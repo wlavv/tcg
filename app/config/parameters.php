@@ -5,7 +5,7 @@
     'database_port' => '',
     'database_name' => 'playfunc_tcg',
     'database_user' => 'playfunc_admin_2024',
-    'database_password' => '}Kpq4yEf]%%qQ',
+    'database_password' => '8dWcFpbdaUY28f3',
     'database_prefix' => 'ps_',
     'database_engine' => 'InnoDB',
     'mailer_transport' => 'smtp',
