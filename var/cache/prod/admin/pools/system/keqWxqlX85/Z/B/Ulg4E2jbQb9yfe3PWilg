@@ -1,0 +1,299 @@
+<?php //is_granted%2528%2527read%2527%252C%2520request.get%2528%2527_legacy_controller%2527%2529%2529%2520%2526%2526%2520is_granted%2528%2527update%2527%252C%2520request.get%2528%2527_legacy_controller%2527%2529%2529%2520%2526%2526%2520is_granted%2528%2527create%2527%252C%2520request.get%2528%2527_legacy_controller%2527%2529%2529%2520%2526%2526%2520is_granted%2528%2527delete%2527%252C%2520request.get%2528%2527_legacy_controller%2527%2529%2529%252F%252Fauth_checker%257Cobject%257Crequest%257Crole_names%257Csubject%257Ctoken%257Ctrust_resolver%257Cuser
+
+return [PHP_INT_MAX, static fn () => \Symfony\Component\VarExporter\Internal\Hydrator::hydrate(
+    $o = [
+        clone (($p = &\Symfony\Component\VarExporter\Internal\Registry::$prototypes)['Symfony\\Component\\ExpressionLanguage\\ParsedExpression'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\ParsedExpression')),
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\BinaryNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\BinaryNode')),
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\BinaryNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\BinaryNode'],
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\FunctionNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\FunctionNode')),
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\Node'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\Node')),
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode')),
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\GetAttrNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\GetAttrNode')),
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\NameNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\NameNode')),
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone ($p['Symfony\\Component\\ExpressionLanguage\\Node\\ArgumentsNode'] ?? \Symfony\Component\VarExporter\Internal\Registry::p('Symfony\\Component\\ExpressionLanguage\\Node\\ArgumentsNode')),
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\FunctionNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\Node'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\GetAttrNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\NameNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ArgumentsNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\FunctionNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\Node'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\GetAttrNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\NameNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ArgumentsNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\FunctionNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\Node'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\GetAttrNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\NameNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ArgumentsNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+        clone $p['Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode'],
+    ],
+    null,
+    [
+        'Symfony\\Component\\ExpressionLanguage\\Expression' => [
+            'expression' => [
+                'is_granted(\'read\', request.get(\'_legacy_controller\')) && is_granted(\'update\', request.get(\'_legacy_controller\')) && is_granted(\'create\', request.get(\'_legacy_controller\')) && is_granted(\'delete\', request.get(\'_legacy_controller\'))',
+            ],
+        ],
+        'Symfony\\Component\\ExpressionLanguage\\ParsedExpression' => [
+            'nodes' => [
+                $o[1],
+            ],
+        ],
+        'stdClass' => [
+            'nodes' => [
+                1 => [
+                    'left' => $o[2],
+                    'right' => $o[31],
+                ],
+                [
+                    'left' => $o[3],
+                    'right' => $o[22],
+                ],
+                [
+                    'left' => $o[4],
+                    'right' => $o[13],
+                ],
+                [
+                    'arguments' => $o[5],
+                ],
+                [
+                    $o[6],
+                    $o[7],
+                ],
+                10 => [
+                    $o[11],
+                    $o[12],
+                ],
+                13 => [
+                    'arguments' => $o[14],
+                ],
+                [
+                    $o[15],
+                    $o[16],
+                ],
+                19 => [
+                    $o[20],
+                    $o[21],
+                ],
+                22 => [
+                    'arguments' => $o[23],
+                ],
+                [
+                    $o[24],
+                    $o[25],
+                ],
+                28 => [
+                    $o[29],
+                    $o[30],
+                ],
+                31 => [
+                    'arguments' => $o[32],
+                ],
+                [
+                    $o[33],
+                    $o[34],
+                ],
+                37 => [
+                    $o[38],
+                    $o[39],
+                ],
+            ],
+            'attributes' => [
+                1 => [
+                    'operator' => '&&',
+                ],
+                [
+                    'operator' => '&&',
+                ],
+                [
+                    'operator' => '&&',
+                ],
+                [
+                    'name' => 'is_granted',
+                ],
+                6 => [
+                    'value' => 'read',
+                ],
+                8 => [
+                    'name' => 'request',
+                ],
+                [
+                    'value' => 'get',
+                ],
+                11 => [
+                    'value' => 0,
+                ],
+                [
+                    'value' => '_legacy_controller',
+                ],
+                [
+                    'name' => 'is_granted',
+                ],
+                15 => [
+                    'value' => 'update',
+                ],
+                17 => [
+                    'name' => 'request',
+                ],
+                [
+                    'value' => 'get',
+                ],
+                20 => [
+                    'value' => 0,
+                ],
+                [
+                    'value' => '_legacy_controller',
+                ],
+                [
+                    'name' => 'is_granted',
+                ],
+                24 => [
+                    'value' => 'create',
+                ],
+                26 => [
+                    'name' => 'request',
+                ],
+                [
+                    'value' => 'get',
+                ],
+                29 => [
+                    'value' => 0,
+                ],
+                [
+                    'value' => '_legacy_controller',
+                ],
+                [
+                    'name' => 'is_granted',
+                ],
+                33 => [
+                    'value' => 'delete',
+                ],
+                35 => [
+                    'name' => 'request',
+                ],
+                [
+                    'value' => 'get',
+                ],
+                38 => [
+                    'value' => 0,
+                ],
+                [
+                    'value' => '_legacy_controller',
+                ],
+            ],
+        ],
+        'Symfony\\Component\\ExpressionLanguage\\Node\\ConstantNode' => [
+            'isNullSafe' => [
+                6 => false,
+                9 => false,
+                11 => false,
+                false,
+                15 => false,
+                18 => false,
+                20 => false,
+                false,
+                24 => false,
+                27 => false,
+                29 => false,
+                false,
+                33 => false,
+                36 => false,
+                38 => false,
+                false,
+            ],
+            'isIdentifier' => [
+                6 => false,
+                9 => true,
+                11 => false,
+                false,
+                15 => false,
+                18 => true,
+                20 => false,
+                false,
+                24 => false,
+                27 => true,
+                29 => false,
+                false,
+                33 => false,
+                36 => true,
+                38 => false,
+                false,
+            ],
+        ],
+        'Symfony\\Component\\ExpressionLanguage\\Node\\ArrayNode' => [
+            'index' => [
+                10 => 0,
+                19 => 0,
+                28 => 0,
+                37 => 0,
+            ],
+        ],
+    ],
+    $o[0],
+    [
+        -7 => [
+            'nodes' => [
+                'node' => $o[8],
+                'attribute' => $o[9],
+                'arguments' => $o[10],
+            ],
+            'attributes' => [
+                'type' => 2,
+                'is_null_coalesce' => false,
+                'is_short_circuited' => false,
+            ],
+        ],
+        -16 => [
+            'nodes' => [
+                'node' => $o[17],
+                'attribute' => $o[18],
+                'arguments' => $o[19],
+            ],
+            'attributes' => [
+                'type' => 2,
+                'is_null_coalesce' => false,
+                'is_short_circuited' => false,
+            ],
+        ],
+        -25 => [
+            'nodes' => [
+                'node' => $o[26],
+                'attribute' => $o[27],
+                'arguments' => $o[28],
+            ],
+            'attributes' => [
+                'type' => 2,
+                'is_null_coalesce' => false,
+                'is_short_circuited' => false,
+            ],
+        ],
+        -34 => [
+            'nodes' => [
+                'node' => $o[35],
+                'attribute' => $o[36],
+                'arguments' => $o[37],
+            ],
+            'attributes' => [
+                'type' => 2,
+                'is_null_coalesce' => false,
+                'is_short_circuited' => false,
+            ],
+        ],
+    ]
+)];

@@ -1,0 +1,1 @@
+[14-Jun-2025 12:07:35 Europe/Lisbon] PHP Fatal error:  Allowed memory size of 536870912 bytes exhausted (tried to allocate 929792 bytes) in /home/playfunc/tcg/vendor/symfony/routing/Generator/UrlGenerator.php on line 283
