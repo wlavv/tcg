@@ -3,7 +3,7 @@
   array (
     'database_host' => '127.0.0.1',
     'database_port' => '',
-    'database_name' => 'playfunc_tcg',
+    'database_name' => 'playfunc_DEV_tcg',
     'database_user' => 'playfunc_admin_2024',
     'database_password' => '8dWcFpbdaUY28f3',
     'database_prefix' => 'ps_',
