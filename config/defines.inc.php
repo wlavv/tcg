@@ -32,6 +32,8 @@
  * Don't forget to disable debug mode in production - produces a significant performance hit.
  * The code below can be also managed by settings in backoffice. The interface hardcodes the value into this file.
  */
+define('_PS_MODE_DEV_', true);
+
 if (!defined('_PS_MODE_DEV_')) {
 define('_PS_MODE_DEV_', false);
 }
