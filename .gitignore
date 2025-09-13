@@ -1,0 +1,70 @@
+# ========================================
+# PrestaShop - .gitignore
+# ========================================
+
+# --- Cache & compiled files ---
+/var/cache/
+/app/cache/
+/cache/
+*.cache
+
+# --- Logs ---
+/var/logs/
+/app/logs/
+/log/
+/*.log
+
+# --- Sessions & temp ---
+/var/sessions/
+/tmp/
+/*.tmp
+
+# --- Uploads & generated content ---
+/download/
+/upload/
+/img/*
+!/img/.htaccess
+
+# --- Mail cache ---
+/mails/
+/modules/*/mails/
+
+# --- Vendor & dependencies ---
+/vendor/
+/node_modules/
+/composer.lock
+/package-lock.json
+/yarn.lock
+
+# --- Backups & exports ---
+/admin/autoupgrade/
+/admin/backups/
+/admin/export/
+/admin/import/
+/admin/themes/default-bootstrap/lang/
+/config/xml/
+
+# --- Translations & compiled templates ---
+/themes/*/cache/
+/themes/*/lang/
+/themes/*/pdf/
+/themes/*/translations/
+/tools/smarty/compile/
+/tools/smarty/cache/
+/translations/
+
+# --- IDE & system files ---
+/.idea/
+/.vscode/
+/nbproject/
+/*.swp
+*.bak
+*.tmp
+*.log
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Icon?
+
+# --- Optional: ignore all .htaccess (descomenta se não quiseres versionar)
+/.htaccess
