@@ -57,7 +57,7 @@ class ps_edition_basic extends Module
     public function __construct()
     {
         $this->name = 'ps_edition_basic';
-        $this->version = '1.0.19';
+        $this->version = '1.0.20';
         $this->tab = 'administration';
         $this->author = 'PrestaShop';
         $this->need_instance = 0;
@@ -156,6 +156,7 @@ class ps_edition_basic extends Module
     private function addAdminThemeMedia(): void
     {
         $this->context->controller->addCSS($this->getParameter('ps_edition_basic.edition_basic_admin_css'));
+        Media::addJsDef(['ps_edition_basic_favicon' => $this->getPathUri() . 'views/favicon.png']);
         $this->context->controller->addJS($this->getPathUri() . 'views/js/favicon.js');
         // Hide minified setup guide if not in edition shop
     }
