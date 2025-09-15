@@ -13,17 +13,25 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Util;
 
-use Doctrine\Inflector\Inflector as LegacyInflector;
+use Doctrine\Common\Inflector\Inflector as LegacyInflector;
+use Doctrine\Inflector\Inflector as InflectorObject;
 use Doctrine\Inflector\InflectorFactory;
 
 /**
+ * Facade for Doctrine Inflector.
+ *
+ * This class allows us to maintain compatibility with Doctrine Inflector 1.3 and 2.0 at the same time.
+ *
  * @internal
  */
 final class Inflector
 {
-    private static ?LegacyInflector $instance = null;
+    /**
+     * @var InflectorObject|null
+     */
+    private static $instance;
 
-    private static function getInstance(): LegacyInflector
+    private static function getInstance(): InflectorObject
     {
         return self::$instance
             ?? self::$instance = InflectorFactory::create()->build();
@@ -34,7 +42,7 @@ final class Inflector
      */
     public static function tableize(string $word): string
     {
-        return self::getInstance()->tableize($word);
+        return class_exists(InflectorFactory::class) ? self::getInstance()->tableize($word) : LegacyInflector::tableize($word); // @phpstan-ignore-line
     }
 
     /**
@@ -42,6 +50,8 @@ final class Inflector
      */
     public static function pluralize(string $word): string
     {
-        return self::getInstance()->pluralize($word);
+        return class_exists(InflectorFactory::class) ? self::getInstance()->pluralize($word) : LegacyInflector::pluralize($word); // @phpstan-ignore-line
     }
 }
+
+class_alias(Inflector::class, \ApiPlatform\Core\Util\Inflector::class);

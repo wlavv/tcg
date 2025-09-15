@@ -55,8 +55,8 @@
 				<input type="hidden" name="type" value="{$type}" />
 				<input type="hidden" name="selected-theme" value="{$theme}" />
 				<script type="text/javascript">
-					$(function(){
-						$('a.useSpecialSyntax').on('click', function(){
+					$(document).ready(function(){
+						$('a.useSpecialSyntax').click(function(){
 							var syntax = $(this).find('img').attr('alt');
 							$('#BoxUseSpecialSyntax .syntax span').html(syntax+".");
 						});
@@ -104,7 +104,7 @@
 				{literal}
 				<script type="text/javascript">
 				//<![CDATA[
-					$(function () {
+					$(document).ready(function () {
 						$('.mails_field').on('shown.bs.collapse', function () {
 							// get active email
 							var active_email = $(this).find('.email-collapse.in');

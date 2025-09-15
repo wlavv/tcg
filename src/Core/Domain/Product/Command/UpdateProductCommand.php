@@ -41,7 +41,7 @@ use PrestaShop\PrestaShop\Core\Domain\Product\Pack\ValueObject\PackStockType;
 use PrestaShop\PrestaShop\Core\Domain\Product\Stock\ValueObject\LowStockThreshold;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\DeliveryTimeNoteType;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Dimension;
-use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Gtin;
+use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Ean13;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Isbn;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductCondition;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductId;
@@ -186,7 +186,10 @@ class UpdateProductCommand
      */
     private $upc;
 
-    private ?Gtin $gtin = null;
+    /**
+     * @var Ean13|null
+     */
+    private $ean13;
 
     /**
      * @var string|null
@@ -711,9 +714,9 @@ class UpdateProductCommand
     /**
      * @param int $manufacturerId
      *
-     * @return self
-     *
      * @throws ManufacturerConstraintException
+     *
+     * @return self
      */
     public function setManufacturerId(int $manufacturerId): self
     {
@@ -766,35 +769,21 @@ class UpdateProductCommand
     }
 
     /**
-     * @deprecated since 9.0 will be removed in 10.0
-     *
-     * @return Gtin|null
+     * @return Ean13|null
      */
-    public function getEan13(): ?Gtin
+    public function getEan13(): ?Ean13
     {
-        return $this->getGtin();
+        return $this->ean13;
     }
 
     /**
-     * @deprecated since 9.0 will be removed in 10.0
-     *
-     * @param string $gtin
+     * @param string $ean13
      *
      * @return self
      */
-    public function setEan13(string $gtin): self
+    public function setEan13(string $ean13): self
     {
-        return $this->setGtin($gtin);
-    }
-
-    public function getGtin(): ?Gtin
-    {
-        return $this->gtin;
-    }
-
-    public function setGtin(string $gtin): self
-    {
-        $this->gtin = new Gtin($gtin);
+        $this->ean13 = new Ean13($ean13);
 
         return $this;
     }

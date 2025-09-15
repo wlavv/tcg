@@ -25,17 +25,14 @@
 
 import initColorPickers from '@app/utils/colorpicker';
 import TranslatableChoice from '@components/form/translatable-choice';
+import TranslatableInput from '@components/translatable-input';
 import FormMap from '@pages/order-states/form-map';
 
 const {$} = window;
 
 $(() => {
   initColorPickers();
-  window.prestashop.component.initComponents(
-    [
-      'TranslatableInput',
-    ],
-  );
+  new TranslatableInput();
   new TranslatableChoice();
 
   let templatePreviewWindow: null | Record<string, any> = null;
@@ -63,7 +60,7 @@ $(() => {
     }
   }
 
-  $(() => {
+  $(document).ready(() => {
     if (!$(FormMap.sendEmailSelector).is(':checked')) {
       $(FormMap.mailTemplateSelector).hide();
     }

@@ -24,8 +24,6 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-use PrestaShopBundle\Form\Admin\Type\FormattedTextareaType;
-
 /**
  * Class ManufacturerCore.
  */
@@ -57,6 +55,9 @@ class ManufacturerCore extends ObjectModel
     /** @var string|array<int, string> Meta title */
     public $meta_title;
 
+    /** @var string|array<int, string> Meta keywords */
+    public $meta_keywords;
+
     /** @var string|array<int, string> Meta description */
     public $meta_description;
 
@@ -77,10 +78,11 @@ class ManufacturerCore extends ObjectModel
             'date_upd' => ['type' => self::TYPE_DATE],
 
             /* Lang fields */
-            'description' => ['type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isCleanHtml', 'size' => FormattedTextareaType::LIMIT_MEDIUMTEXT_UTF8_MB4],
-            'short_description' => ['type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isCleanHtml', 'size' => FormattedTextareaType::LIMIT_MEDIUMTEXT_UTF8_MB4],
+            'description' => ['type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isCleanHtml', 'size' => 4194303],
+            'short_description' => ['type' => self::TYPE_HTML, 'lang' => true, 'validate' => 'isCleanHtml', 'size' => 4194303],
             'meta_title' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 255],
             'meta_description' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName', 'size' => 512],
+            'meta_keywords' => ['type' => self::TYPE_STRING, 'lang' => true, 'validate' => 'isGenericName'],
         ],
     ];
 
@@ -143,8 +145,12 @@ class ManufacturerCore extends ObjectModel
      *
      * return boolean Deletion result
      */
-    public function deleteSelection(array $selection)
+    public function deleteSelection($selection)
     {
+        if (!is_array($selection)) {
+            die(Tools::displayError('Parameter "selection" must be an array.'));
+        }
+
         $result = true;
         foreach ($selection as $id) {
             $this->id = (int) $id;
@@ -229,7 +235,7 @@ class ManufacturerCore extends ObjectModel
 						WHERE p.`id_product` = cp.`id_product` AND cg.`id_group` ' . $sqlGroups . '
 					)') . '
 					GROUP BY p.`id_manufacturer`'
-            );
+                );
 
             $counts = [];
             foreach ($results as $result) {
@@ -374,7 +380,7 @@ class ManufacturerCore extends ObjectModel
         $getTotal = false,
         $active = true,
         $activeCategory = true,
-        ?Context $context = null
+        Context $context = null
     ) {
         if (!$context) {
             $context = Context::getContext();
@@ -439,15 +445,13 @@ class ManufacturerCore extends ObjectModel
             $alias = 'm.';
         } elseif ($orderBy == 'quantity') {
             $alias = 'stock.';
-        } elseif ($orderBy == 'sales') {
-            $alias = '';
         } else {
             $alias = 'p.';
         }
 
         $sql = 'SELECT p.*, product_shop.*, stock.out_of_stock, IFNULL(stock.quantity, 0) as quantity'
             . (Combination::isFeatureActive() ? ', product_attribute_shop.minimal_quantity AS product_attribute_minimal_quantity, IFNULL(product_attribute_shop.`id_product_attribute`,0) id_product_attribute' : '') . '
-			, pl.`description`, pl.`description_short`, pl.`link_rewrite`, pl.`meta_description`,
+			, pl.`description`, pl.`description_short`, pl.`link_rewrite`, pl.`meta_description`, pl.`meta_keywords`,
 			pl.`meta_title`, pl.`name`, pl.`available_now`, pl.`available_later`, image_shop.`id_image` id_image, il.`legend`, m.`name` AS manufacturer_name,
 				DATEDIFF(
 					product_shop.`date_add`,
@@ -455,7 +459,7 @@ class ManufacturerCore extends ObjectModel
 						"' . date('Y-m-d') . ' 00:00:00",
 						INTERVAL ' . (Validate::isUnsignedInt(Configuration::get('PS_NB_DAYS_NEW_PRODUCT')) ? Configuration::get('PS_NB_DAYS_NEW_PRODUCT') : 20) . ' DAY
 					)
-				) > 0 AS new, psales.`quantity` as sales'
+				) > 0 AS new'
             . ' FROM `' . _DB_PREFIX_ . 'product` p
 			' . Shop::addSqlAssociation('product', 'p') .
             (Combination::isFeatureActive() ? 'LEFT JOIN `' . _DB_PREFIX_ . 'product_attribute_shop` product_attribute_shop
@@ -466,8 +470,6 @@ class ManufacturerCore extends ObjectModel
 					ON (image_shop.`id_product` = p.`id_product` AND image_shop.cover=1 AND image_shop.id_shop=' . (int) $context->shop->id . ')
 			LEFT JOIN `' . _DB_PREFIX_ . 'image_lang` il
 				ON (image_shop.`id_image` = il.`id_image` AND il.`id_lang` = ' . (int) $idLang . ')
-            LEFT JOIN `' . _DB_PREFIX_ . 'product_sale` psales
-					ON psales.`id_product` = p.`id_product`
 			LEFT JOIN `' . _DB_PREFIX_ . 'manufacturer` m
 				ON (m.`id_manufacturer` = p.`id_manufacturer`)
 			' . Product::sqlStock('p', 0);
@@ -505,7 +507,7 @@ class ManufacturerCore extends ObjectModel
             $result = array_slice($result, (int) (($p - 1) * $n), (int) $n);
         }
 
-        return $result;
+        return Product::getProductsProperties($idLang, $result);
     }
 
     /**

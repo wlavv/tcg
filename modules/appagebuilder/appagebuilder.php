@@ -1643,7 +1643,7 @@ class APPageBuilder extends Module implements WidgetInterface
                 product_attribute_shop.id_product_attribute,
                 product_attribute_shop.minimal_quantity AS product_attribute_minimal_quantity,
                 pl.`description`, pl.`description_short`, pl.`available_now`,
-                pl.`available_later`, pl.`link_rewrite`, pl.`meta_description`, pl.`meta_title`, pl.`name`,
+                pl.`available_later`, pl.`link_rewrite`, pl.`meta_description`, pl.`meta_keywords`, pl.`meta_title`, pl.`name`,
                 image_shop.`id_image`,
                 il.`legend`, m.`name` AS manufacturer_name, cl.`name` AS category_default,
                 DATEDIFF(product_shop.`date_add`, DATE_SUB(NOW(),

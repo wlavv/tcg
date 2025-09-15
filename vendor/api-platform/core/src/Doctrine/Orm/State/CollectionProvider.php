@@ -13,17 +13,16 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Orm\State;
 
-use ApiPlatform\Doctrine\Common\State\LinksHandlerLocatorTrait;
 use ApiPlatform\Doctrine\Orm\Extension\QueryCollectionExtensionInterface;
 use ApiPlatform\Doctrine\Orm\Extension\QueryResultCollectionExtensionInterface;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGenerator;
-use ApiPlatform\Metadata\Exception\RuntimeException;
+use ApiPlatform\Exception\RuntimeException;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
 use ApiPlatform\State\ProviderInterface;
 use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\EntityRepository;
 use Doctrine\Persistence\ManagerRegistry;
-use Psr\Container\ContainerInterface;
 
 /**
  * Collection state provider using the Doctrine ORM.
@@ -33,30 +32,30 @@ use Psr\Container\ContainerInterface;
  */
 final class CollectionProvider implements ProviderInterface
 {
-    use LinksHandlerLocatorTrait;
     use LinksHandlerTrait;
+
+    private $resourceMetadataCollectionFactory;
+    private $managerRegistry;
+    private $collectionExtensions;
 
     /**
      * @param QueryCollectionExtensionInterface[] $collectionExtensions
      */
-    public function __construct(ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, ManagerRegistry $managerRegistry, private readonly iterable $collectionExtensions = [], ?ContainerInterface $handleLinksLocator = null)
+    public function __construct(ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, ManagerRegistry $managerRegistry, iterable $collectionExtensions = [])
     {
         $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
-        $this->handleLinksLocator = $handleLinksLocator;
         $this->managerRegistry = $managerRegistry;
+        $this->collectionExtensions = $collectionExtensions;
     }
 
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): iterable
+    public function provide(Operation $operation, array $uriVariables = [], array $context = [])
     {
-        $entityClass = $operation->getClass();
-        if (($options = $operation->getStateOptions()) && $options instanceof Options && $options->getEntityClass()) {
-            $entityClass = $options->getEntityClass();
-        }
-
+        $resourceClass = $operation->getClass();
         /** @var EntityManagerInterface $manager */
-        $manager = $this->managerRegistry->getManagerForClass($entityClass);
+        $manager = $this->managerRegistry->getManagerForClass($resourceClass);
 
-        $repository = $manager->getRepository($entityClass);
+        /** @var EntityRepository */
+        $repository = $manager->getRepository($resourceClass);
         if (!method_exists($repository, 'createQueryBuilder')) {
             throw new RuntimeException('The repository class must have a "createQueryBuilder" method.');
         }
@@ -64,17 +63,13 @@ final class CollectionProvider implements ProviderInterface
         $queryBuilder = $repository->createQueryBuilder('o');
         $queryNameGenerator = new QueryNameGenerator();
 
-        if ($handleLinks = $this->getLinksHandler($operation)) {
-            $handleLinks($queryBuilder, $uriVariables, $queryNameGenerator, ['entityClass' => $entityClass, 'operation' => $operation] + $context);
-        } else {
-            $this->handleLinks($queryBuilder, $uriVariables, $queryNameGenerator, $context, $entityClass, $operation);
-        }
+        $this->handleLinks($queryBuilder, $uriVariables, $queryNameGenerator, $context, $resourceClass, $operation);
 
         foreach ($this->collectionExtensions as $extension) {
-            $extension->applyToCollection($queryBuilder, $queryNameGenerator, $entityClass, $operation, $context);
+            $extension->applyToCollection($queryBuilder, $queryNameGenerator, $resourceClass, $operation, $context);
 
-            if ($extension instanceof QueryResultCollectionExtensionInterface && $extension->supportsResult($entityClass, $operation, $context)) {
-                return $extension->getResult($queryBuilder, $entityClass, $operation, $context);
+            if ($extension instanceof QueryResultCollectionExtensionInterface && $extension->supportsResult($resourceClass, $operation, $context)) {
+                return $extension->getResult($queryBuilder, $resourceClass, $operation, $context);
             }
         }
 

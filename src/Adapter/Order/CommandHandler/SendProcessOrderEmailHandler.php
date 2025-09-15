@@ -31,7 +31,6 @@ use Customer;
 use Language;
 use Link;
 use Mail;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\Cart\Exception\CartNotFoundException;
 use PrestaShop\PrestaShop\Core\Domain\Cart\ValueObject\CartId;
 use PrestaShop\PrestaShop\Core\Domain\Customer\Exception\CustomerNotFoundException;
@@ -46,7 +45,6 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 /**
  * Handles SendProcessOrderEmail command using legacy object model
  */
-#[AsCommandHandler]
 class SendProcessOrderEmailHandler implements SendProcessOrderEmailHandlerInterface
 {
     /**
@@ -97,7 +95,7 @@ class SendProcessOrderEmailHandler implements SendProcessOrderEmailHandlerInterf
             )) {
                 throw new OrderEmailSendException('Failed to send order process email to customer', OrderEmailSendException::FAILED_SEND_PROCESS_ORDER);
             }
-        } catch (PrestaShopException) {
+        } catch (PrestaShopException $e) {
             throw new OrderException('An error occurred when trying to get info for order processing');
         }
     }

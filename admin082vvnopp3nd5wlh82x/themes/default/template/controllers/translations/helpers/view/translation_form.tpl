@@ -65,13 +65,13 @@
 				<input type="hidden" name="theme" value="{$theme}" />
 
 				<script type="text/javascript">
-					$(function(){
-						$('a.useSpecialSyntax').on('click', function(){
+					$(document).ready(function(){
+						$('a.useSpecialSyntax').click(function(){
 							var syntax = $(this).find('img').attr('alt');
 							$('#BoxUseSpecialSyntax .syntax span').html(syntax+".");
 						});
 
-						$("a.sidetoggle").on('click', function(){
+						$("a.sidetoggle").click(function(){
 							$('#'+$(this).attr('data-slidetoggle')).slideToggle();
 							return false;
 						});

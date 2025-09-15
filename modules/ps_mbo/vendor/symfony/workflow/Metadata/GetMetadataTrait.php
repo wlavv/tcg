@@ -11,6 +11,7 @@
 
 namespace Symfony\Component\Workflow\Metadata;
 
+use Symfony\Component\Workflow\Exception\InvalidArgumentException;
 use Symfony\Component\Workflow\Transition;
 
 /**
@@ -18,17 +19,30 @@ use Symfony\Component\Workflow\Transition;
  */
 trait GetMetadataTrait
 {
-    /**
-     * @return mixed
-     */
-    public function getMetadata(string $key, string|Transition|null $subject = null)
+    public function getMetadata(string $key, $subject = null)
     {
         if (null === $subject) {
             return $this->getWorkflowMetadata()[$key] ?? null;
         }
 
-        $metadataBag = \is_string($subject) ? $this->getPlaceMetadata($subject) : $this->getTransitionMetadata($subject);
+        if (\is_string($subject)) {
+            $metadataBag = $this->getPlaceMetadata($subject);
+            if (!$metadataBag) {
+                return null;
+            }
 
-        return $metadataBag[$key] ?? null;
+            return $metadataBag[$key] ?? null;
+        }
+
+        if ($subject instanceof Transition) {
+            $metadataBag = $this->getTransitionMetadata($subject);
+            if (!$metadataBag) {
+                return null;
+            }
+
+            return $metadataBag[$key] ?? null;
+        }
+
+        throw new InvalidArgumentException(sprintf('Could not find a MetadataBag for the subject of type "%s".', get_debug_type($subject)));
     }
 }

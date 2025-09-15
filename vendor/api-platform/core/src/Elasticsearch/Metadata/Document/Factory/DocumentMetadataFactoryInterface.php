@@ -19,7 +19,7 @@ use ApiPlatform\Elasticsearch\Metadata\Document\DocumentMetadata;
 /**
  * Creates a document metadata value object.
  *
- * @deprecated
+ * @experimental
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */

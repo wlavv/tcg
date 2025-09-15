@@ -32,11 +32,6 @@ class BestSalesControllerCore extends ProductListingFrontController
     /** @var string */
     public $php_self = 'best-sales';
 
-    /**
-     * Returns canonical URL for best-sales page
-     *
-     * @return string
-     */
     public function getCanonicalURL(): string
     {
         return $this->buildPaginatedUrl($this->context->link->getPageLink('best-sales'));
@@ -49,7 +44,7 @@ class BestSalesControllerCore extends ProductListingFrontController
      *
      * @throws PrestaShopException
      */
-    public function init(): void
+    public function init()
     {
         if (Configuration::get('PS_DISPLAY_BEST_SELLERS')) {
             parent::init();
@@ -59,11 +54,9 @@ class BestSalesControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Assign template vars related to page content.
-     *
-     * @see FrontController::initContent()
+     * {@inheritdoc}
      */
-    public function initContent(): void
+    public function initContent()
     {
         parent::initContent();
 
@@ -71,12 +64,9 @@ class BestSalesControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Gets the product search query for the controller. This is a set of information that
-     * a filtering module or the default provider will use to fetch our products.
-     *
      * @return ProductSearchQuery
      */
-    protected function getProductSearchQuery(): ProductSearchQuery
+    protected function getProductSearchQuery()
     {
         $query = new ProductSearchQuery();
         $query
@@ -87,23 +77,21 @@ class BestSalesControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Default product search provider used if no filtering module stood up for the job
-     *
      * @return BestSalesProductSearchProvider
      */
-    protected function getDefaultProductSearchProvider(): BestSalesProductSearchProvider
+    protected function getDefaultProductSearchProvider()
     {
         return new BestSalesProductSearchProvider(
             $this->getTranslator()
         );
     }
 
-    public function getListingLabel(): string
+    public function getListingLabel()
     {
         return $this->getTranslator()->trans('Best sellers', [], 'Shop.Theme.Catalog');
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 

@@ -18,22 +18,25 @@ use Symfony\Component\Serializer\NameConverter\CamelCaseToSnakeCaseNameConverter
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
- * Converts inner fields with a inner name converter.
+ * Converts inner fields with a decorated name converter.
  *
  * @experimental
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
-final class InnerFieldsNameConverter implements NameConverterInterface, AdvancedNameConverterInterface
+final class InnerFieldsNameConverter implements AdvancedNameConverterInterface
 {
-    public function __construct(private readonly NameConverterInterface $inner = new CamelCaseToSnakeCaseNameConverter())
+    private $decorated;
+
+    public function __construct(?NameConverterInterface $decorated = null)
     {
+        $this->decorated = $decorated ?? new CamelCaseToSnakeCaseNameConverter();
     }
 
     /**
      * {@inheritdoc}
      */
-    public function normalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string
+    public function normalize($propertyName, string $class = null, string $format = null, array $context = []): string
     {
         return $this->convertInnerFields($propertyName, true, $class, $format, $context);
     }
@@ -41,19 +44,21 @@ final class InnerFieldsNameConverter implements NameConverterInterface, Advanced
     /**
      * {@inheritdoc}
      */
-    public function denormalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string
+    public function denormalize($propertyName, string $class = null, string $format = null, array $context = []): string
     {
         return $this->convertInnerFields($propertyName, false, $class, $format, $context);
     }
 
-    private function convertInnerFields(string $propertyName, bool $normalization, ?string $class = null, ?string $format = null, array $context = []): string
+    private function convertInnerFields(string $propertyName, bool $normalization, string $class = null, string $format = null, $context = []): string
     {
         $convertedProperties = [];
 
         foreach (explode('.', $propertyName) as $decomposedProperty) {
-            $convertedProperties[] = $this->inner->{$normalization ? 'normalize' : 'denormalize'}($decomposedProperty, $class, $format, $context);
+            $convertedProperties[] = $this->decorated->{$normalization ? 'normalize' : 'denormalize'}($decomposedProperty, $class, $format, $context);
         }
 
         return implode('.', $convertedProperties);
     }
 }
+
+class_alias(InnerFieldsNameConverter::class, \ApiPlatform\Core\Bridge\Elasticsearch\Serializer\NameConverter\InnerFieldsNameConverter::class);

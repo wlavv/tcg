@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -20,7 +19,7 @@
  */
 
 use PrestaShop\Module\PrestashopCheckout\Cart\ValueObject\CartId;
-use PrestaShop\Module\PrestashopCheckout\CommandBus\QueryBusInterface;
+use PrestaShop\Module\PrestashopCheckout\CommandBus\CommandBusInterface;
 use PrestaShop\Module\PrestashopCheckout\Controller\AbstractFrontController;
 use PrestaShop\Module\PrestashopCheckout\PayPal\GooglePay\Query\GetGooglePayTransactionInfoQuery;
 
@@ -34,7 +33,10 @@ class Ps_CheckoutGooglepayModuleFrontController extends AbstractFrontController
      */
     public $module;
 
-    private QueryBusInterface $queryBus;
+    /**
+     * @var CommandBusInterface
+     */
+    private $commandBus;
 
     /**
      * @see FrontController::postProcess()
@@ -51,7 +53,7 @@ class Ps_CheckoutGooglepayModuleFrontController extends AbstractFrontController
 
             $action = $bodyValues['action'];
 
-            $this->queryBus = $this->module->getService('ps_checkout.bus.query');
+            $this->commandBus = $this->module->getService('ps_checkout.bus.command');
 
             if ($action === 'getTransactionInfo') {
                 $this->getTransactionInfo($bodyValues);
@@ -65,7 +67,7 @@ class Ps_CheckoutGooglepayModuleFrontController extends AbstractFrontController
 
     private function getTransactionInfo(array $bodyValues)
     {
-        $transactionInfo = $this->queryBus->handle(new GetGooglePayTransactionInfoQuery(new CartId($this->context->cart->id)));
+        $transactionInfo = $this->commandBus->handle(new GetGooglePayTransactionInfoQuery(new CartId($this->context->cart->id)));
 
         $this->exitWithResponse([
             'httpCode' => 200,

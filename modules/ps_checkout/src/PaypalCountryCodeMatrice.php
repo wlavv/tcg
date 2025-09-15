@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -35,7 +34,7 @@ class PaypalCountryCodeMatrice
     /**
      * Get the PayPal ISO code from PrestaShop ISO Code
      *
-     * @param string|mixed $isoCode
+     * @param string $isoCode
      *
      * @return string|false
      */
@@ -55,7 +54,7 @@ class PaypalCountryCodeMatrice
     /**
      * Get the PrestaShop ISO code from PayPal ISO Code
      *
-     * @param string|mixed $isoCode
+     * @param string $isoCode
      *
      * @return string|false
      */
@@ -65,7 +64,7 @@ class PaypalCountryCodeMatrice
             return false;
         }
 
-        if (!in_array($isoCode, self::MATCH_ISO_CODE)) {
+        if (false === array_search($isoCode, self::MATCH_ISO_CODE)) {
             return $isoCode;
         }
 

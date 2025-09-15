@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\Category\Repository;
 
-use Language;
 use PrestaShop\PrestaShop\Adapter\Image\ImagePathFactory;
 use PrestaShop\PrestaShop\Core\Domain\Category\Exception\CategoryNotFoundException;
 use PrestaShop\PrestaShop\Core\Domain\Category\QueryResult\CategoryPreview;
@@ -83,12 +82,7 @@ class CategoryPreviewRepository
         );
         $names = explode(static::BREADCRUMB_SEPARATOR, $breadcrumb);
         $name = $names[count($names) - 1] ?? $names[0];
-
-        if (file_exists(_PS_CAT_IMG_DIR_ . $categoryId->getValue() . '.jpg')) {
-            $imagePath = $this->categoryImagePathFactory->getPath($categoryId->getValue());
-        } else {
-            $imagePath = $this->categoryImagePathFactory->getPath(Language::getIsoById($languageId->getValue()) . '-default-category_default');
-        }
+        $imagePath = $this->categoryImagePathFactory->getPath($categoryId->getValue());
 
         return new CategoryPreview(
             $categoryId->getValue(),

@@ -29,6 +29,8 @@ class MultilanguageCatalog
     /**
      * @param string|int $key
      * @param string|int $locale
+     *
+     * @return mixed
      */
     public function get($key, $locale = null)
     {
@@ -42,6 +44,7 @@ class MultilanguageCatalog
     /**
      * @param string|int $key
      * @param string|int $locale
+     * @param mixed $translation
      */
     public function set($key, $locale, $translation)
     {

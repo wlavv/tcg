@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -32,21 +31,54 @@ use PrestaShop\Module\PrestashopCheckout\Logger\LoggerConfiguration;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository;
 use PrestaShop\Module\PrestashopCheckout\Routing\Router;
 use PrestaShop\Module\PrestashopCheckout\ShopContext;
+use Ps_checkout;
 use Psr\Log\LoggerInterface;
 
 class CheckoutClientConfigurationBuilder implements HttpClientConfigurationBuilderInterface
 {
     const TIMEOUT = 10;
 
+    /** @var Env */
+    private $env;
+
+    /** @var Router */
+    private $router;
+
+    /** @var ShopContext */
+    private $shopContext;
+
+    /** @var PsAccountRepository */
+    private $psAccountRepository;
+
+    /**
+     * @var PrestaShopContext
+     */
+    private $prestaShopContext;
+    /**
+     * @var LoggerConfiguration
+     */
+    private $loggerConfiguration;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
-        private Env $env,
-        private Router $router,
-        private ShopContext $shopContext,
-        private PsAccountRepository $psAccountRepository,
-        private PrestaShopContext $prestaShopContext,
-        private LoggerConfiguration $loggerConfiguration,
-        private LoggerInterface $psCheckoutLogger,
+        Env $env,
+        Router $router,
+        ShopContext $shopContext,
+        PsAccountRepository $psAccountRepository,
+        PrestaShopContext $prestaShopContext,
+        LoggerConfiguration $loggerConfiguration,
+        LoggerInterface $logger
     ) {
+        $this->env = $env;
+        $this->router = $router;
+        $this->shopContext = $shopContext;
+        $this->psAccountRepository = $psAccountRepository;
+        $this->prestaShopContext = $prestaShopContext;
+        $this->loggerConfiguration = $loggerConfiguration;
+        $this->logger = $logger;
     }
 
     /**
@@ -59,14 +91,14 @@ class CheckoutClientConfigurationBuilder implements HttpClientConfigurationBuild
             'verify' => $this->getVerify(),
             'timeout' => static::TIMEOUT,
             'headers' => [
-                //                'Content-Type' => 'application/vnd.checkout.v1+json', // api version to use (psl side)
+//                'Content-Type' => 'application/vnd.checkout.v1+json', // api version to use (psl side)
                 'Content-Type' => 'application/json',
                 'Accept' => 'application/json',
                 'Authorization' => 'Bearer ' . $this->psAccountRepository->getIdToken(),  // Token we get from PsAccounts
                 'Checkout-Shop-Id' => $this->psAccountRepository->getShopUuid(),  // Shop UUID we get from PsAccounts
                 'Checkout-Hook-Url' => $this->router->getDispatchWebhookLink($this->prestaShopContext->getShopId()),
                 'Checkout-Bn-Code' => $this->shopContext->getBnCode(),
-                'Checkout-Module-Version' => \Ps_checkout::VERSION, // version of the module
+                'Checkout-Module-Version' => Ps_checkout::VERSION, // version of the module
                 'Checkout-Prestashop-Version' => _PS_VERSION_, // prestashop version
             ],
         ];
@@ -78,8 +110,7 @@ class CheckoutClientConfigurationBuilder implements HttpClientConfigurationBuild
                 && class_exists(LogMiddleware::class)
             ) {
                 $handlerStack = HandlerStack::create();
-                $logMiddleWare = new LogMiddleware($this->psCheckoutLogger);
-                $handlerStack->push($logMiddleWare);
+                $handlerStack->push(new LogMiddleware($this->logger));
                 $configuration['handler'] = $handlerStack;
             } elseif (
                 defined('\GuzzleHttp\ClientInterface::VERSION')
@@ -88,8 +119,10 @@ class CheckoutClientConfigurationBuilder implements HttpClientConfigurationBuild
                 && class_exists(Formatter::class)
             ) {
                 $emitter = new Emitter();
-                $logSubscriber = new LogSubscriber($this->psCheckoutLogger, Formatter::DEBUG);
-                $emitter->attach($logSubscriber);
+                $emitter->attach(new LogSubscriber(
+                    $this->logger,
+                    Formatter::DEBUG
+                ));
 
                 $configuration['emitter'] = $emitter;
             }

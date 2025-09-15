@@ -13,12 +13,9 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Common\Filter;
 
-use ApiPlatform\Api\IdentifiersExtractorInterface as LegacyIdentifiersExtractorInterface;
-use ApiPlatform\Api\IriConverterInterface as LegacyIriConverterInterface;
+use ApiPlatform\Api\IriConverterInterface;
 use ApiPlatform\Doctrine\Common\PropertyHelperTrait;
-use ApiPlatform\Metadata\Exception\InvalidArgumentException;
-use ApiPlatform\Metadata\IdentifiersExtractorInterface;
-use ApiPlatform\Metadata\IriConverterInterface;
+use ApiPlatform\Exception\InvalidArgumentException;
 use Psr\Log\LoggerInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 
@@ -32,9 +29,8 @@ trait SearchFilterTrait
 {
     use PropertyHelperTrait;
 
-    protected IriConverterInterface|LegacyIriConverterInterface $iriConverter;
-    protected PropertyAccessorInterface $propertyAccessor;
-    protected IdentifiersExtractorInterface|LegacyIdentifiersExtractorInterface|null $identifiersExtractor = null;
+    protected $iriConverter;
+    protected $propertyAccessor;
 
     /**
      * {@inheritdoc}
@@ -68,7 +64,7 @@ trait SearchFilterTrait
                 $strategy = $this->getProperties()[$property] ?? self::STRATEGY_EXACT;
                 $filterParameterNames = [$propertyName];
 
-                if (\in_array($strategy, [self::STRATEGY_EXACT, self::STRATEGY_IEXACT], true)) {
+                if (self::STRATEGY_EXACT === $strategy) {
                     $filterParameterNames[] = $propertyName.'[]';
                 }
 
@@ -111,29 +107,23 @@ trait SearchFilterTrait
 
     abstract protected function getLogger(): LoggerInterface;
 
-    abstract protected function getIriConverter(): LegacyIriConverterInterface|IriConverterInterface;
+    abstract protected function getIriConverter(): IriConverterInterface;
 
     abstract protected function getPropertyAccessor(): PropertyAccessorInterface;
 
-    abstract protected function normalizePropertyName(string $property): string;
+    abstract protected function normalizePropertyName($property): string;
 
     /**
      * Gets the ID from an IRI or a raw ID.
      */
-    protected function getIdFromValue(string $value): mixed
+    protected function getIdFromValue(string $value)
     {
         try {
             $iriConverter = $this->getIriConverter();
             $item = $iriConverter->getResourceFromIri($value, ['fetch_data' => false]);
 
-            if (null === $this->identifiersExtractor) {
-                return $this->getPropertyAccessor()->getValue($item, 'id');
-            }
-
-            $identifiers = $this->identifiersExtractor->getIdentifiersFromItem($item);
-
-            return 1 === \count($identifiers) ? array_pop($identifiers) : $identifiers;
-        } catch (InvalidArgumentException) {
+            return $this->getPropertyAccessor()->getValue($item, 'id');
+        } catch (InvalidArgumentException $e) {
             // Do nothing, return the raw value
         }
 
@@ -153,7 +143,7 @@ trait SearchFilterTrait
 
         if (empty($values)) {
             $this->getLogger()->notice('Invalid filter ignored', [
-                'exception' => new InvalidArgumentException(\sprintf('At least one value is required, multiple values should be in "%1$s[]=firstvalue&%1$s[]=secondvalue" format', $property)),
+                'exception' => new InvalidArgumentException(sprintf('At least one value is required, multiple values should be in "%1$s[]=firstvalue&%1$s[]=secondvalue" format', $property)),
             ]);
 
             return null;
@@ -164,10 +154,12 @@ trait SearchFilterTrait
 
     /**
      * When the field should be an integer, check that the given value is a valid one.
+     *
+     * @param mixed|null $type
      */
-    protected function hasValidValues(array $values, ?string $type = null): bool
+    protected function hasValidValues(array $values, $type = null): bool
     {
-        foreach ($values as $value) {
+        foreach ($values as $key => $value) {
             if (null !== $value && \in_array($type, (array) self::DOCTRINE_INTEGER_TYPE, true) && false === filter_var($value, \FILTER_VALIDATE_INT)) {
                 return false;
             }

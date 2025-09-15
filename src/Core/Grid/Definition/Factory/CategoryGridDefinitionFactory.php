@@ -53,7 +53,6 @@ use PrestaShop\PrestaShop\Core\Multistore\MultistoreContextCheckerInterface;
 use PrestaShopBundle\Form\Admin\Type\SearchAndResetType;
 use PrestaShopBundle\Form\Admin\Type\YesAndNoChoiceType;
 use Symfony\Component\Form\Extension\Core\Type\TextType;
-use Symfony\Component\HttpFoundation\RequestStack;
 
 /**
  * Class CategoryGridDefinitionFactory builds Grid definition for Categories listing.
@@ -72,8 +71,6 @@ final class CategoryGridDefinitionFactory extends AbstractFilterableGridDefiniti
      */
     private $multistoreContextChecker;
 
-    private $categoryId = null;
-
     /**
      * @param HookDispatcherInterface $hookDispatcher
      * @param MultistoreContextCheckerInterface $multistoreContextChecker
@@ -82,18 +79,11 @@ final class CategoryGridDefinitionFactory extends AbstractFilterableGridDefiniti
     public function __construct(
         HookDispatcherInterface $hookDispatcher,
         MultistoreContextCheckerInterface $multistoreContextChecker,
-        AccessibilityCheckerInterface $categoryForViewAccessibilityChecker,
-        RequestStack $requestStack
+        AccessibilityCheckerInterface $categoryForViewAccessibilityChecker
     ) {
         parent::__construct($hookDispatcher);
         $this->categoryForViewAccessibilityChecker = $categoryForViewAccessibilityChecker;
         $this->multistoreContextChecker = $multistoreContextChecker;
-
-        $request = $requestStack->getCurrentRequest();
-
-        if ($request !== null && $request->attributes->has('categoryId') && $request->get('categoryId') != null) {
-            $this->categoryId = (int) $request->get('categoryId');
-        }
     }
 
     /**
@@ -284,9 +274,6 @@ final class CategoryGridDefinitionFactory extends AbstractFilterableGridDefiniti
                     ->setIcon('cloud_download')
                     ->setOptions([
                         'route' => 'admin_categories_export',
-                        'route_params' => [
-                            'categoryId' => $this->categoryId,
-                        ],
                     ])
             )
             ->add(

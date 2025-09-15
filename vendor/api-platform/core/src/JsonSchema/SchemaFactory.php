@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\JsonSchema;
 
-use ApiPlatform\JsonSchema\Metadata\Property\Factory\SchemaPropertyMetadataFactory;
+use ApiPlatform\Api\ResourceClassResolverInterface;
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\CollectionOperationInterface;
 use ApiPlatform\Metadata\HttpOperation;
@@ -21,7 +21,9 @@ use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
 use ApiPlatform\Metadata\Property\Factory\PropertyNameCollectionFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
-use ApiPlatform\Metadata\ResourceClassResolverInterface;
+use ApiPlatform\OpenApi\Factory\OpenApiFactory;
+use ApiPlatform\Util\ResourceClassInfoTrait;
+use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 
@@ -30,27 +32,34 @@ use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareInterface
+final class SchemaFactory implements SchemaFactoryInterface
 {
-    use ResourceMetadataTrait;
-    private ?TypeFactoryInterface $typeFactory = null;
-    private ?SchemaFactoryInterface $schemaFactory = null;
-    // Edge case where the related resource is not readable (for example: NotExposed) but we have groups to read the whole related object
-    public const FORCE_SUBSCHEMA = '_api_subschema_force_readable_link';
-    public const OPENAPI_DEFINITION_NAME = 'openapi_definition_name';
+    use ResourceClassInfoTrait;
 
-    public function __construct(?TypeFactoryInterface $typeFactory, ResourceMetadataCollectionFactoryInterface $resourceMetadataFactory, private readonly PropertyNameCollectionFactoryInterface $propertyNameCollectionFactory, private readonly PropertyMetadataFactoryInterface $propertyMetadataFactory, private readonly ?NameConverterInterface $nameConverter = null, ?ResourceClassResolverInterface $resourceClassResolver = null, private readonly ?array $distinctFormats = null, private ?DefinitionNameFactoryInterface $definitionNameFactory = null)
+    private $typeFactory;
+    private $propertyNameCollectionFactory;
+    private $propertyMetadataFactory;
+    private $nameConverter;
+    private $distinctFormats = [];
+
+    public function __construct(TypeFactoryInterface $typeFactory, ResourceMetadataCollectionFactoryInterface $resourceMetadataFactory, PropertyNameCollectionFactoryInterface $propertyNameCollectionFactory, PropertyMetadataFactoryInterface $propertyMetadataFactory, NameConverterInterface $nameConverter = null, ResourceClassResolverInterface $resourceClassResolver = null)
     {
-        if ($typeFactory) {
-            trigger_deprecation('api-platform/core', '3.4', \sprintf('Injecting the "%s" inside "%s" is deprecated and "%s" will be removed in 4.x.', TypeFactoryInterface::class, self::class, TypeFactoryInterface::class));
-            $this->typeFactory = $typeFactory;
-        }
-        if (!$definitionNameFactory) {
-            $this->definitionNameFactory = new DefinitionNameFactory($this->distinctFormats);
-        }
-
+        $this->typeFactory = $typeFactory;
         $this->resourceMetadataFactory = $resourceMetadataFactory;
+        $this->propertyNameCollectionFactory = $propertyNameCollectionFactory;
+        $this->propertyMetadataFactory = $propertyMetadataFactory;
+        $this->nameConverter = $nameConverter;
         $this->resourceClassResolver = $resourceClassResolver;
+    }
+
+    /**
+     * When added to the list, the given format will lead to the creation of a new definition.
+     *
+     * @internal
+     */
+    public function addDistinctFormat(string $format): void
+    {
+        $this->distinctFormats[$format] = true;
     }
 
     /**
@@ -60,32 +69,21 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
     {
         $schema = $schema ? clone $schema : new Schema();
 
-        if (!$this->isResourceClass($className)) {
-            $operation = null;
-            $inputOrOutputClass = $className;
-            $serializerContext ??= [];
-        } else {
-            $operation = $this->findOperation($className, $type, $operation, $serializerContext);
-            $inputOrOutputClass = $this->findOutputClass($className, $type, $operation, $serializerContext);
-            $serializerContext ??= $this->getSerializerContext($operation, $type);
-        }
-
-        if (null === $inputOrOutputClass) {
-            // input or output disabled
+        if (null === $metadata = $this->getMetadata($className, $type, $operation, $serializerContext)) {
             return $schema;
         }
 
-        $validationGroups = $operation ? $this->getValidationGroups($operation) : [];
+        [$operation, $serializerContext, $validationGroups, $inputOrOutputClass] = $metadata;
+
         $version = $schema->getVersion();
-        $definitionName = $this->definitionNameFactory->create($className, $format, $inputOrOutputClass, $operation, $serializerContext);
+        $definitionName = $this->buildDefinitionName($className, $format, $inputOrOutputClass, $operation, $serializerContext);
 
         $method = $operation instanceof HttpOperation ? $operation->getMethod() : 'GET';
         if (!$operation) {
             $method = Schema::TYPE_INPUT === $type ? 'POST' : 'GET';
         }
 
-        // In case of FORCE_SUBSCHEMA an object can be writable through another class even though it has no POST operation
-        if (!($serializerContext[self::FORCE_SUBSCHEMA] ?? false) && Schema::TYPE_OUTPUT !== $type && !\in_array($method, ['POST', 'PATCH', 'PUT'], true)) {
+        if (Schema::TYPE_OUTPUT !== $type && !\in_array($method, ['POST', 'PATCH', 'PUT'], true)) {
             return $schema;
         }
 
@@ -119,8 +117,6 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
         // see https://github.com/json-schema-org/json-schema-spec/pull/737
         if (Schema::VERSION_SWAGGER !== $version && $operation && $operation->getDeprecationReason()) {
             $definition['deprecated'] = true;
-        } else {
-            $definition['deprecated'] = false;
         }
 
         // externalDocs is an OpenAPI specific extension, but JSON Schema allows additional keys, so we always add it
@@ -129,7 +125,7 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
             $definition['externalDocs'] = ['url' => $operation->getTypes()[0]];
         }
 
-        $options = ['schema_type' => $type] + $this->getFactoryOptions($serializerContext, $validationGroups, $operation instanceof HttpOperation ? $operation : null);
+        $options = $this->getFactoryOptions($serializerContext, $validationGroups, $operation instanceof HttpOperation ? $operation : null);
         foreach ($this->propertyNameCollectionFactory->create($inputOrOutputClass, $options) as $propertyName) {
             $propertyMetadata = $this->propertyMetadataFactory->create($inputOrOutputClass, $propertyName, $options);
             if (!$propertyMetadata->isReadable() && !$propertyMetadata->isWritable()) {
@@ -141,15 +137,16 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
                 $definition['required'][] = $normalizedPropertyName;
             }
 
-            $this->buildPropertySchema($schema, $definitionName, $normalizedPropertyName, $propertyMetadata, $serializerContext, $format, $type);
+            $this->buildPropertySchema($schema, $definitionName, $normalizedPropertyName, $propertyMetadata, $serializerContext, $format);
         }
 
         return $schema;
     }
 
-    private function buildPropertySchema(Schema $schema, string $definitionName, string $normalizedPropertyName, ApiProperty $propertyMetadata, array $serializerContext, string $format, string $parentType): void
+    private function buildPropertySchema(Schema $schema, string $definitionName, string $normalizedPropertyName, ApiProperty $propertyMetadata, array $serializerContext, string $format): void
     {
         $version = $schema->getVersion();
+        $swagger = Schema::VERSION_SWAGGER === $version;
         if (Schema::VERSION_SWAGGER === $version || Schema::VERSION_OPENAPI === $version) {
             $additionalPropertySchema = $propertyMetadata->getOpenapiContext();
         } else {
@@ -161,110 +158,175 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
             $additionalPropertySchema ?? []
         );
 
-        // @see https://github.com/api-platform/core/issues/6299
-        if (Schema::UNKNOWN_TYPE === ($propertySchema['type'] ?? null) && isset($propertySchema['$ref'])) {
-            unset($propertySchema['type']);
+        if (false === $propertyMetadata->isWritable() && !$propertyMetadata->isInitializable()) {
+            $propertySchema['readOnly'] = true;
+        }
+        if (!$swagger && false === $propertyMetadata->isReadable()) {
+            $propertySchema['writeOnly'] = true;
+        }
+        if (null !== $description = $propertyMetadata->getDescription()) {
+            $propertySchema['description'] = $description;
         }
 
-        $extraProperties = $propertyMetadata->getExtraProperties() ?? [];
-        // see AttributePropertyMetadataFactory
-        if (true === ($extraProperties[SchemaPropertyMetadataFactory::JSON_SCHEMA_USER_DEFINED] ?? false)) {
-            // schema seems to have been declared by the user: do not override nor complete user value
-            $schema->getDefinitions()[$definitionName]['properties'][$normalizedPropertyName] = new \ArrayObject($propertySchema);
+        $deprecationReason = $propertyMetadata->getDeprecationReason();
 
-            return;
+        // see https://github.com/json-schema-org/json-schema-spec/pull/737
+        if (!$swagger && null !== $deprecationReason) {
+            $propertySchema['deprecated'] = true;
+        }
+        // externalDocs is an OpenAPI specific extension, but JSON Schema allows additional keys, so we always add it
+        // See https://json-schema.org/latest/json-schema-core.html#rfc.section.6.4
+        $iri = $propertyMetadata->getTypes()[0] ?? null;
+        if (null !== $iri) {
+            $propertySchema['externalDocs'] = ['url' => $iri];
         }
 
-        $types = $propertyMetadata->getBuiltinTypes() ?? [];
-
-        // never override the following keys if at least one is already set
-        // or if property has no type(s) defined
-        // or if property schema is already fully defined (type=string + format || enum)
-        $propertySchemaType = $propertySchema['type'] ?? false;
-
-        $isUnknown = Schema::UNKNOWN_TYPE === $propertySchemaType
-            || ('array' === $propertySchemaType && Schema::UNKNOWN_TYPE === ($propertySchema['items']['type'] ?? null))
-            || ('object' === $propertySchemaType && Schema::UNKNOWN_TYPE === ($propertySchema['additionalProperties']['type'] ?? null));
-
-        if (
-            !$isUnknown && (
-                [] === $types
-                || ($propertySchema['$ref'] ?? $propertySchema['anyOf'] ?? $propertySchema['allOf'] ?? $propertySchema['oneOf'] ?? false)
-                || (\is_array($propertySchemaType) ? \array_key_exists('string', $propertySchemaType) : 'string' !== $propertySchemaType)
-                || ($propertySchema['format'] ?? $propertySchema['enum'] ?? false)
-            )
-        ) {
-            $schema->getDefinitions()[$definitionName]['properties'][$normalizedPropertyName] = new \ArrayObject($propertySchema);
-
-            return;
+        if (!isset($propertySchema['default']) && !empty($default = $propertyMetadata->getDefault())) {
+            $propertySchema['default'] = $default;
         }
 
-        // property schema is created in SchemaPropertyMetadataFactory, but it cannot build resource reference ($ref)
-        // complete property schema with resource reference ($ref) only if it's related to an object
-        $version = $schema->getVersion();
-        $refs = [];
-        $isNullable = null;
+        if (!isset($propertySchema['example']) && !empty($example = $propertyMetadata->getExample())) {
+            $propertySchema['example'] = $example;
+        }
 
-        foreach ($types as $type) {
-            $subSchema = new Schema($version);
-            $subSchema->setDefinitions($schema->getDefinitions()); // Populate definitions of the main schema
+        if (!isset($propertySchema['example']) && isset($propertySchema['default'])) {
+            $propertySchema['example'] = $propertySchema['default'];
+        }
 
-            // TODO: in 3.3 add trigger_deprecation() as type factories are not used anymore, we moved this logic to SchemaPropertyMetadataFactory so that it gets cached
-            if ($typeFromFactory = $this->typeFactory?->getType($type, 'jsonschema', $propertyMetadata->isReadableLink(), $serializerContext)) {
-                $propertySchema = $typeFromFactory;
-                break;
-            }
-
-            $isCollection = $type->isCollection();
-            if ($isCollection) {
-                $valueType = $type->getCollectionValueTypes()[0] ?? null;
+        $valueSchema = [];
+        // TODO: 3.0 support multiple types
+        $type = $propertyMetadata->getBuiltinTypes()[0] ?? null;
+        if (null !== $type) {
+            if ($isCollection = $type->isCollection()) {
+                $keyType = method_exists(Type::class, 'getCollectionKeyTypes') ? ($type->getCollectionKeyTypes()[0] ?? null) : $type->getCollectionKeyType();
+                $valueType = method_exists(Type::class, 'getCollectionValueTypes') ? ($type->getCollectionValueTypes()[0] ?? null) : $type->getCollectionValueType();
             } else {
+                $keyType = null;
                 $valueType = $type;
             }
 
-            $className = $valueType?->getClassName();
-            if (null === $className) {
-                continue;
+            if (null === $valueType) {
+                $builtinType = 'string';
+                $className = null;
+            } else {
+                $builtinType = $valueType->getBuiltinType();
+                $className = $valueType->getClassName();
             }
 
-            $subSchemaFactory = $this->schemaFactory ?: $this;
-            $subSchema = $subSchemaFactory->buildSchema($className, $format, $parentType, null, $subSchema, $serializerContext + [self::FORCE_SUBSCHEMA => true], false);
-            if (!isset($subSchema['$ref'])) {
-                continue;
-            }
+            $valueSchema = $this->typeFactory->getType(new Type($builtinType, $type->isNullable(), $className, $isCollection, $keyType, $valueType), $format, $propertyMetadata->isReadableLink(), $serializerContext, $schema);
+        }
 
-            if (false === $propertyMetadata->getGenId()) {
-                $subDefinitionName = $this->definitionNameFactory->create($className, $format, $className, null, $serializerContext);
+        if (\array_key_exists('type', $propertySchema) && \array_key_exists('$ref', $valueSchema)) {
+            $propertySchema = new \ArrayObject($propertySchema);
+        } else {
+            $propertySchema = new \ArrayObject($propertySchema + $valueSchema);
+        }
+        $schema->getDefinitions()[$definitionName]['properties'][$normalizedPropertyName] = $propertySchema;
+    }
 
-                if (isset($subSchema->getDefinitions()[$subDefinitionName])) {
-                    unset($subSchema->getDefinitions()[$subDefinitionName]['properties']['@id']);
+    private function buildDefinitionName(string $className, string $format = 'json', ?string $inputOrOutputClass = null, Operation $operation = null, ?array $serializerContext = null): string
+    {
+        if ($operation) {
+            $prefix = $operation->getShortName();
+        }
+
+        if (!isset($prefix)) {
+            $prefix = (new \ReflectionClass($className))->getShortName();
+        }
+
+        if (null !== $inputOrOutputClass && $className !== $inputOrOutputClass) {
+            $parts = explode('\\', $inputOrOutputClass);
+            $shortName = end($parts);
+            $prefix .= '.'.$shortName;
+        }
+
+        if (isset($this->distinctFormats[$format])) {
+            // JSON is the default, and so isn't included in the definition name
+            $prefix .= '.'.$format;
+        }
+
+        $definitionName = $serializerContext[OpenApiFactory::OPENAPI_DEFINITION_NAME] ?? null;
+        if ($definitionName) {
+            $name = sprintf('%s-%s', $prefix, $definitionName);
+        } else {
+            $groups = (array) ($serializerContext[AbstractNormalizer::GROUPS] ?? []);
+            $name = $groups ? sprintf('%s-%s', $prefix, implode('_', $groups)) : $prefix;
+        }
+
+        return $this->encodeDefinitionName($name);
+    }
+
+    private function encodeDefinitionName(string $name): string
+    {
+        return preg_replace('/[^a-zA-Z0-9.\-_]/', '.', $name);
+    }
+
+    private function getMetadata(string $className, string $type = Schema::TYPE_OUTPUT, ?Operation $operation = null, ?array $serializerContext = null): ?array
+    {
+        if (!$this->isResourceClass($className)) {
+            return [
+                null,
+                $serializerContext ?? [],
+                [],
+                $className,
+            ];
+        }
+
+        // The best here is to use an Operation when calling `buildSchema`, we try to do a smart guess otherwise
+        if (!$operation || !$operation->getClass()) {
+            $resourceMetadataCollection = $this->resourceMetadataFactory->create($className);
+
+            if ($operation && $operation->getName()) {
+                $operation = $resourceMetadataCollection->getOperation($operation->getName());
+            } else {
+                // Guess the operation and use the first one that matches criterias
+                foreach ($resourceMetadataCollection as $resourceMetadata) {
+                    foreach ($resourceMetadata->getOperations() ?? [] as $op) {
+                        if ($operation instanceof CollectionOperationInterface && $op instanceof CollectionOperationInterface) {
+                            $operation = $op;
+                            break 2;
+                        }
+
+                        if (Schema::TYPE_INPUT === $type && \in_array($op->getMethod(), ['POST', 'PATCH', 'PUT'], true)) {
+                            $operation = $op;
+                            break 2;
+                        }
+
+                        if (!$operation) {
+                            $operation = new HttpOperation();
+                        }
+                    }
                 }
             }
-
-            if ($isCollection) {
-                $key = ($propertySchema['type'] ?? null) === 'object' ? 'additionalProperties' : 'items';
-                $propertySchema[$key]['$ref'] = $subSchema['$ref'];
-                unset($propertySchema[$key]['type']);
-                break;
-            }
-
-            $refs[] = ['$ref' => $subSchema['$ref']];
-            $isNullable = $isNullable ?? $type->isNullable();
         }
 
-        if ($isNullable) {
-            $refs[] = ['type' => 'null'];
+        $attribute = Schema::TYPE_OUTPUT === $type ? 'output' : 'input';
+        $inputOrOutput = ['class' => $className];
+
+        if ($operation) {
+            $inputOrOutput = Schema::TYPE_OUTPUT === $type ? ($operation->getOutput() ?? $inputOrOutput) : ($operation->getInput() ?? $inputOrOutput);
         }
 
-        if (($c = \count($refs)) > 1) {
-            $propertySchema['anyOf'] = $refs;
-            unset($propertySchema['type']);
-        } elseif (1 === $c) {
-            $propertySchema['$ref'] = $refs[0]['$ref'];
-            unset($propertySchema['type']);
+        if (null === ($inputOrOutput['class'] ?? $inputOrOutput->class ?? null)) {
+            // input or output disabled
+            return null;
         }
 
-        $schema->getDefinitions()[$definitionName]['properties'][$normalizedPropertyName] = new \ArrayObject($propertySchema);
+        if (!$operation) {
+            return [$operation, $serializerContext ?? [], [], $inputOrOutput['class'] ?? $inputOrOutput->class];
+        }
+
+        return [
+            $operation,
+            $serializerContext ?? $this->getSerializerContext($operation, $type),
+            $this->getValidationGroups($operation),
+            $inputOrOutput['class'] ?? $inputOrOutput->class,
+        ];
+    }
+
+    private function getSerializerContext(?Operation $operation, string $type = Schema::TYPE_OUTPUT): array
+    {
+        return Schema::TYPE_OUTPUT === $type ? ($operation->getNormalizationContext() ?? []) : ($operation->getDenormalizationContext() ?? []);
     }
 
     private function getValidationGroups(Operation $operation): array
@@ -302,10 +364,5 @@ final class SchemaFactory implements SchemaFactoryInterface, SchemaFactoryAwareI
         }
 
         return $options;
-    }
-
-    public function setSchemaFactory(SchemaFactoryInterface $schemaFactory): void
-    {
-        $this->schemaFactory = $schemaFactory;
     }
 }

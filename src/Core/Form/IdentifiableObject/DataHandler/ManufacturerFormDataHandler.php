@@ -83,6 +83,7 @@ final class ManufacturerFormDataHandler implements FormDataHandlerInterface
             $data['description'],
             $data['meta_title'],
             $data['meta_description'],
+            $data['meta_keyword'],
             $data['shop_association']
         ));
 
@@ -111,6 +112,7 @@ final class ManufacturerFormDataHandler implements FormDataHandlerInterface
             ->setLocalizedDescriptions($data['description'])
             ->setLocalizedMetaDescriptions($data['meta_description'])
             ->setLocalizedMetaTitles($data['meta_title'])
+            ->setLocalizedMetaKeywords($data['meta_keyword'])
             ->setEnabled((bool) $data['is_enabled'])
         ;
 

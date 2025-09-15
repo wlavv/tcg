@@ -144,7 +144,7 @@ class LegacyLinkBlockRepository
     /**
      * @return bool
      */
-    public function installFixtures(): bool
+    public function installFixtures()
     {
         $success = true;
         $id_hook = (int) Hook::getIdByName('displayFooter');
@@ -168,7 +168,7 @@ class LegacyLinkBlockRepository
         }
 
         foreach ($queries as $query) {
-            $success = $success && ((bool) $this->db->execute($query));
+            $success &= $this->db->execute($query);
         }
 
         return $success;

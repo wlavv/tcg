@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
+use Exception;
 use PrestaShop\Module\Mbo\Exception\ExpectedServiceNotFoundException;
 use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
@@ -38,23 +39,23 @@ use Twig\Error\SyntaxError;
 trait UseActionListModules
 {
     /**
-     * Hook actionListModules.
+     * Hook displayModuleConfigureExtraButtons.
      * Add additional buttons on the module configure page's toolbar.
      *
      * @return array<array<string, string>>
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function hookActionListModules(): array
     {
         try {
-            /** @var FiltersFactory|null $filtersFactory */
-            $filtersFactory = $this->get(FiltersFactory::class);
-            /** @var CollectionFactory|null $collectionFactory */
-            $collectionFactory = $this->get(CollectionFactory::class);
-            /** @var Repository|null $moduleRepository */
-            $moduleRepository = $this->get(Repository::class);
-            /** @var Router|null $router */
+            /** @var FiltersFactory $filtersFactory */
+            $filtersFactory = $this->get('mbo.modules.filters.factory');
+            /** @var CollectionFactory $collectionFactory */
+            $collectionFactory = $this->get('mbo.modules.collection.factory');
+            /** @var Repository $moduleRepository */
+            $moduleRepository = $this->get('mbo.modules.repository');
+            /** @var Router $router */
             $router = $this->get('router');
 
             if (
@@ -65,7 +66,7 @@ trait UseActionListModules
             ) {
                 throw new ExpectedServiceNotFoundException('Some services not found in UseActionListModules');
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             ErrorHelper::reportError($exception);
 
             return [];
@@ -87,7 +88,7 @@ trait UseActionListModules
         $catalogUrlParts = parse_url($catalogUrl);
         $catalogUrlParams = [];
 
-        if (is_array($catalogUrlParts) && isset($catalogUrlParts['query'])) {
+        if (is_array($catalogUrlParts) && isset($catalogUrlParts['query']) && is_string($catalogUrlParts['query'])) {
             parse_str($catalogUrlParts['query'], $catalogUrlParams);
         }
 
@@ -98,6 +99,10 @@ trait UseActionListModules
             $downloadUrl = $module->get('download_url');
             if (is_string($downloadUrl) && strpos($downloadUrl, 'shop_url') === false) {
                 $downloadUrl .= '&shop_url=' . $shopUrl;
+            }
+
+            if ('ps_mbo' === $name) {
+                $downloadUrl = null;
             }
 
             $catalogUrlParams['mbo_cdc_path'] = sprintf('/#/module/%d/fullpage', (int) $module->get('id'));
@@ -115,7 +120,6 @@ trait UseActionListModules
                 'download_url' => $downloadUrl,
                 'img' => $module->get('img'),
                 'tab' => $module->get('tab'),
-                'id' => $module->get('id'),
             ];
         }
 
@@ -130,13 +134,13 @@ trait UseActionListModules
     private function getAdditionalDescription(string $moduleUrl, string $moduleName): string
     {
         try {
-            /** @var Environment|null $twigEnvironment */
-            $twigEnvironment = $this->get(Environment::class);
+            /** @var Environment $twigEnvironment */
+            $twigEnvironment = $this->get('twig');
 
             if (null === $twigEnvironment) {
                 throw new ExpectedServiceNotFoundException('Unable to get Twig service');
             }
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             ErrorHelper::reportError($exception);
 
             return '';

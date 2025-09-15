@@ -59,6 +59,9 @@ class TwigExtractor extends BaseTwigExtractor implements ExtractorInterface
         $this->twig->registerUndefinedFilterCallback(function () {});
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function extract($resource, MessageCatalogue $catalogue)
     {
         $files = $this->extractFiles($resource);
@@ -89,6 +92,9 @@ class TwigExtractor extends BaseTwigExtractor implements ExtractorInterface
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     protected function extractTemplateFile($file, MessageCatalogue $catalogue)
     {
         if (!$file instanceof \SplFileInfo) {
@@ -119,14 +125,14 @@ class TwigExtractor extends BaseTwigExtractor implements ExtractorInterface
                 'line' => $message['line'],
             ];
 
-            $comment = $this->getEntryComment($comments, $file->getFilename(), $message['line'] - 1);
+            $comment = $this->getEntryComment($comments, $file->getFilename(), ($message['line'] - 1));
 
             if (null != $comment) {
                 $metadata['comment'] = $comment;
             }
 
             if (isset($message['line'])) {
-                $metadata['comment'] = $this->getEntryComment($comments, $file->getFilename(), $message['line'] - 1);
+                $metadata['comment'] = $this->getEntryComment($comments, $file->getFilename(), ($message['line'] - 1));
             }
 
             $catalogue->setMetadata($message[0], $metadata, $domain);
@@ -142,7 +148,6 @@ class TwigExtractor extends BaseTwigExtractor implements ExtractorInterface
     {
         return $this->getFinder()->files()
             ->name('*.twig')
-            ->sortByName(useNaturalSort: true)
             ->in($directory)
             ->exclude($this->getExcludedDirectories());
     }

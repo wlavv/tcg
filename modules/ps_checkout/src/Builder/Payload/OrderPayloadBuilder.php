@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -60,6 +59,11 @@ class OrderPayloadBuilder extends Builder implements PayloadBuilderInterface
      * @var string
      */
     private $paypalOrderId;
+
+    /**
+     * @var bool
+     */
+    private $isPatch;
 
     /**
      * @var bool
@@ -133,10 +137,12 @@ class OrderPayloadBuilder extends Builder implements PayloadBuilderInterface
 
     /**
      * @param array $cart
+     * @param bool $isPatch
      */
-    public function __construct(array $cart)
+    public function __construct(array $cart, $isPatch = false)
     {
         $this->cart = $cart;
+        $this->isPatch = $isPatch;
 
         parent::__construct();
     }

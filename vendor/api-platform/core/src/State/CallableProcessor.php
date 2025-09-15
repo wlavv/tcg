@@ -13,42 +13,41 @@ declare(strict_types=1);
 
 namespace ApiPlatform\State;
 
-use ApiPlatform\Metadata\Exception\RuntimeException;
+use ApiPlatform\Core\Exception\RuntimeException;
 use ApiPlatform\Metadata\Operation;
 use Psr\Container\ContainerInterface;
 
-/**
- * @template T1
- * @template T2
- *
- * @implements ProcessorInterface<T1, T2>
- */
 final class CallableProcessor implements ProcessorInterface
 {
-    public function __construct(private readonly ?ContainerInterface $locator = null)
+    private $locator;
+
+    public function __construct(ContainerInterface $locator)
     {
+        $this->locator = $locator;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = [])
+    public function process($data, Operation $operation, array $uriVariables = [], array $context = [])
     {
         if (!($processor = $operation->getProcessor())) {
-            return $data;
+            return;
         }
 
         if (\is_callable($processor)) {
             return $processor($data, $operation, $uriVariables, $context);
         }
 
-        if (!$this->locator->has($processor)) {
-            throw new RuntimeException(\sprintf('Processor "%s" not found on operation "%s"', $processor, $operation->getName()));
+        if (\is_string($processor)) {
+            if (!$this->locator->has($processor)) {
+                throw new RuntimeException(sprintf('Processor "%s" not found on operation "%s"', $processor, $operation->getName()));
+            }
+
+            /** @var ProcessorInterface */
+            $processor = $this->locator->get($processor);
+
+            return $processor->process($data, $operation, $uriVariables, $context);
         }
-
-        /** @var ProcessorInterface<T1, T2> $processorInstance */
-        $processorInstance = $this->locator->get($processor);
-
-        return $processorInstance->process($data, $operation, $uriVariables, $context);
     }
 }

@@ -18,6 +18,7 @@ use Symfony\Component\Serializer\Encoder\EncoderInterface;
 use Symfony\Component\Serializer\Encoder\JsonDecode;
 use Symfony\Component\Serializer\Encoder\JsonEncode;
 use Symfony\Component\Serializer\Encoder\JsonEncoder as BaseJsonEncoder;
+use Symfony\Component\Serializer\NameConverter\AdvancedNameConverterInterface;
 
 /**
  * A JSON encoder with appropriate default options to embed the generated document into HTML.
@@ -26,17 +27,29 @@ use Symfony\Component\Serializer\Encoder\JsonEncoder as BaseJsonEncoder;
  */
 final class JsonEncoder implements EncoderInterface, DecoderInterface
 {
-    public function __construct(private readonly string $format, private ?BaseJsonEncoder $jsonEncoder = null)
+    private $format;
+    private $jsonEncoder;
+
+    public function __construct(string $format, BaseJsonEncoder $jsonEncoder = null)
     {
+        $this->format = $format;
+        $this->jsonEncoder = $jsonEncoder;
+
         if (null !== $this->jsonEncoder) {
             return;
         }
 
-        $this->jsonEncoder = new BaseJsonEncoder(
-            // Encode <, >, ', &, and " characters in the JSON, making it also safe to be embedded into HTML.
-            new JsonEncode(['json_encode_options' => \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_AMP | \JSON_HEX_QUOT | \JSON_UNESCAPED_UNICODE | \JSON_INVALID_UTF8_IGNORE]),
-            new JsonDecode(['json_decode_associative' => true])
-        );
+        // Encode <, >, ', &, and " characters in the JSON, making it also safe to be embedded into HTML.
+        $jsonEncodeOptions = \JSON_HEX_TAG | \JSON_HEX_APOS | \JSON_HEX_AMP | \JSON_HEX_QUOT | \JSON_UNESCAPED_UNICODE | (\PHP_VERSION_ID >= 70200 ? \JSON_INVALID_UTF8_IGNORE : 0);
+        if (interface_exists(AdvancedNameConverterInterface::class)) {
+            $jsonEncode = new JsonEncode(['json_encode_options' => $jsonEncodeOptions]);
+            $jsonDecode = new JsonDecode(['json_decode_associative' => true]);
+        } else {
+            $jsonEncode = new JsonEncode($jsonEncodeOptions);
+            $jsonDecode = new JsonDecode(true);
+        }
+
+        $this->jsonEncoder = new BaseJsonEncoder($jsonEncode, $jsonDecode);
     }
 
     /**
@@ -65,9 +78,13 @@ final class JsonEncoder implements EncoderInterface, DecoderInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return mixed
      */
-    public function decode($data, $format, array $context = []): mixed
+    public function decode($data, $format, array $context = [])
     {
         return $this->jsonEncoder->decode($data, $format, $context);
     }
 }
+
+class_alias(JsonEncoder::class, \ApiPlatform\Core\Serializer\JsonEncoder::class);

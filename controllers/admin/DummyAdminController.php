@@ -30,7 +30,7 @@ use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * This class is used only because some parts of the Back Office require a Controller
- * to function (like the NullDispatcher). It is also used in integration tests for override.
+ * to function (like the NullDispatcher).
  */
 class DummyAdminControllerCore extends AdminController
 {
@@ -92,7 +92,10 @@ class DummyAdminControllerCore extends AdminController
         return '';
     }
 
-    protected function buildContainer(): ContainerInterface
+    /**
+     * @return ContainerInterface|null
+     */
+    protected function buildContainer()
     {
         return SymfonyContainer::getInstance();
     }

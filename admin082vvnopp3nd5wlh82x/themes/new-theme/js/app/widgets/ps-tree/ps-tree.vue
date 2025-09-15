@@ -28,7 +28,6 @@
       <button
         class="btn btn-text text-uppercase pointer"
         @click="expand"
-        data-action="expand"
       >
         <i class="material-icons">keyboard_arrow_down</i>
         <span v-if="translations">{{ translations.expand }}</span>
@@ -36,7 +35,6 @@
       <button
         class="btn btn-text float-right text-uppercase pointer"
         @click="reduce"
-        data-action="reduce"
       >
         <i class="material-icons">keyboard_arrow_up</i>
         <span v-if="translations">{{ translations.reduce }}</span>

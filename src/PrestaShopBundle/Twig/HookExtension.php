@@ -26,7 +26,6 @@
 
 namespace PrestaShopBundle\Twig;
 
-use Exception;
 use PrestaShop\PrestaShop\Adapter\Module\ModuleDataProvider;
 use PrestaShop\PrestaShop\Core\Hook\HookDispatcherInterface;
 use PrestaShop\PrestaShop\Core\Module\ModuleRepository;
@@ -63,7 +62,7 @@ class HookExtension extends AbstractExtension
     public function __construct(
         HookDispatcherInterface $hookDispatcher,
         ModuleDataProvider $moduleDataProvider,
-        ?ModuleRepository $moduleRepository = null
+        ModuleRepository $moduleRepository = null
     ) {
         $this->hookDispatcher = $hookDispatcher;
         $this->moduleDataProvider = $moduleDataProvider;
@@ -116,14 +115,14 @@ class HookExtension extends AbstractExtension
      * @param string $hookName the name of the hook to trigger
      * @param array $hookParameters the parameters to send to the Hook
      *
-     * @return array[string] All listener's responses, ordered by the listeners' priorities
+     * @throws \Exception if the hookName is missing
      *
-     * @throws Exception if the hookName is missing
+     * @return array[string] All listener's responses, ordered by the listeners' priorities
      */
     public function renderHooksArray($hookName, $hookParameters = [])
     {
         if ('' == $hookName) {
-            throw new Exception('Hook name missing');
+            throw new \Exception('Hook name missing');
         }
 
         // The call to the render of the hooks is encapsulated into a ob management to avoid any call of echo from the
@@ -155,14 +154,14 @@ class HookExtension extends AbstractExtension
      * @param string $hookName the name of the hook to trigger
      * @param array $hookParameters the parameters to send to the Hook
      *
-     * @return string all listener's responses, concatenated in a simple string, ordered by the listeners' priorities
+     * @throws \Exception if the hookName is missing
      *
-     * @throws Exception if the hookName is missing
+     * @return string all listener's responses, concatenated in a simple string, ordered by the listeners' priorities
      */
     public function renderHook($hookName, array $hookParameters = [])
     {
         if ($hookName == '') {
-            throw new Exception('Hook name missing');
+            throw new \Exception('Hook name missing');
         }
 
         return $this->hookDispatcher

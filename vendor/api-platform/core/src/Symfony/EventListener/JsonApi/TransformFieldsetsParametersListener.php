@@ -13,7 +13,10 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\EventListener\JsonApi;
 
+use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
+use ApiPlatform\Core\Metadata\Resource\ResourceMetadata;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
+use ApiPlatform\Metadata\Resource\ResourceMetadataCollection;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 
 /**
@@ -24,27 +27,34 @@ use Symfony\Component\HttpKernel\Event\RequestEvent;
  */
 final class TransformFieldsetsParametersListener
 {
-    public function __construct(private readonly ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory)
+    /**
+     * @var ResourceMetadataFactoryInterface|ResourceMetadataCollectionFactoryInterface
+     */
+    private $resourceMetadataFactory;
+
+    public function __construct($resourceMetadataFactory)
     {
+        $this->resourceMetadataFactory = $resourceMetadataFactory;
+
+        if (!$resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface) {
+            trigger_deprecation('api-platform/core', '2.7', sprintf('Use "%s" instead of "%s".', ResourceMetadataCollectionFactoryInterface::class, ResourceMetadataFactoryInterface::class));
+        }
     }
 
     public function onKernelRequest(RequestEvent $event): void
     {
         $request = $event->getRequest();
-        if (($operation = $request->attributes->get('_api_operation')) && 'api_platform.symfony.main_controller' === $operation->getController()) {
-            return;
-        }
 
         $queryParameters = $request->query->all();
         $includeParameter = $queryParameters['include'] ?? null;
         $fieldsParameter = $queryParameters['fields'] ?? null;
 
         if (
-            (!$fieldsParameter && !$includeParameter)
-            || ($fieldsParameter && !\is_array($fieldsParameter))
-            || (!\is_string($includeParameter))
-            || 'jsonapi' !== $request->getRequestFormat()
-            || !($resourceClass = $request->attributes->get('_api_resource_class'))
+            (!$fieldsParameter && !$includeParameter) ||
+            ($fieldsParameter && !\is_array($fieldsParameter)) ||
+            (!\is_string($includeParameter)) ||
+            'jsonapi' !== $request->getRequestFormat() ||
+            !($resourceClass = $request->attributes->get('_api_resource_class'))
         ) {
             return;
         }
@@ -56,12 +66,13 @@ final class TransformFieldsetsParametersListener
             return;
         }
 
-        $resourceMetadata = $this->resourceMetadataCollectionFactory->create($resourceClass);
-        $resourceShortName = $resourceMetadata->getOperation()->getShortName();
+        /** @var ResourceMetadata|ResourceMetadataCollection */
+        $resourceMetadata = $this->resourceMetadataFactory->create($resourceClass);
+        $resourceShortName = $resourceMetadata instanceof ResourceMetadata ? $resourceMetadata->getShortName() : $resourceMetadata->getOperation()->getShortName();
 
         $properties = [];
         foreach ($fieldsParameter as $resourceType => $fields) {
-            $fields = explode(',', (string) $fields);
+            $fields = explode(',', $fields);
 
             if ($resourceShortName === $resourceType) {
                 $properties = array_merge($properties, $fields);
@@ -77,3 +88,5 @@ final class TransformFieldsetsParametersListener
         $request->attributes->set('_api_filter_property', $properties);
     }
 }
+
+class_alias(TransformFieldsetsParametersListener::class, \ApiPlatform\Core\JsonApi\EventListener\TransformFieldsetsParametersListener::class);

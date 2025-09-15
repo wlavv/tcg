@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -20,7 +19,6 @@
  */
 
 use PrestaShop\Module\PrestashopCheckout\CommandBus\CommandBusInterface;
-use PrestaShop\Module\PrestashopCheckout\CommandBus\QueryBusInterface;
 use PrestaShop\Module\PrestashopCheckout\Controller\AbstractFrontController;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Command\DeletePaymentTokenCommand;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Query\GetCustomerPaymentTokensQuery;
@@ -41,9 +39,6 @@ class Ps_CheckoutVaultModuleFrontController extends AbstractFrontController
         try {
             /** @var CommandBusInterface $commandBus */
             $commandBus = $this->module->getService('ps_checkout.bus.command');
-
-            /** @var QueryBusInterface $queryBus */
-            $queryBus = $this->module->getService('ps_checkout.bus.query');
 
             $bodyValues = [];
             $bodyContent = file_get_contents('php://input');
@@ -75,7 +70,7 @@ class Ps_CheckoutVaultModuleFrontController extends AbstractFrontController
             }
 
             /** @var GetCustomerPaymentTokensQueryResult $getCustomerPaymentMethodTokensQueryResult */
-            $getCustomerPaymentMethodTokensQueryResult = $queryBus->handle(new GetCustomerPaymentTokensQuery(
+            $getCustomerPaymentMethodTokensQueryResult = $commandBus->handle(new GetCustomerPaymentTokensQuery(
                 $customerId,
                 $this->getPageSize(),
                 $this->getPageNumber()

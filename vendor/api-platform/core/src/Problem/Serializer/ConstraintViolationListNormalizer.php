@@ -29,12 +29,12 @@ final class ConstraintViolationListNormalizer extends AbstractConstraintViolatio
     public const TYPE = 'type';
     public const TITLE = 'title';
 
-    private array $defaultContext = [
+    private $defaultContext = [
         self::TYPE => 'https://tools.ietf.org/html/rfc2616#section-10',
         self::TITLE => 'An error occurred',
     ];
 
-    public function __construct(?array $serializePayloadFields = null, ?NameConverterInterface $nameConverter = null, array $defaultContext = [])
+    public function __construct(array $serializePayloadFields = null, NameConverterInterface $nameConverter = null, array $defaultContext = [])
     {
         parent::__construct($serializePayloadFields, $nameConverter);
 
@@ -44,14 +44,9 @@ final class ConstraintViolationListNormalizer extends AbstractConstraintViolatio
     /**
      * {@inheritdoc}
      */
-    public function normalize(mixed $object, ?string $format = null, array $context = []): array
+    public function normalize($object, $format = null, array $context = []): array
     {
         [$messages, $violations] = $this->getMessagesAndViolations($object);
-
-        // TODO: in api platform 4 this will be the default, as right now we serialize a ValidationException instead of a ConstraintViolationList
-        if ($context['rfc_7807_compliant_errors'] ?? false) {
-            return $violations;
-        }
 
         return [
             'type' => $context[self::TYPE] ?? $this->defaultContext[self::TYPE],
@@ -61,3 +56,5 @@ final class ConstraintViolationListNormalizer extends AbstractConstraintViolatio
         ];
     }
 }
+
+class_alias(ConstraintViolationListNormalizer::class, \ApiPlatform\Core\Problem\Serializer\ConstraintViolationListNormalizer::class);

@@ -32,7 +32,6 @@ use PrestaShop\PrestaShop\Core\Domain\Country\ValueObject\CountryId;
 use PrestaShop\PrestaShop\Core\Domain\State\ValueObject\StateId;
 use PrestaShop\PrestaShop\Core\Domain\TaxRulesGroup\ValueObject\TaxRulesGroupId;
 use PrestaShop\PrestaShop\Core\Form\FormChoiceAttributeProviderInterface;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceFormatter;
 use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
 use State;
 use TaxRulesGroup;
@@ -69,11 +68,12 @@ final class TaxRuleGroupChoiceProvider implements FormChoiceProviderInterface, F
      */
     public function getChoices()
     {
-        return FormChoiceFormatter::formatFormChoices(
-            $this->getRules(),
-            'id_tax_rules_group',
-            'name'
-        );
+        $choices = [];
+        foreach ($this->getRules() as $rule) {
+            $choices[$rule['name']] = (int) $rule['id_tax_rules_group'];
+        }
+
+        return $choices;
     }
 
     /**

@@ -21,6 +21,9 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Exception;
 
-class ExpectedServiceNotFoundException extends \Exception
+use Exception;
+
+class ExpectedServiceNotFoundException extends Exception
 {
+
 }

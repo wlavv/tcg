@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Serializer\Mapping\Factory;
 
-use ApiPlatform\Metadata\Util\ClassInfoTrait;
+use ApiPlatform\Util\ClassInfoTrait;
 use Symfony\Component\Serializer\Mapping\ClassMetadataInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 
@@ -21,8 +21,11 @@ final class ClassMetadataFactory implements ClassMetadataFactoryInterface
 {
     use ClassInfoTrait;
 
-    public function __construct(private readonly ClassMetadataFactoryInterface $decorated)
+    private $decorated;
+
+    public function __construct(ClassMetadataFactoryInterface $decorated)
     {
+        $this->decorated = $decorated;
     }
 
     /**
@@ -36,8 +39,10 @@ final class ClassMetadataFactory implements ClassMetadataFactoryInterface
     /**
      * {@inheritdoc}
      */
-    public function hasMetadataFor(mixed $value): bool
+    public function hasMetadataFor($value): bool
     {
         return $this->decorated->hasMetadataFor(\is_object($value) ? $this->getObjectClass($value) : $this->getRealClassName($value));
     }
 }
+
+class_alias(ClassMetadataFactory::class, \ApiPlatform\Core\Serializer\Mapping\Factory\ClassMetadataFactory::class);

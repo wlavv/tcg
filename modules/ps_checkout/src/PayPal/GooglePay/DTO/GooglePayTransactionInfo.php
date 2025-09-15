@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -35,11 +34,11 @@ class GooglePayTransactionInfo
     /**
      * @var string
      */
-    private $countryCode;
+    private $countryCode = null;
     /**
      * @var string
      */
-    private $transactionId;
+    private $transactionId = null;
     /**
      * @var 'ESTIMATED'|'FINAL'
      */

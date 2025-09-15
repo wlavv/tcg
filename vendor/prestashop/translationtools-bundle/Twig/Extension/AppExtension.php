@@ -10,7 +10,7 @@
 
 namespace PrestaShop\TranslationToolsBundle\Twig\Extension;
 
-use Symfony\Contracts\Translation\TranslatorInterface;
+use Symfony\Component\Translation\TranslatorInterface;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFunction;
 
@@ -41,6 +41,8 @@ class AppExtension extends AbstractExtension
     }
 
     /**
+     * @param $string
+     *
      * @return string
      */
     public function transChoice($string)
@@ -48,6 +50,9 @@ class AppExtension extends AbstractExtension
         return $this->translation->transChoice($string);
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getName()
     {
         return 'app';

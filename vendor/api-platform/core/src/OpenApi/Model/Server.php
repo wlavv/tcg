@@ -17,8 +17,15 @@ final class Server
 {
     use ExtensionTrait;
 
-    public function __construct(private string $url, private string $description = '', private ?\ArrayObject $variables = null)
+    private $url;
+    private $description;
+    private $variables;
+
+    public function __construct(string $url, string $description = '', \ArrayObject $variables = null)
     {
+        $this->url = $url;
+        $this->description = $description;
+        $this->variables = $variables;
     }
 
     public function getUrl(): string
@@ -60,3 +67,5 @@ final class Server
         return $clone;
     }
 }
+
+class_alias(Server::class, \ApiPlatform\Core\OpenApi\Model\Server::class);

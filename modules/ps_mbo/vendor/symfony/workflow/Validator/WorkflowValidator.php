@@ -20,16 +20,13 @@ use Symfony\Component\Workflow\Exception\InvalidDefinitionException;
  */
 class WorkflowValidator implements DefinitionValidatorInterface
 {
-    private bool $singlePlace;
+    private $singlePlace;
 
     public function __construct(bool $singlePlace = false)
     {
         $this->singlePlace = $singlePlace;
     }
 
-    /**
-     * @return void
-     */
     public function validate(Definition $definition, string $name)
     {
         // Make sure all transitions for one place has unique name.

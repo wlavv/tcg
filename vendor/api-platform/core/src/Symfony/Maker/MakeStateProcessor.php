@@ -43,7 +43,7 @@ final class MakeStateProcessor extends AbstractMaker
     /**
      * {@inheritdoc}
      */
-    public function configureCommand(Command $command, InputConfiguration $inputConfig): void
+    public function configureCommand(Command $command, InputConfiguration $inputConfig)
     {
         $command
             ->addArgument('name', InputArgument::REQUIRED, 'Choose a class name for your state processor (e.g. <fg=yellow>AwesomeStateProcessor</>)')
@@ -53,14 +53,14 @@ final class MakeStateProcessor extends AbstractMaker
     /**
      * {@inheritdoc}
      */
-    public function configureDependencies(DependencyBuilder $dependencies): void
+    public function configureDependencies(DependencyBuilder $dependencies)
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator): void
+    public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator)
     {
         $stateProcessorClassNameDetails = $generator->createClassNameDetails(
             $input->getArgument('name'),

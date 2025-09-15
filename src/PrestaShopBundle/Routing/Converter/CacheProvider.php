@@ -26,7 +26,7 @@
 
 namespace PrestaShopBundle\Routing\Converter;
 
-use Psr\Cache\CacheItemPoolInterface;
+use Symfony\Component\Cache\Adapter\AdapterInterface;
 
 /**
  * Class CacheProvider.
@@ -34,7 +34,7 @@ use Psr\Cache\CacheItemPoolInterface;
 class CacheProvider extends AbstractLegacyRouteProvider implements CacheCleanerInterface
 {
     /**
-     * @var CacheItemPoolInterface
+     * @var AdapterInterface
      */
     private $cache;
 
@@ -55,7 +55,7 @@ class CacheProvider extends AbstractLegacyRouteProvider implements CacheCleanerI
 
     public function __construct(
         LegacyRouteProviderInterface $legacyRouteProvider,
-        CacheItemPoolInterface $cache,
+        AdapterInterface $cache,
         CacheKeyGeneratorInterface $cacheKeyGenerator
     ) {
         $this->legacyRouteProvider = $legacyRouteProvider;

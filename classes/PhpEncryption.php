@@ -79,7 +79,7 @@ class PhpEncryptionCore
      *
      * @return string
      *
-     * @throws EnvironmentIsBrokenException
+     * @throws \Defuse\Crypto\Exception\EnvironmentIsBrokenException
      */
     public static function saveBytesToChecksummedAsciiSafeString($header, $bytes)
     {

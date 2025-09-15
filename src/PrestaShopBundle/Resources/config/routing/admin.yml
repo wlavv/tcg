@@ -21,10 +21,3 @@ _admin_improve_routing:
 _admin_errors:
   resource: "admin/_errors.yml"
   prefix: /errors
-
-_admin_login:
-  resource: "admin/_login.yml"
-  prefix: /
-
-_legacy:
-  resource: "admin/_legacy.yml"

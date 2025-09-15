@@ -3,14 +3,16 @@
 {shop_url}
 
 Olá,
+
 Recebeu um novo pedido de devolução para {shop_name}.
 
 Detalhes de devolução
 
 Encomenda: {order_name} Realizada a {date}
+
 Cliente: {firstname} {lastname}, ({email})
 
-Referência	Produto	Quantidade  {items}
+Referência	Produto	Quantidade   {items}
 
 Endereço de entrega
 
@@ -25,4 +27,5 @@ Mensagem do cliente:
 {message}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

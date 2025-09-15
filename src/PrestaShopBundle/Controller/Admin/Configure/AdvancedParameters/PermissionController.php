@@ -33,9 +33,8 @@ use PrestaShop\PrestaShop\Core\Domain\Profile\Permission\Command\UpdateModulePer
 use PrestaShop\PrestaShop\Core\Domain\Profile\Permission\Command\UpdateTabPermissionsCommand;
 use PrestaShop\PrestaShop\Core\Domain\Profile\Permission\Query\GetPermissionsForConfiguration;
 use PrestaShop\PrestaShop\Core\Domain\Profile\Permission\QueryResult\ConfigurablePermissions;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
-use PrestaShopBundle\Controller\Attribute\AllShopContext;
-use PrestaShopBundle\Security\Attribute\AdminSecurity;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
+use PrestaShopBundle\Security\Annotation\AdminSecurity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -43,21 +42,21 @@ use Symfony\Component\HttpFoundation\Response;
 /**
  * Allows permissions configuration for employee profiles in "Configure > Advanced Parameters > Team > Permissions"
  */
-#[AllShopContext]
-class PermissionController extends PrestaShopAdminController
+class PermissionController extends FrameworkBundleAdminController
 {
     /**
      * Show permissions configuration page
      *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))")
+     *
      * @return Response
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
     public function indexAction(): Response
     {
         /** @var ConfigurablePermissions $configurablePermissions */
-        $configurablePermissions = $this->dispatchQuery(
+        $configurablePermissions = $this->getQueryBus()->handle(
             new GetPermissionsForConfiguration(
-                $this->getEmployeeContext()->getEmployee()->getProfileId()
+                (int) $this->getContext()->employee->id_profile
             )
         );
 
@@ -66,14 +65,13 @@ class PermissionController extends PrestaShopAdminController
             [
                 'help_link' => $this->generateSidebarLink('AdminAccess'),
                 'enableSidebar' => true,
-                'layoutTitle' => $this->trans('Permissions', [], 'Admin.Navigation.Menu'),
                 'configurablePermissions' => $configurablePermissions,
                 'multistoreInfoTip' => $this->trans(
                     'Note that this page is available in all shops context only, this is why your context has just switched.',
-                    [],
                     'Admin.Notifications.Info'
                 ),
-                'multistoreIsUsed' => $this->getShopContext()->isMultiShopUsed() && $this->getShopContext()->getShopConstraint()->getShopId() !== null,
+                'multistoreIsUsed' => ($this->get('prestashop.adapter.multistore_feature')->isUsed()
+                                       && $this->get('prestashop.adapter.shop.context')->isShopContext()),
             ]
         );
     }
@@ -81,11 +79,12 @@ class PermissionController extends PrestaShopAdminController
     /**
      * Update tab permissions for profile
      *
+     * @AdminSecurity("is_granted('create', request.get('_legacy_controller')) && is_granted('update', request.get('_legacy_controller')) && is_granted('delete', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('create', request.get('_legacy_controller')) && is_granted('update', request.get('_legacy_controller')) && is_granted('delete', request.get('_legacy_controller'))")]
     public function updateTabPermissionsAction(Request $request): JsonResponse
     {
         if ($this->isDemoModeEnabled()) {
@@ -93,7 +92,7 @@ class PermissionController extends PrestaShopAdminController
         }
 
         try {
-            $this->dispatchCommand(
+            $this->getQueryBus()->handle(
                 new UpdateTabPermissionsCommand(
                     $request->request->getInt('profile_id'),
                     $request->request->getInt('tab_id'),
@@ -104,7 +103,7 @@ class PermissionController extends PrestaShopAdminController
 
             $response['success'] = true;
             $responseCode = Response::HTTP_OK;
-        } catch (ProfileException) {
+        } catch (ProfileException $e) {
             $response['success'] = false;
             $responseCode = Response::HTTP_BAD_REQUEST;
         }
@@ -115,11 +114,12 @@ class PermissionController extends PrestaShopAdminController
     /**
      * Updates module permissions for profile
      *
+     * @AdminSecurity("is_granted('create', request.get('_legacy_controller')) && is_granted('update', request.get('_legacy_controller')) && is_granted('delete', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('create', request.get('_legacy_controller')) && is_granted('update', request.get('_legacy_controller')) && is_granted('delete', request.get('_legacy_controller'))")]
     public function updateModulePermissionsAction(Request $request): JsonResponse
     {
         if ($this->isDemoModeEnabled()) {
@@ -127,7 +127,7 @@ class PermissionController extends PrestaShopAdminController
         }
 
         try {
-            $this->dispatchCommand(
+            $this->getQueryBus()->handle(
                 new UpdateModulePermissionsCommand(
                     $request->request->getInt('profile_id'),
                     $request->request->getInt('id_module'),
@@ -138,7 +138,7 @@ class PermissionController extends PrestaShopAdminController
 
             $response['success'] = true;
             $responseCode = Response::HTTP_OK;
-        } catch (ProfileException) {
+        } catch (ProfileException $e) {
             $response['success'] = false;
             $responseCode = Response::HTTP_BAD_REQUEST;
         }

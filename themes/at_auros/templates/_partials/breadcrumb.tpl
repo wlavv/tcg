@@ -1,5 +1,5 @@
 {**
- *  PrestaShop
+ * 2007-2017 PrestaShop
  *
  * NOTICE OF LICENSE
  *
@@ -22,20 +22,53 @@
  * @license   https://opensource.org/licenses/AFL-3.0 Academic Free License 3.0 (AFL-3.0)
  * International Registered Trademark & Property of PrestaShop SA
  *}
+
+{assign var="leobrbg" value={hook h="pagebuilderConfig" configName="leobrbg"}}
+{assign var="leobrcolor" value={hook h="pagebuilderConfig" configName="leobrcolor"}}
+{assign var="leobgfull" value={hook h="pagebuilderConfig" configName="leobgfull"}}
+{assign var="leobgheight" value={hook h="pagebuilderConfig" configName="leobgheight"}}
+{assign var="leobrtext" value={hook h="pagebuilderConfig" configName="leobrtext"}}
+
+{if $leobrbg || $leobrcolor}
+<div data-depth="{$breadcrumb.count}" class="breadcrumb-bg {$leobrtext} {if $leobgfull}breadcrumb-full{/if}" style="{if $leobrbg}background-image: {if $leobrbg}url({if $page.page_name == 'category' && $leobrbg == 'catimg' && $category.image.large.url != ''}{$category.image.large.url}{else}{$leobrbg}{/if}){/if};{/if}{if $leobrcolor} background-color:{$leobrcolor};{/if}{if $leobgheight} min-height:{$leobgheight};{/if} ">
+  {if isset($leobgfull) && $leobgfull}
+  <div class="container">
+  {/if}
+  <nav data-depth="{$breadcrumb.count}" class="breadcrumb hidden-sm-down">
+    <ol>
+      {block name='breadcrumb'}
+        {foreach from=$breadcrumb.links item=path name=breadcrumb}
+          {block name='breadcrumb_item'}
+            <li>
+              <a href="{$path.url}">
+                <span>{$path.title}</span>
+              </a>
+             
+            </li>
+          {/block}
+        {/foreach}
+      {/block}
+    </ol>
+  </nav>
+  {if isset($leobgfull) && $leobgfull}
+  </div>
+  {/if}
+</div>
+{else}
 <nav data-depth="{$breadcrumb.count}" class="breadcrumb hidden-sm-down">
   <ol>
     {block name='breadcrumb'}
       {foreach from=$breadcrumb.links item=path name=breadcrumb}
         {block name='breadcrumb_item'}
           <li>
-            {if not $smarty.foreach.breadcrumb.last}
-              <a href="{$path.url}"><span>{$path.title}</span></a>
-            {else}
+            <a href="{$path.url}">
               <span>{$path.title}</span>
-            {/if}
+            </a>
+      
           </li>
         {/block}
       {/foreach}
     {/block}
   </ol>
 </nav>
+{/if}

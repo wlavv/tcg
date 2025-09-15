@@ -21,31 +21,41 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Controller\Admin;
 
-use PrestaShop\Module\Mbo\Service\View\ContextBuilder;
-use PrestaShop\Module\Mbo\Tab\TabCollectionProvider;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Request;
+use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Exception\ServiceUnavailableHttpException;
 
 /**
  * Responsible of render json data for ajax display of Recommended Modules.
  */
-class ModuleRecommendedController extends PrestaShopAdminController
+class ModuleRecommendedController extends FrameworkBundleAdminController
 {
+    /**
+     * @var RequestStack
+     */
+    protected $requestStack;
+
+    /**
+     * @param RequestStack $requestStack
+     */
+    public function __construct(
+        RequestStack $requestStack
+    ) {
+        parent::__construct();
+        $this->requestStack = $requestStack;
+    }
+
     /**
      * @return JsonResponse|RedirectResponse
      */
-    public function indexAction(
-        Request $request,
-        TabCollectionProvider $tabCollectionProvider,
-        ContextBuilder $contextBuilder,
-    ): Response {
+    public function indexAction(): Response
+    {
         $response = new JsonResponse();
         try {
-            $tabClassName = $request->get('tabClassName');
+            $tabClassName = $this->requestStack->getCurrentRequest()->get('tabClassName');
             if (null === $tabClassName) { // In case the recommended modules page is requested without giving tab context, we redirect to Modules catalog page
                 $routeParams = [];
                 $query = \Tools::getValue('bo_query');
@@ -55,10 +65,10 @@ class ModuleRecommendedController extends PrestaShopAdminController
 
                 return $this->redirectToRoute('admin_mbo_catalog_module', $routeParams);
             }
-            $tabCollection = $tabCollectionProvider->getTabCollection();
+            $tabCollection = $this->get('mbo.tab.collection.provider')->getTabCollection();
             $tab = $tabCollection->getTab($tabClassName);
-            $context = $contextBuilder->getRecommendedModulesContext($tab);
-            $context['recommendation_format'] = $request->get('recommendation_format');
+            $context = $this->get('mbo.cdc.context_builder')->getRecommendedModulesContext($tab);
+            $context['recommendation_format'] = $this->requestStack->getCurrentRequest()->get('recommendation_format');
             $response->setData([
                 'content' => $this->renderView(
                     '@Modules/ps_mbo/views/templates/admin/controllers/module_catalog/recommended-modules.html.twig',

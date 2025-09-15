@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,8 +25,14 @@ use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 
 class ExpressCheckoutConfiguration
 {
-    public function __construct(private PrestaShopConfiguration $configuration)
+    /**
+     * @var PrestaShopConfiguration
+     */
+    private $configuration;
+
+    public function __construct(PrestaShopConfiguration $configuration)
     {
+        $this->configuration = $configuration;
     }
 
     public function isOrderPageEnabled()

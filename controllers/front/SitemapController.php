@@ -33,7 +33,7 @@ class SitemapControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         $sitemapUrls = [
             'our_offers' => [
@@ -88,7 +88,7 @@ class SitemapControllerCore extends FrontController
         $this->setTemplate('cms/sitemap');
     }
 
-    public function getCategoriesLinks(): array
+    public function getCategoriesLinks()
     {
         return [Category::getRootCategory()->recurseLiteCategTree(0, 0, null, null, 'sitemap')];
     }
@@ -96,19 +96,16 @@ class SitemapControllerCore extends FrontController
     /**
      * @return array
      */
-    protected function getPagesLinks(): array
+    protected function getPagesLinks()
     {
         $cms = CMSCategory::getRecurseCategory($this->context->language->id, 1, 1, 1);
         $links = $this->getCmsTree($cms);
 
-        // We hide stores page, if there is no page configured
-        if (Store::atLeastOneStoreExists()) {
-            $links[] = [
-                'id' => 'stores-page',
-                'label' => $this->trans('Our stores', [], 'Shop.Theme.Global'),
-                'url' => $this->context->link->getPageLink('stores'),
-            ];
-        }
+        $links[] = [
+            'id' => 'stores-page',
+            'label' => $this->trans('Our stores', [], 'Shop.Theme.Global'),
+            'url' => $this->context->link->getPageLink('stores'),
+        ];
 
         $links[] = [
             'id' => 'contact-page',
@@ -128,7 +125,7 @@ class SitemapControllerCore extends FrontController
     /**
      * @return array
      */
-    protected function getCmsTree($cms): array
+    protected function getCmsTree($cms)
     {
         $links = [];
 
@@ -157,7 +154,7 @@ class SitemapControllerCore extends FrontController
     /**
      * @return array
      */
-    protected function getUserAccountLinks(): array
+    protected function getUserAccountLinks()
     {
         $links = [];
 
@@ -179,7 +176,7 @@ class SitemapControllerCore extends FrontController
     /**
      * @return array
      */
-    protected function getOffersLinks(): array
+    protected function getOffersLinks()
     {
         $links = [
             [
@@ -228,7 +225,7 @@ class SitemapControllerCore extends FrontController
         return $links;
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -243,7 +240,7 @@ class SitemapControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         return $this->context->link->getPageLink('sitemap');
     }

@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\Product\Update\Filler;
 
-use PrestaShop\PrestaShop\Adapter\Domain\LocalizedObjectModelTrait;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\UpdateProductCommand;
 use Product;
 
@@ -36,8 +35,6 @@ use Product;
  */
 class ShippingFiller implements ProductFillerInterface
 {
-    use LocalizedObjectModelTrait;
-
     /**
      * {@inheritDoc}
      */
@@ -76,11 +73,13 @@ class ShippingFiller implements ProductFillerInterface
         }
 
         if (null !== $command->getLocalizedDeliveryTimeInStockNotes()) {
-            $this->fillLocalizedValues($product, 'delivery_in_stock', $command->getLocalizedDeliveryTimeInStockNotes(), $updatableProperties);
+            $product->delivery_in_stock = $command->getLocalizedDeliveryTimeInStockNotes();
+            $updatableProperties['delivery_in_stock'] = array_keys($command->getLocalizedDeliveryTimeInStockNotes());
         }
 
         if (null !== $command->getLocalizedDeliveryTimeOutOfStockNotes()) {
-            $this->fillLocalizedValues($product, 'delivery_out_stock', $command->getLocalizedDeliveryTimeOutOfStockNotes(), $updatableProperties);
+            $product->delivery_out_stock = $command->getLocalizedDeliveryTimeOutOfStockNotes();
+            $updatableProperties['delivery_out_stock'] = array_keys($command->getLocalizedDeliveryTimeOutOfStockNotes());
         }
 
         return $updatableProperties;

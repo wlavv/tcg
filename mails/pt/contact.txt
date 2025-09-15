@@ -5,7 +5,9 @@
 Mensagem de um cliente da loja {shop_name}
 
 Email do cliente: {email}
+
 N.º da Encomenda #:  {order_name}
+
 Ficheiro anexo: {attached_file}
 
 Mensagem do cliente:
@@ -13,4 +15,5 @@ Mensagem do cliente:
 {message}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

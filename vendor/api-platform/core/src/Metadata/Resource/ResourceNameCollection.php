@@ -20,11 +20,14 @@ namespace ApiPlatform\Metadata\Resource;
  */
 final class ResourceNameCollection implements \IteratorAggregate, \Countable
 {
+    private $classes;
+
     /**
      * @param string[] $classes
      */
-    public function __construct(private readonly array $classes = [])
+    public function __construct(array $classes = [])
     {
+        $this->classes = $classes;
     }
 
     /**

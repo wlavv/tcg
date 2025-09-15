@@ -1,4 +1,4 @@
-{# **
+{#**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
  *
@@ -21,32 +21,27 @@
  * @author    PrestaShop SA and Contributors <contact@prestashop.com>
  * @copyright Since 2007 PrestaShop SA and Contributors
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
- * #}
+ *#}
 {% extends '@PrestaShop/Admin/layout.html.twig' %}
-{% trans_default_domain 'Admin.Advparameters.Feature' %}
+{% trans_default_domain "Admin.Advparameters.Feature" %}
 
 {% block content %}
 <div class="row">
   <div class="col-lg-6">
-    <div class="card" data-block="configuration_information">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Configuration information'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Configuration information'|trans }}
       </h3>
       <div class="card-body">
         <p class="mb-0">{{ 'You must provide this information when reporting an issue on GitHub or on the forum.'|trans }}</p>
       </div>
     </div>
 
-    <div class="card" data-block="server_information">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Server information'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Server information'|trans }}
       </h3>
       <div class="card-body">
-        {% if system.hostname is not empty %}
-          <p class="mb-0">
-            <strong>{{ 'Server Hostname:'|trans }}</strong> {{ system.hostname }}
-          </p>
-        {% endif %}
         {% if system.uname is not empty %}
           <p class="mb-0">
             <strong>{{ 'Server information:'|trans }}</strong> {{ system.uname }}
@@ -73,9 +68,9 @@
       </div>
     </div>
 
-    <div class="card" data-block="database_information">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Database information'|trans({}, 'Admin.Advparameters.Feature') }}
+        <i class="material-icons">info_outline</i> {{ 'Database information'|trans({}, 'Admin.Advparameters.Feature') }}
       </h3>
       <div class="card-body">
         <p class="mb-0">
@@ -102,9 +97,9 @@
       </div>
     </div>
 
-    <div class="card" data-block="list_overrides">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'List of overrides'|trans({}, 'Admin.Advparameters.Feature') }}
+        <i class="material-icons">info_outline</i> {{ 'List of overrides'|trans({}, 'Admin.Advparameters.Feature') }}
       </h3>
       <div class="card-body">
         {% if system.overrides is empty %}
@@ -122,15 +117,14 @@
     </div>
   </div>
   <div class="col-lg-6">
-    <div class="card" data-block="store_information">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Store information'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Store information'|trans }}
       </h3>
       <div class="card-body">
         <p class="mb-0">
           <strong>{{ 'PrestaShop version:'|trans }}</strong> {{ system.shop.version }}
         </p>
-        {{ renderhook('displayAdminStoreInformation') }}
         <p class="mb-0">
           <strong>{{ 'Shop URL:'|trans }}</strong> {{ system.shop.url }}
         </p>
@@ -143,9 +137,9 @@
       </div>
     </div>
 
-    <div class="card" data-block="mail_configuration">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Mail configuration'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Mail configuration'|trans }}
       </h3>
       <div class="card-body">
         {% if system.isNativePHPmail %}
@@ -185,9 +179,9 @@
       </div>
     </div>
 
-    <div class="card" data-block="your_information">
+    <div class="card">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Your information'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Your information'|trans }}
       </h3>
       <div class="card-body">
         <p class="mb-0">
@@ -198,7 +192,7 @@
 
     <div class="card" id="checkConfiguration">
       <h3 class="card-header">
-        <i class="material-icons">info</i> {{ 'Check your configuration'|trans }}
+        <i class="material-icons">info_outline</i> {{ 'Check your configuration'|trans }}
       </h3>
       <div class="card-body">
         {% if requirements.failRequired == false %}
@@ -244,9 +238,9 @@
   </div>
 </div>
 
-<div class="card" data-block="list_changed_files">
+<div class="card">
   <h3 class="card-header">
-    <i class="material-icons">info</i> {{ 'List of changed files'|trans }}
+    <i class="material-icons">info_outline</i> {{ 'List of changed files'|trans }}
   </h3>
   <div class="card-body" id="changedFiles">
     <i class="material-icons">loop</i> {{ 'Checking files...'|trans({}, 'Admin.Advparameters.Notification') }}
@@ -254,7 +248,7 @@
 </div>
 
 <script>
-  $(function()
+  $(document).ready(function()
   {
     var translations = {
       missing: '{{ 'Missing files'|trans({}, 'Admin.Advparameters.Notification')|e('js') }}',
@@ -265,7 +259,7 @@
 
     $.ajax({
       type: 'POST',
-      url: '{{ path('admin_system_information_check_files') }}',
+      url: '{{ path("admin_system_information_check_files") }}',
       data: {},
       dataType: 'json',
       success: function(json)

@@ -14,7 +14,7 @@ declare(strict_types=1);
 namespace ApiPlatform\Metadata\Resource\Factory;
 
 use ApiPlatform\Metadata\Resource\ResourceNameCollection;
-use ApiPlatform\Metadata\Util\CachedTrait;
+use ApiPlatform\Util\CachedTrait;
 use Psr\Cache\CacheItemPoolInterface;
 
 /**
@@ -28,9 +28,12 @@ final class CachedResourceNameCollectionFactory implements ResourceNameCollectio
 
     public const CACHE_KEY = 'resource_name_collection';
 
-    public function __construct(CacheItemPoolInterface $cacheItemPool, private readonly ResourceNameCollectionFactoryInterface $decorated)
+    private $decorated;
+
+    public function __construct(CacheItemPoolInterface $cacheItemPool, ResourceNameCollectionFactoryInterface $decorated)
     {
         $this->cacheItemPool = $cacheItemPool;
+        $this->decorated = $decorated;
     }
 
     /**
@@ -38,6 +41,8 @@ final class CachedResourceNameCollectionFactory implements ResourceNameCollectio
      */
     public function create(): ResourceNameCollection
     {
-        return $this->getCached(self::CACHE_KEY, fn (): ResourceNameCollection => $this->decorated->create());
+        return $this->getCached(self::CACHE_KEY, function () {
+            return $this->decorated->create();
+        });
     }
 }

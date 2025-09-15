@@ -19,10 +19,13 @@ use ApiPlatform\Metadata\GraphQl\Operation;
  * Write stage of GraphQL resolvers.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated
  */
 interface WriteStageInterface
 {
-    public function __invoke(?object $data, string $resourceClass, Operation $operation, array $context): ?object;
+    /**
+     * @param object|null $data
+     *
+     * @return object|null
+     */
+    public function __invoke($data, string $resourceClass, Operation $operation, array $context);
 }

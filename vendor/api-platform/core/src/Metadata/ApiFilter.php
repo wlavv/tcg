@@ -13,10 +13,11 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Metadata;
 
-use ApiPlatform\Metadata\Exception\InvalidArgumentException;
+use ApiPlatform\Api\FilterInterface;
+use ApiPlatform\Exception\InvalidArgumentException;
 
 /**
- * Filter attribute.
+ * Filter annotation.
  *
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
@@ -24,19 +25,69 @@ use ApiPlatform\Metadata\Exception\InvalidArgumentException;
 final class ApiFilter
 {
     /**
-     * @param string|class-string<FilterInterface> $filterClass
-     * @param string                               $alias       a filter tag alias to be referenced in a Parameter
+     * @var string
+     */
+    public $id;
+
+    /**
+     * @var string
+     */
+    public $strategy;
+
+    /**
+     * @var string|FilterInterface
+     */
+    public $filterClass;
+
+    /**
+     * @var array
+     */
+    public $properties = [];
+
+    /**
+     * @var array raw arguments for the filter
+     */
+    public $arguments = [];
+
+    /**
+     * @param string $filterClass
+     * @param string $id
+     * @param string $strategy
      */
     public function __construct(
-        public string $filterClass,
-        public ?string $id = null,
-        public ?string $strategy = null,
-        public array $properties = [],
-        public array $arguments = [],
-        public ?string $alias = null,
+        $filterClass,
+        ?string $id = null,
+        ?string $strategy = null,
+        array $properties = [],
+        array $arguments = []
     ) {
+        if (\is_array($filterClass)) { /** @phpstan-ignore-line Doctrine annotations */
+            $options = $filterClass;
+            $this->filterClass = $options['value'] ?? null; /* @phpstan-ignore-line Doctrine annotations */
+            unset($options['value']);
+
+            foreach ($options as $key => $value) {
+                if (!property_exists($this, $key)) {
+                    throw new InvalidArgumentException(sprintf('Property "%s" does not exist on the ApiFilter annotation.', $key));
+                }
+
+                $this->{$key} = $value;
+            }
+        } else {
+            // PHP attribute
+            $this->filterClass = $filterClass;
+            $this->id = $id;
+            $this->strategy = $strategy;
+            $this->properties = $properties;
+            $this->arguments = $arguments;
+        }
+
+        if (!\is_string($this->filterClass)) { /* @phpstan-ignore-line Doctrine annotations */
+            throw new InvalidArgumentException('This annotation needs a value representing the filter class.');
+        }
+
         if (!is_a($this->filterClass, FilterInterface::class, true)) {
-            throw new InvalidArgumentException(\sprintf('The filter class "%s" does not implement "%s". Did you forget a use statement?', $this->filterClass, FilterInterface::class));
+            throw new InvalidArgumentException(sprintf('The filter class "%s" does not implement "%s". Did you forget a use statement?', $this->filterClass, FilterInterface::class));
         }
     }
 }

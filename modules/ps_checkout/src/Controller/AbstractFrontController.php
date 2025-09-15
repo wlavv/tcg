@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,22 +20,26 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Controller;
 
+use Exception;
+use ModuleFrontController;
 use PrestaShop\Module\PrestashopCheckout\Customer\Exception\CustomerException;
 use PrestaShop\Module\PrestashopCheckout\Customer\ValueObject\CustomerId;
+use Ps_checkout;
+use Tools;
 
-class AbstractFrontController extends \ModuleFrontController
+class AbstractFrontController extends ModuleFrontController
 {
     /**
-     * @var \Ps_checkout
+     * @var Ps_checkout
      */
     public $module;
 
     /**
-     * @param \Exception $exception
+     * @param Exception $exception
      *
      * @return void
      */
-    protected function exitWithExceptionMessage(\Exception $exception)
+    protected function exitWithExceptionMessage(Exception $exception)
     {
         $this->exitWithResponse([
             'status' => false,
@@ -90,7 +93,7 @@ class AbstractFrontController extends \ModuleFrontController
      */
     protected function getPageSize()
     {
-        return (int) \Tools::getValue('pageSize', 10);
+        return (int) Tools::getValue('pageSize', 10);
     }
 
     /**
@@ -98,6 +101,6 @@ class AbstractFrontController extends \ModuleFrontController
      */
     protected function getPageNumber()
     {
-        return (int) \Tools::getValue('pageNumber', 1);
+        return (int) Tools::getValue('pageNumber', 1);
     }
 }

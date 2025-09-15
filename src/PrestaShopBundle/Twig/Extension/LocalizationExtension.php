@@ -26,22 +26,60 @@
 
 namespace PrestaShopBundle\Twig\Extension;
 
+use Currency;
 use DateTime;
 use DateTimeInterface;
-use PrestaShop\PrestaShop\Core\Context\CurrencyContext;
-use PrestaShop\PrestaShop\Core\Context\LanguageContext;
+use Language;
 use PrestaShop\PrestaShop\Core\Localization\Locale\Repository;
 use Twig\Extension\AbstractExtension;
 use Twig\TwigFilter;
-use Twig\TwigFunction;
 
 class LocalizationExtension extends AbstractExtension
 {
+    /**
+     * @var string
+     */
+    private $dateFormatFull;
+
+    /**
+     * @var string
+     */
+    private $dateFormatLight;
+
+    /**
+     * @var Repository
+     */
+    private $localeRepository;
+
+    /**
+     * @var Language|null
+     */
+    private $contextLanguage;
+
+    /**
+     * @var Currency|null
+     */
+    private $contextCurrency;
+
+    /**
+     * @param string $contextDateFormatFull
+     * @param string $contextDateFormatLight
+     * @param Repository $localeRepository
+     * @param Language|null $contextLanguage No strict type for this one because another Language class is used during install
+     * @param Currency|null $contextCurrency
+     */
     public function __construct(
-        private readonly Repository $localeRepository,
-        private readonly LanguageContext $languageContext,
-        private readonly CurrencyContext $currencyContext,
+        string $contextDateFormatFull,
+        string $contextDateFormatLight,
+        Repository $localeRepository,
+        $contextLanguage,
+        ?Currency $contextCurrency
     ) {
+        $this->dateFormatFull = $contextDateFormatFull;
+        $this->dateFormatLight = $contextDateFormatLight;
+        $this->localeRepository = $localeRepository;
+        $this->contextLanguage = $contextLanguage;
+        $this->contextCurrency = $contextCurrency;
     }
 
     public function getFilters(): array
@@ -53,18 +91,6 @@ class LocalizationExtension extends AbstractExtension
         ];
     }
 
-    public function getFunctions()
-    {
-        return [
-            new TwigFunction(
-                'format_date',
-                function ($date) {
-                    return (new DateTime($date))->format($this->languageContext->getDateFormat());
-                }
-            ),
-        ];
-    }
-
     /**
      * @param float $price
      * @param string|null $currencyCode
@@ -72,15 +98,18 @@ class LocalizationExtension extends AbstractExtension
      *
      * @return string
      */
-    public function priceFormat(float $price, ?string $currencyCode = null, ?string $locale = null): string
+    public function priceFormat(float $price, string $currencyCode = null, string $locale = null): string
     {
-        if (null !== $locale) {
-            $cldrLocale = $this->localeRepository->getLocale($locale);
-
-            return $cldrLocale->formatPrice($price, $currencyCode ?? $this->currencyContext->getIsoCode());
-        } else {
-            return $this->languageContext->formatPrice($price, $currencyCode ?? $this->currencyContext->getIsoCode());
+        // If no locale is specified and the context language is not accessible we can't format, so we return the input
+        // unchanged, same thing for the currency (use getLocale getter, it is smarter ^^)
+        if ((null === $locale && (null === $this->contextLanguage || empty($this->contextLanguage->getLocale()))) ||
+            (null === $currencyCode && (null === $this->contextCurrency || empty($this->contextCurrency->iso_code)))) {
+            return (string) $price;
         }
+
+        $locale = $this->localeRepository->getLocale($locale ?? $this->contextLanguage->getLocale());
+
+        return $locale->formatPrice($price, $currencyCode ?? $this->contextCurrency->iso_code);
     }
 
     /**
@@ -94,7 +123,7 @@ class LocalizationExtension extends AbstractExtension
             $date = new DateTime($date);
         }
 
-        return $date->format($this->languageContext->getDateTimeFormat());
+        return $date->format($this->dateFormatFull);
     }
 
     /**
@@ -108,6 +137,6 @@ class LocalizationExtension extends AbstractExtension
             $date = new DateTime($date);
         }
 
-        return $date->format($this->languageContext->getDateFormat());
+        return $date->format($this->dateFormatLight);
     }
 }

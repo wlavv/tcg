@@ -26,8 +26,6 @@
 
 namespace PrestaShop\PrestaShop\Adapter\Webservice;
 
-use PrestaShopDatabaseException;
-use PrestaShopException;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Validate;
 use WebserviceKey;
@@ -59,8 +57,8 @@ final class WebserviceKeyStatusModifier
      *
      * @return string[] - if empty when process of status change was successful
      *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function toggleStatus($columnId)
     {
@@ -97,8 +95,8 @@ final class WebserviceKeyStatusModifier
      *
      * @return bool
      *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
+     * @throws \PrestaShopDatabaseException
+     * @throws \PrestaShopException
      */
     public function setStatus(array $columnIds, $status)
     {

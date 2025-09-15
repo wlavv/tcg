@@ -42,7 +42,6 @@ use PrestaShop\PrestaShop\Adapter\Product\SpecificPrice\Repository\SpecificPrice
 use PrestaShop\PrestaShop\Adapter\Product\Stock\Repository\StockAvailableRepository;
 use PrestaShop\PrestaShop\Adapter\Product\Stock\Update\ProductStockProperties;
 use PrestaShop\PrestaShop\Adapter\Product\Stock\Update\ProductStockUpdater;
-use PrestaShop\PrestaShop\Adapter\Tools;
 use PrestaShop\PrestaShop\Core\Domain\Product\Combination\ValueObject\CombinationId;
 use PrestaShop\PrestaShop\Core\Domain\Product\Exception\CannotDuplicateProductException;
 use PrestaShop\PrestaShop\Core\Domain\Product\Exception\CannotUpdateProductException;
@@ -55,7 +54,6 @@ use PrestaShop\PrestaShop\Core\Domain\Product\Supplier\ValueObject\ProductSuppli
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductId;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductType;
 use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\ShopAssociationNotFound;
-use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopCollection;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopId;
 use PrestaShop\PrestaShop\Core\Exception\CoreException;
@@ -75,23 +73,106 @@ use Symfony\Contracts\Translation\TranslatorInterface;
  */
 class ProductDuplicator extends AbstractMultiShopObjectModelRepository
 {
+    /**
+     * @var ProductRepository
+     */
+    private $productRepository;
+
+    /**
+     * @var HookDispatcherInterface
+     */
+    private $hookDispatcher;
+
+    /**
+     * @var TranslatorInterface
+     */
+    private $translator;
+
+    /**
+     * @var StringModifierInterface
+     */
+    private $stringModifier;
+
+    /**
+     * @var Connection
+     */
+    private $connection;
+
+    /**
+     * @var string
+     */
+    private $dbPrefix;
+
+    /**
+     * @var CombinationRepository
+     */
+    private $combinationRepository;
+
+    /**
+     * @var ProductSupplierRepository
+     */
+    private $productSupplierRepository;
+
+    /**
+     * @var SpecificPriceRepository
+     */
+    private $specificPriceRepository;
+
+    /**
+     * @var StockAvailableRepository
+     */
+    private $stockAvailableRepository;
+
+    /**
+     * @var ProductStockUpdater
+     */
+    private $productStockUpdater;
+
+    /**
+     * @var CombinationStockUpdater
+     */
+    private $combinationStockUpdater;
+
+    /**
+     * @var ProductImageRepository
+     */
+    private $productImageRepository;
+
+    /**
+     * @var ProductImagePathFactory
+     */
+    private $productImageSystemPathFactory;
+
     public function __construct(
-        protected readonly ProductRepository $productRepository,
-        protected readonly HookDispatcherInterface $hookDispatcher,
-        protected readonly TranslatorInterface $translator,
-        protected readonly StringModifierInterface $stringModifier,
-        protected readonly Connection $connection,
-        protected readonly string $dbPrefix,
-        protected readonly CombinationRepository $combinationRepository,
-        protected readonly ProductSupplierRepository $productSupplierRepository,
-        protected readonly SpecificPriceRepository $specificPriceRepository,
-        protected readonly StockAvailableRepository $stockAvailableRepository,
-        protected readonly ProductStockUpdater $productStockUpdater,
-        protected readonly CombinationStockUpdater $combinationStockUpdater,
-        protected readonly ProductImageRepository $productImageRepository,
-        protected readonly ProductImagePathFactory $productImageSystemPathFactory,
-        protected readonly Tools $tools,
+        ProductRepository $productRepository,
+        HookDispatcherInterface $hookDispatcher,
+        TranslatorInterface $translator,
+        StringModifierInterface $stringModifier,
+        Connection $connection,
+        string $dbPrefix,
+        CombinationRepository $combinationRepository,
+        ProductSupplierRepository $productSupplierRepository,
+        SpecificPriceRepository $specificPriceRepository,
+        StockAvailableRepository $stockAvailableRepository,
+        ProductStockUpdater $productStockUpdater,
+        CombinationStockUpdater $combinationStockUpdater,
+        ProductImageRepository $productImageRepository,
+        ProductImagePathFactory $productImageSystemPathFactory
     ) {
+        $this->productRepository = $productRepository;
+        $this->hookDispatcher = $hookDispatcher;
+        $this->translator = $translator;
+        $this->stringModifier = $stringModifier;
+        $this->connection = $connection;
+        $this->dbPrefix = $dbPrefix;
+        $this->combinationRepository = $combinationRepository;
+        $this->productSupplierRepository = $productSupplierRepository;
+        $this->specificPriceRepository = $specificPriceRepository;
+        $this->stockAvailableRepository = $stockAvailableRepository;
+        $this->productStockUpdater = $productStockUpdater;
+        $this->combinationStockUpdater = $combinationStockUpdater;
+        $this->productImageRepository = $productImageRepository;
+        $this->productImageSystemPathFactory = $productImageSystemPathFactory;
     }
 
     /**
@@ -106,7 +187,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
      */
     public function duplicate(ProductId $productId, ShopConstraint $shopConstraint): ProductId
     {
-        // @todo: add database transaction. After/if PR #21740 gets merged
+        //@todo: add database transaction. After/if PR #21740 gets merged
         $oldProductId = $productId->getValue();
         $this->hookDispatcher->dispatchWithParameters(
             'actionAdminDuplicateBefore',
@@ -130,8 +211,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
             'actionAdminDuplicateAfter',
             ['id_product' => $oldProductId, 'id_product_new' => $newProductId]
         );
-
-        // @todo: after ##21740 (transactions PR) is resolved.
+        //@todo: after ##21740 (transactions PR) is resolved.
         //  Based on if its accepted or not, we need to implement roll back if something went wrong.
         //  If transactions are accepted then we use it, else we manually rewind (delete the duplicate product)
         return new ProductId((int) $newProduct->id);
@@ -160,7 +240,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
 
         if ($shopConstraint->getShopId()) {
             $targetDefaultShopId = $shopConstraint->getShopId();
-        } elseif ($shopConstraint->getShopGroupId() || ($shopConstraint instanceof ShopCollection && $shopConstraint->hasShopIds())) {
+        } elseif ($shopConstraint->getShopGroupId()) {
             // If source default shop is in the group use it as new default, if not use the first shop from group
             $targetDefaultShopId = null;
             foreach ($shopIds as $groupShopId) {
@@ -189,7 +269,6 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
             $shopProduct->date_add = date('Y-m-d H:i:s');
             // Force a copy name to tell the two products apart (for each shop since name can be different on each shop)
             $shopProduct->name = $this->getNewProductName($shopProduct->name);
-            $shopProduct->link_rewrite = $this->getNewProductLinkRewrite($shopProduct->link_rewrite);
             // Force ID to update the new product
             $shopProduct->id = $shopProduct->id_product = $newProductId->getValue();
             // Force the desired default shop so that it doesn't switch back to the source one
@@ -206,7 +285,6 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
 
     /**
      * @template T
-     *
      * @psalm-param T $sourceObjectModel
      *
      * @return T
@@ -245,26 +323,6 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
         }
 
         return $newProductLocalizedNames;
-    }
-
-    /**
-     * Provides duplicated product name
-     *
-     * @param array<int, string> $oldProductLocalizedLinkRewrites
-     *
-     * @return array<int, string>
-     */
-    private function getNewProductLinkRewrite(array $oldProductLocalizedLinkRewrites): array
-    {
-        $newProductLocalizedLinkRewrites = [];
-        foreach ($oldProductLocalizedLinkRewrites as $langId => $oldName) {
-            $langId = (int) $langId;
-            $namePattern = $this->translator->trans('copy of %s', [], 'Admin.Catalog.Feature', Language::getLocaleById($langId));
-            $newName = sprintf($namePattern, $oldName);
-            $newProductLocalizedLinkRewrites[$langId] = $this->tools->linkRewrite($this->stringModifier->cutEnd($newName, ProductSettings::MAX_NAME_LENGTH));
-        }
-
-        return $newProductLocalizedLinkRewrites;
     }
 
     /**
@@ -314,7 +372,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
             $targetShopId = new ShopId($shopId);
             try {
                 $this->stockAvailableRepository->getForProduct($targetProductId, $targetShopId);
-            } catch (StockAvailableNotFoundException) {
+            } catch (StockAvailableNotFoundException $e) {
                 // We create the new StockAvailable for this product and shop, it will then be updated via stock modification
                 $this->stockAvailableRepository->createStockAvailable($targetProductId, $targetShopId);
             }
@@ -324,7 +382,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                 $outOfStock = new OutOfStockType((int) $sourceStock->out_of_stock);
                 $productQuantity = (int) $sourceStock->quantity;
                 $location = $sourceStock->location;
-            } catch (StockAvailableNotFoundException) {
+            } catch (StockAvailableNotFoundException $e) {
                 // The source product may not have any associated StockAvailable (this happens with product created with old versions)
                 $outOfStock = new OutOfStockType(OutOfStockType::OUT_OF_STOCK_DEFAULT);
                 $productQuantity = 0;
@@ -364,7 +422,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
             $newCombinationId = new CombinationId($combinationMatching[$oldCombinationId->getValue()]);
             try {
                 $this->stockAvailableRepository->getForCombination($newCombinationId, $targetShopId);
-            } catch (StockAvailableNotFoundException) {
+            } catch (StockAvailableNotFoundException $e) {
                 $this->stockAvailableRepository->createStockAvailable($targetProductId, $targetShopId, $newCombinationId);
             }
 
@@ -373,7 +431,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                 $sourceStock = $this->stockAvailableRepository->getForCombination($oldCombinationId, $targetShopId);
                 $combinationQuantity = (int) $sourceStock->quantity;
                 $location = $sourceStock->location;
-            } catch (StockAvailableNotFoundException) {
+            } catch (StockAvailableNotFoundException $e) {
                 // The source combination may not have any associated StockAvailable (this happens with combinations created with old versions)
                 $combinationQuantity = 0;
                 $location = '';
@@ -408,7 +466,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                     ->where('cp.id_category = :categoryId')
                     ->setParameter('categoryId', $categoryId)
                     ->addOrderBy('position', 'DESC')
-                    ->executeQuery()
+                    ->execute()
                     ->fetchOne()
                 ;
             }
@@ -433,6 +491,9 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
     private function duplicateSuppliers(int $oldProductId, int $newProductId, array $combinationMatching): void
     {
         $oldSuppliers = $this->getRows('product_supplier', ['id_product' => $oldProductId], CannotDuplicateProductException::FAILED_DUPLICATE_SUPPLIERS);
+        if (empty($oldSuppliers)) {
+            return;
+        }
 
         foreach ($oldSuppliers as $oldSupplier) {
             $newProductSupplier = $this->productSupplierRepository->get(new ProductSupplierId((int) $oldSupplier['id_product_supplier']));
@@ -594,7 +655,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                 ->from($this->dbPrefix . 'feature_value')
                 ->select('id_feature_value')
                 ->addOrderBy('id_feature_value', 'DESC')
-                ->executeQuery()
+                ->execute()
                 ->fetchOne()
             ;
 
@@ -688,7 +749,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
             ->from($this->dbPrefix . 'customization_field')
             ->select('id_customization_field')
             ->addOrderBy('id_customization_field', 'DESC')
-            ->executeQuery()
+            ->execute()
             ->fetchOne()
         ;
 
@@ -794,6 +855,15 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                 $oldOriginalPath,
                 $newOriginalPath
             );
+
+            // And fileType
+            $originalFileTypePath = dirname($oldOriginalPath) . '/fileType';
+            if (file_exists($originalFileTypePath)) {
+                $fs->copy(
+                    $originalFileTypePath,
+                    dirname($newOriginalPath) . '/fileType'
+                );
+            }
 
             $imagesMapping[$oldImageId->getValue()] = $newImageId->getValue();
         }
@@ -973,7 +1043,7 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
 
         try {
             $this->connection->executeStatement($bulkInsertSql);
-        } catch (Exception) {
+        } catch (Exception $e) {
             throw new CannotDuplicateProductException(
                 sprintf('Cannot bulk insert into table %s failed', $table),
                 $errorCode
@@ -1022,12 +1092,12 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
                 $arrayType = is_int(reset($value)) ? Connection::PARAM_INT_ARRAY : Connection::PARAM_STR_ARRAY;
                 $qb
                     ->andWhere("$column IN (:$column)")
-                    ->setParameter($column, $value, $arrayType)
+                    ->setParameter(":$column", $value, $arrayType)
                 ;
             } else {
                 $qb
                     ->andWhere("$column = :$column")
-                    ->setParameter($column, $value)
+                    ->setParameter(":$column", $value)
                 ;
             }
         }
@@ -1037,8 +1107,8 @@ class ProductDuplicator extends AbstractMultiShopObjectModelRepository
         }
 
         try {
-            $rows = $qb->executeQuery()->fetchAllAssociative();
-        } catch (Exception) {
+            $rows = $qb->execute()->fetchAllAssociative();
+        } catch (Exception $e) {
             throw new CannotDuplicateProductException(
                 sprintf('Cannot select rows from table %s', $this->dbPrefix . $table),
                 $errorCode

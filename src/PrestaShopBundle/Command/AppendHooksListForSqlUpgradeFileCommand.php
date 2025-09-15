@@ -27,11 +27,12 @@
 namespace PrestaShopBundle\Command;
 
 use Employee;
+use PrestaShop\PrestaShop\Adapter\Hook\HookInformationProvider;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
+use PrestaShop\PrestaShop\Core\Hook\Generator\HookDescriptionGenerator;
 use PrestaShop\PrestaShop\Core\Hook\HookDescription;
-use PrestaShop\PrestaShop\Core\Version;
-use RuntimeException;
-use SimpleXMLElement;
+use PrestaShop\PrestaShop\Core\Hook\Provider\GridDefinitionHookByServiceIdsProvider;
+use PrestaShop\PrestaShop\Core\Hook\Provider\IdentifiableObjectHookByFormTypeProvider;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
@@ -39,30 +40,78 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Style\SymfonyStyle;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 use Symfony\Component\Filesystem\Filesystem;
-use Symfony\Component\HttpFoundation\Response;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 
 /**
  * Appends sql upgrade file with the sql which can be used to create new hooks.
- *
- * The command compares the current hook.xml fixture file with the previous one (you need to specify
- * the previous version to define the base to compare to).
- *
- * Thanks to the comparison we get new and obsolete hooks, then two SQL queries are generated and
- * appended in the autoupgrade file (you must specify its local path), the upgrade file matching the
- * current version will be appended with these two SQL queries.
- *
- * No check of previous request in the file is done you must check manually that there are no duplicates.
  */
 class AppendHooksListForSqlUpgradeFileCommand extends Command
 {
+    /**
+     * @var string
+     */
+    private $env;
+
+    /**
+     * @var LegacyContext
+     */
+    private $legacyContext;
+
+    /**
+     * @var GridDefinitionHookByServiceIdsProvider
+     */
+    private $gridDefinitionHookByServiceIdsProvider;
+
+    /**
+     * @var IdentifiableObjectHookByFormTypeProvider
+     */
+    private $identifiableObjectHookByFormTypeProvider;
+
+    /**
+     * @var HookInformationProvider
+     */
+    private $hookInformationProvider;
+
+    /**
+     * @var HookDescriptionGenerator
+     */
+    private $hookDescriptionGenerator;
+
+    /**
+     * @var array
+     */
+    private $serviceIds;
+
+    /**
+     * @var array
+     */
+    private $optionFormHookNames;
+
+    /**
+     * @var array
+     */
+    private $formTypes;
+
     public function __construct(
-        private string $env,
-        private LegacyContext $legacyContext,
-        private HttpClientInterface $httpClient,
-        private string $projectDir,
+        string $env,
+        LegacyContext $legacyContext,
+        GridDefinitionHookByServiceIdsProvider $gridDefinitionHookByServiceIdsProvider,
+        IdentifiableObjectHookByFormTypeProvider $identifiableObjectHookByFormTypeProvider,
+        HookInformationProvider $hookInformationProvider,
+        HookDescriptionGenerator $hookDescriptionGenerator,
+        array $serviceIds,
+        array $optionFormHookNames,
+        array $formTypes
     ) {
         parent::__construct();
+        $this->env = $env;
+        $this->legacyContext = $legacyContext;
+        $this->gridDefinitionHookByServiceIdsProvider = $gridDefinitionHookByServiceIdsProvider;
+        $this->identifiableObjectHookByFormTypeProvider = $identifiableObjectHookByFormTypeProvider;
+        $this->hookInformationProvider = $hookInformationProvider;
+        $this->hookDescriptionGenerator = $hookDescriptionGenerator;
+        $this->serviceIds = $serviceIds;
+        $this->optionFormHookNames = $optionFormHookNames;
+        $this->formTypes = $formTypes;
     }
 
     /**
@@ -76,9 +125,9 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
                 'Adds sql to sql upgrade file which contains hook insert operation'
             )
             ->addArgument(
-                'previous-ps-version',
+                'ps-version',
                 InputArgument::REQUIRED,
-                'The previous prestashop version based on which we know the previous existing hooks'
+                'The prestashop version for which sql upgrade file will be searched'
             )
             ->addArgument(
                 'autoupgrade-path',
@@ -88,7 +137,7 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->initContext();
 
@@ -100,22 +149,21 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
             return 1;
         }
 
-        $currentHooks = $this->getCurrentHooks();
-        $previousHooks = $this->getPreviousHooks($input->getArgument('previous-ps-version'));
+        $hookNames = $this->getHookNames();
+        $hookNames = $this->getWithoutRegisteredHooks($hookNames);
 
-        $newHooks = array_diff($currentHooks, $previousHooks);
-        $removedHooks = array_diff($previousHooks, $currentHooks);
-
-        if (empty($newHooks) && empty($removedHooks)) {
-            $io->note('No hooks modification found.');
+        if (empty($hookNames)) {
+            $io->note('No hooks found.');
 
             return 0;
         }
 
-        // Get SQL upgrade file from module for the current version
+        $hookDescriptions = $this->getHookDescriptions($hookNames);
+
+        $prestashopVersion = $input->getArgument('ps-version');
         try {
             $sqlUpgradeFile = $this->getSqlUpgradeFileByPrestaShopVersion(
-                Version::VERSION,
+                $prestashopVersion,
                 $input->getArgument('autoupgrade-path')
             );
         } catch (FileNotFoundException $exception) {
@@ -127,33 +175,17 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
             return 1;
         }
 
-        // First add new hooks to SQL file
-        if (!empty($newHooks)) {
-            $hookDescriptions = $this->extractHookDescriptions($newHooks);
+        $sqlInsertStatement = $this->getSqlInsertStatement($hookDescriptions, $prestashopVersion);
 
-            $sqlInsertStatement = $this->getSqlInsertStatement($hookDescriptions, Version::VERSION);
-            $this->appendSqlToFile($sqlUpgradeFile, $sqlInsertStatement);
-            $io->success(
-                sprintf(
-                    'All new %s hooks have been listed to file %s',
-                    count($newHooks),
-                    $sqlUpgradeFile
-                )
-            );
-        }
+        $this->appendSqlToFile($sqlUpgradeFile, $sqlInsertStatement);
 
-        // Now delete removed hooks
-        if (!empty($removedHooks)) {
-            $sqlDeleteStatement = $this->getSqlDeleteStatement($removedHooks, Version::VERSION);
-            $this->appendSqlToFile($sqlUpgradeFile, $sqlDeleteStatement);
-            $io->success(
-                sprintf(
-                    'All obsolete %s hooks have been removed in file %s',
-                    count($removedHooks),
-                    $sqlUpgradeFile
-                )
-            );
-        }
+        $io->success(
+            sprintf(
+                'All %s hooks have been listed to file %s',
+                count($hookNames),
+                $sqlUpgradeFile
+            )
+        );
 
         return 0;
     }
@@ -163,12 +195,30 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
      */
     private function initContext()
     {
-        // We need to have an employee or the listing hooks don't work
-        // see LegacyHookSubscriber
+        //We need to have an employee or the listing hooks don't work
+        //see LegacyHookSubscriber
         if (!$this->legacyContext->getContext()->employee) {
-            // Even a non existing employee is fine
+            //Even a non existing employee is fine
             $this->legacyContext->getContext()->employee = new Employee();
         }
+    }
+
+    /**
+     * Gets all hooks names which need to be appended.
+     *
+     * @return string[]
+     */
+    private function getHookNames()
+    {
+        $gridDefinitionHookNames = $this->gridDefinitionHookByServiceIdsProvider->getHookNames($this->serviceIds);
+
+        $identifiableObjectHookNames = $this->identifiableObjectHookByFormTypeProvider->getHookNames($this->formTypes);
+
+        return array_merge(
+            $identifiableObjectHookNames,
+            $this->optionFormHookNames,
+            $gridDefinitionHookNames
+        );
     }
 
     /**
@@ -197,7 +247,7 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
      *
      * @return string
      */
-    private function getSqlInsertStatement(array $hookDescriptions, string $prestashopVersion): string
+    private function getSqlInsertStatement(array $hookDescriptions, string $prestashopVersion)
     {
         $valuesToInsert = [];
         foreach ($hookDescriptions as $hookDescription) {
@@ -214,28 +264,11 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
         }
 
         $insertSQL = PHP_EOL . "/* Auto generated hooks added for version $prestashopVersion */" . PHP_EOL;
-        $insertSQL .= 'INSERT INTO `PREFIX_hook` (`id_hook`, `name`, `title`, `description`, `position`) VALUES' . PHP_EOL;
+        $insertSQL .= 'INSERT IGNORE INTO `PREFIX_hook` (`id_hook`, `name`, `title`, `description`, `position`) VALUES' . PHP_EOL;
         $insertSQL .= implode(',' . PHP_EOL, $valuesToInsert);
-        $insertSQL .= PHP_EOL . 'ON DUPLICATE KEY UPDATE `title` = VALUES(`title`), `description` = VALUES(`description`);' . PHP_EOL;
+        $insertSQL .= PHP_EOL . ';';
 
         return $insertSQL;
-    }
-
-    private function getSqlDeleteStatement(array $removedHooks, string $prestashopVersion): string
-    {
-        if (empty($removedHooks)) {
-            return '';
-        }
-
-        $deleteSQL = PHP_EOL . "/* Auto generated hooks removed for version $prestashopVersion */" . PHP_EOL;
-        $deleteSQL .= 'DELETE FROM `PREFIX_hook` WHERE `name` IN (' . PHP_EOL;
-        $deleteSQL .= implode(',' . PHP_EOL, array_map(fn (string $hookName) => "  '$hookName'", $removedHooks));
-        $deleteSQL .= PHP_EOL . ');' . PHP_EOL;
-        $deleteSQL .= '/* Clean hook registrations related to removed hooks */' . PHP_EOL;
-        $deleteSQL .= 'DELETE FROM `PREFIX_hook_module` WHERE `id_hook` NOT IN (SELECT id_hook FROM `PREFIX_hook`);' . PHP_EOL;
-        $deleteSQL .= 'DELETE FROM `PREFIX_hook_module_exceptions` WHERE `id_hook` NOT IN (SELECT id_hook FROM `PREFIX_hook`);' . PHP_EOL;
-
-        return $deleteSQL;
     }
 
     /**
@@ -246,75 +279,42 @@ class AppendHooksListForSqlUpgradeFileCommand extends Command
      */
     private function appendSqlToFile($pathToFile, $content)
     {
-        $fileSystem = new Filesystem();
+        $fileSystem = new FileSystem();
 
         $fileSystem->appendToFile($pathToFile, $content);
     }
 
-    private function getCurrentHooks(): array
+    /**
+     * Filters out already registered hooks.
+     *
+     * @param array $hookNames
+     *
+     * @return array
+     */
+    private function getWithoutRegisteredHooks(array $hookNames)
     {
-        $currentHookXml = file_get_contents($this->projectDir . '/install-dev/data/xml/hook.xml');
+        $registeredHooks = $this->hookInformationProvider->getHooks();
+        $registeredHookNames = array_column($registeredHooks, 'name');
 
-        return $this->extractHookNamesFromXML($currentHookXml);
+        return array_diff($hookNames, $registeredHookNames);
     }
 
-    private function getPreviousHooks(string $previousVersion): array
+    /**
+     * Gets hook descriptions
+     *
+     * @param array $hookNames
+     *
+     * @return HookDescription[]
+     */
+    private function getHookDescriptions(array $hookNames)
     {
-        $previousHookFile = sprintf('https://raw.githubusercontent.com/PrestaShop/PrestaShop/refs/tags/%s/install-dev/data/xml/hook.xml', $previousVersion);
-        $response = $this->httpClient->request('GET', $previousHookFile);
-        if ($response->getStatusCode() !== Response::HTTP_OK) {
-            throw new RuntimeException('Could not get previous hook information ' . $previousHookFile);
+        $descriptions = [];
+        foreach ($hookNames as $hookName) {
+            $hookDescription = $this->hookDescriptionGenerator->generate($hookName);
+
+            $descriptions[] = $hookDescription;
         }
 
-        return $this->extractHookNamesFromXML($response->getContent());
-    }
-
-    private function extractHookNamesFromXML(string $xmlContent): array
-    {
-        $xmlFileContent = new SimpleXMLElement($xmlContent);
-
-        if (!isset($xmlFileContent->entities, $xmlFileContent->entities->hook)) {
-            throw new RuntimeException('Invalid hook fixtures files could not find hooks node');
-        }
-
-        $hookNames = [];
-        foreach ($xmlFileContent->entities->hook as $hook) {
-            if (!isset($hook->name)) {
-                continue;
-            }
-
-            $hookNames[] = $hook->name->__toString();
-        }
-
-        return $hookNames;
-    }
-
-    private function extractHookDescriptions(array $extractedHooks): array
-    {
-        $currentHookXml = file_get_contents($this->projectDir . '/install-dev/data/xml/hook.xml');
-        $xmlFileContent = new SimpleXMLElement($currentHookXml);
-
-        if (!isset($xmlFileContent->entities, $xmlFileContent->entities->hook)) {
-            throw new RuntimeException('Invalid hook fixtures files could not find hooks node');
-        }
-
-        $hookNames = [];
-        foreach ($xmlFileContent->entities->hook as $hook) {
-            if (!isset($hook->name)) {
-                continue;
-            }
-            $hookName = $hook->name->__toString();
-            if (!in_array($hookName, $extractedHooks)) {
-                continue;
-            }
-
-            $hookNames[] = new HookDescription(
-                $hook->name->__toString(),
-                $hook->title->__toString(),
-                $hook->description->__toString()
-            );
-        }
-
-        return $hookNames;
+        return $descriptions;
     }
 }

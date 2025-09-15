@@ -44,7 +44,7 @@ class AddressControllerCore extends FrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         parent::init();
         $this->address_form = $this->makeAddressForm();
@@ -56,7 +56,7 @@ class AddressControllerCore extends FrontController
      *
      * @see FrontController::postProcess()
      */
-    public function postProcess(): void
+    public function postProcess()
     {
         $this->context->smarty->assign('editing', false);
         $id_address = (int) Tools::getValue('id_address');
@@ -123,14 +123,14 @@ class AddressControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         if (!$this->ajax && $this->should_redirect) {
             if (($back = Tools::getValue('back')) && Tools::urlBelongsToShop($back)) {
                 $mod = Tools::getValue('mod');
                 $this->redirectWithNotifications('index.php?controller=' . $back . ($mod ? '&back=' . $mod : ''));
             } else {
-                $this->redirectWithNotifications($this->context->link->getPageLink('addresses'));
+                $this->redirectWithNotifications('index.php?controller=addresses');
             }
         }
 
@@ -144,7 +144,7 @@ class AddressControllerCore extends FrontController
         );
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -168,7 +168,7 @@ class AddressControllerCore extends FrontController
         return $breadcrumb;
     }
 
-    public function displayAjaxAddressForm(): void
+    public function displayAjaxAddressForm()
     {
         $addressForm = $this->makeAddressForm();
 

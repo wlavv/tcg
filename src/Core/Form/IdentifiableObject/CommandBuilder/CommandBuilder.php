@@ -147,7 +147,7 @@ class CommandBuilder
     public function buildCommands(
         array $data,
         object $singleShopCommand,
-        ?object $allShopsCommand = null
+        object $allShopsCommand = null
     ): array {
         $updatedCommands = [];
 
@@ -187,7 +187,7 @@ class CommandBuilder
     {
         try {
             $setterArguments = $this->fetchDataValues($commandField, $data);
-        } catch (NoSuchIndexException) {
+        } catch (NoSuchIndexException $exception) {
             // Data has no value for this field, this is acceptable since partial data can be submitted
             return false;
         }
@@ -195,7 +195,7 @@ class CommandBuilder
 
         if (!method_exists($command, $setterMethod)) {
             throw new InvalidArgumentException(
-                sprintf('Setter method "%s" not found in command "%s"', $setterMethod, $command::class)
+                sprintf('Setter method "%s" not found in command "%s"', $setterMethod, get_class($command))
             );
         }
         $command->$setterMethod(...$setterArguments);
@@ -240,7 +240,7 @@ class CommandBuilder
                 if ($this->propertyAccessor->getValue($data, $stringPath)) {
                     return $allShopsCommand;
                 }
-            } catch (NoSuchIndexException) {
+            } catch (NoSuchIndexException $exception) {
                 // No checkbox value found in data
             }
         }

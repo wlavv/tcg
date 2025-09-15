@@ -18,24 +18,23 @@ namespace ApiPlatform\State\Pagination;
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
  */
-final class ArrayPaginator implements \IteratorAggregate, PaginatorInterface, HasNextPagePaginatorInterface
+final class ArrayPaginator implements \IteratorAggregate, PaginatorInterface
 {
-    private \Traversable $iterator;
-    private readonly int $firstResult;
-    private readonly int $maxResults;
-    private readonly int $totalItems;
+    private $iterator;
+    private $firstResult;
+    private $maxResults;
+    private $totalItems;
 
     public function __construct(array $results, int $firstResult, int $maxResults)
     {
-        $this->firstResult = $firstResult;
-        $this->maxResults = $maxResults;
-        $this->totalItems = \count($results);
-
-        if ($maxResults > 0 && $firstResult < $this->totalItems) {
+        if ($maxResults > 0) {
             $this->iterator = new \LimitIterator(new \ArrayIterator($results), $firstResult, $maxResults);
         } else {
             $this->iterator = new \EmptyIterator();
         }
+        $this->firstResult = $firstResult;
+        $this->maxResults = $maxResults;
+        $this->totalItems = \count($results);
     }
 
     /**
@@ -93,12 +92,6 @@ final class ArrayPaginator implements \IteratorAggregate, PaginatorInterface, Ha
     {
         return $this->iterator;
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function hasNextPage(): bool
-    {
-        return $this->getCurrentPage() < $this->getLastPage();
-    }
 }
+
+class_alias(ArrayPaginator::class, \ApiPlatform\Core\DataProvider\ArrayPaginator::class);

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,21 +20,18 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Configuration;
 
+use Db;
+
 class ToggleShopConfigurationCommandHandler
 {
     /**
-     * @var \Db
+     * @var Db
      */
     private $db;
 
     public function __construct()
     {
-        $this->db = \Db::getInstance();
-    }
-
-    public function __invoke(ToggleShopConfigurationCommand $command)
-    {
-        $this->handle($command);
+        $this->db = Db::getInstance();
     }
 
     /**

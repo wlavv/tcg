@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -24,6 +23,7 @@ use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 use PrestaShop\Module\PrestashopCheckout\PaypalCountryCodeMatrice;
 use PrestaShop\Module\PrestashopCheckout\Repository\CountryRepository;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
+use PrestaShop\Module\PrestashopCheckout\Updater\CustomerUpdater;
 
 /**
  * This controller receive ajax call when customer click on an express checkout button
@@ -157,7 +157,7 @@ class ps_checkoutExpressCheckoutModuleFrontController extends AbstractFrontContr
     private function createAndLoginCustomer(
         $email,
         $firstName,
-        $lastName,
+        $lastName
     ) {
         /** @var int $idCustomerExists */
         $idCustomerExists = Customer::customerExists($email, true);
@@ -173,7 +173,11 @@ class ps_checkoutExpressCheckoutModuleFrontController extends AbstractFrontContr
             $customer = new Customer($idCustomerExists);
         }
 
-        $this->context->updateCustomer($customer);
+        if (method_exists($this->context, 'updateCustomer')) {
+            $this->context->updateCustomer($customer);
+        } else {
+            CustomerUpdater::updateContextCustomer($this->context, $customer);
+        }
     }
 
     /**
@@ -249,7 +253,7 @@ class ps_checkoutExpressCheckoutModuleFrontController extends AbstractFrontContr
         $city,
         $countryIsoCode,
         $phone,
-        $idPaypalOrder,
+        $idPaypalOrder
     ) {
         // check if country is available for delivery
         $psIsoCode = (new PaypalCountryCodeMatrice())->getPrestashopIsoCode($countryIsoCode);
@@ -308,6 +312,11 @@ class ps_checkoutExpressCheckoutModuleFrontController extends AbstractFrontContr
 
         $this->context->cart->id_address_delivery = $address->id;
         $this->context->cart->id_address_invoice = $address->id;
+
+        $products = $this->context->cart->getProducts();
+        foreach ($products as $product) {
+            $this->context->cart->setProductAddressDelivery($product['id_product'], $product['id_product_attribute'], $product['id_address_delivery'], $address->id);
+        }
 
         return $this->context->cart->save();
     }

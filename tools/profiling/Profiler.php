@@ -73,14 +73,7 @@ class Profiler
 
     private function __construct()
     {
-        global $start_time;
-        if (isset($_SERVER['REQUEST_TIME_FLOAT'])) {
-            $this->startTime = (float) $_SERVER['REQUEST_TIME_FLOAT'];
-        } elseif (!empty($start_time)) {
-            $this->startTime = $start_time;
-        } else {
-            $this->startTime = microtime(true);
-        }
+        $this->startTime = microtime(true);
     }
 
     /**
@@ -154,15 +147,11 @@ class Profiler
      *
      * @param mixed $var
      *
-     * @return string|object|array
+     * @return string|object
      */
     private function getVarData($var)
     {
         if (is_object($var)) {
-            return $var;
-        }
-
-        if (is_array($var)) {
             return $var;
         }
 

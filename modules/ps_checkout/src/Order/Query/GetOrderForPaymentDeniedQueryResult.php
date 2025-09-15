@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -44,7 +43,7 @@ class GetOrderForPaymentDeniedQueryResult
      */
     public function __construct(
         $orderId,
-        $hasBeenError,
+        $hasBeenError
     ) {
         $this->orderId = new OrderId($orderId);
         $this->hasBeenError = $hasBeenError;

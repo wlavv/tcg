@@ -53,21 +53,25 @@ class EventSubscriber implements EventSubscriberInterface
     public static function getSubscribedEvents()
     {
         return [
-            ModuleManagementEvent::INSTALL => 'onModuleStateChanged',
-            ModuleManagementEvent::POST_INSTALL => 'onModuleStateChanged',
-            ModuleManagementEvent::UNINSTALL => 'onModuleStateChanged',
-            ModuleManagementEvent::UPGRADE => 'onModuleStateChanged',
-            ModuleManagementEvent::UPLOAD => 'onModuleStateChanged',
+            ModuleManagementEvent::INSTALL => 'onModuleInstalledOrUninstalled',
+            ModuleManagementEvent::UNINSTALL => 'onModuleInstalledOrUninstalled',
+            ModuleManagementEvent::UPGRADE => 'onModuleInstalledOrUninstalled',
             ModuleManagementEvent::ENABLE => 'onModuleStateChanged',
             ModuleManagementEvent::DISABLE => 'onModuleStateChanged',
-            ModuleManagementEvent::DELETE => 'onModuleStateChanged',
+            ModuleManagementEvent::ENABLE_MOBILE => 'onModuleStateChanged',
+            ModuleManagementEvent::DISABLE_MOBILE => 'onModuleStateChanged',
         ];
     }
 
     public function onModuleStateChanged(ModuleManagementEvent $event): void
     {
-        // Force clearing all cache because it's so badly handled
-        $this->moduleRepository->clearCache();
+        $moduleName = $event->getModule()->get('name');
+        $this->moduleRepository->clearCache($moduleName, true);
+    }
+
+    public function onModuleInstalledOrUninstalled(ModuleManagementEvent $event): void
+    {
+        $this->onModuleStateChanged($event);
         $this->cacheClearer->clear();
     }
 }

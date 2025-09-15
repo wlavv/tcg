@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order;
 
+use Exception;
+use Order;
 use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 use PrestaShop\Module\PrestashopCheckout\Order\OrderDataProvider;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\ValueObject\PayPalOrderId;
@@ -29,30 +30,74 @@ use PrestaShop\Module\PrestashopCheckout\PsCheckoutDataProvider;
 use PrestaShop\Module\PrestashopCheckout\Repository\PayPalOrderRepository;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
 use PrestaShop\Module\PrestashopCheckout\Routing\Router;
+use PrestaShop\Module\PrestashopCheckout\ShopContext;
 
 class PayPalOrderSummaryViewBuilder
 {
+    /**
+     * @var PsCheckoutCartRepository
+     */
+    private $psCheckoutCartRepository;
+
+    /**
+     * @var PayPalOrderProvider
+     */
+    private $orderPayPalProvider;
+
+    /**
+     * @var Router
+     */
+    private $router;
+
+    /**
+     * @var PayPalOrderTranslationProvider
+     */
+    private $orderPayPalTranslationProvider;
+
+    /**
+     * @var ShopContext
+     */
+    private $shopContext;
+    /**
+     * @var PayPalOrderRepository
+     */
+    private $payPalOrderRepository;
+
+    /**
+     * @param PsCheckoutCartRepository $psCheckoutCartRepository
+     * @param PayPalOrderProvider $orderPayPalProvider
+     * @param Router $router
+     * @param PayPalOrderTranslationProvider $orderPayPalTranslationProvider
+     * @param ShopContext $shopContext
+     */
     public function __construct(
-        private PsCheckoutCartRepository $psCheckoutCartRepository,
-        private PayPalOrderProvider $orderPayPalProvider,
-        private Router $router,
-        private PayPalOrderTranslationProvider $orderPayPalTranslationProvider,
-        private PayPalOrderRepository $payPalOrderRepository,
+        PsCheckoutCartRepository $psCheckoutCartRepository,
+        PayPalOrderProvider $orderPayPalProvider,
+        Router $router,
+        PayPalOrderTranslationProvider $orderPayPalTranslationProvider,
+        ShopContext $shopContext,
+        PayPalOrderRepository $payPalOrderRepository
     ) {
+        $this->psCheckoutCartRepository = $psCheckoutCartRepository;
+        $this->orderPayPalProvider = $orderPayPalProvider;
+        $this->router = $router;
+        $this->orderPayPalTranslationProvider = $orderPayPalTranslationProvider;
+        $this->shopContext = $shopContext;
+        $this->payPalOrderRepository = $payPalOrderRepository;
     }
 
     /**
-     * @param \Order $order
+     * @param Order $order
      *
      * @return PayPalOrderSummaryView
      *
      * @throws PsCheckoutException
      */
-    public function build(\Order $order)
+    public function build(Order $order)
     {
         try {
             $psCheckoutCart = $this->psCheckoutCartRepository->findOneByCartId($order->id_cart);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Unable to retrieve cart data', 0, $exception);
         }
 
@@ -68,7 +113,7 @@ class PayPalOrderSummaryViewBuilder
 
         try {
             $orderPayPal = $this->orderPayPalProvider->getById($psCheckoutCart->paypal_order);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $orderPayPal = [];
         }
 
@@ -84,7 +129,8 @@ class PayPalOrderSummaryViewBuilder
             new OrderDataProvider($order),
             $checkoutDataProvider,
             $this->router,
-            new PayPalOrderPresenter($orderPayPalDataProvider, $this->orderPayPalTranslationProvider)
+            new PayPalOrderPresenter($orderPayPalDataProvider, $checkoutDataProvider, $this->orderPayPalTranslationProvider),
+            $this->shopContext
         );
     }
 }

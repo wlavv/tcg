@@ -13,16 +13,18 @@ declare(strict_types=1);
 
 namespace ApiPlatform\JsonApi\Serializer;
 
+use ApiPlatform\Core\Metadata\Property\Factory\PropertyMetadataFactoryInterface as LegacyPropertyMetadataFactoryInterface;
+use ApiPlatform\Core\Metadata\Property\PropertyMetadata;
+use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
-use ApiPlatform\Serializer\CacheableSupportsMethodInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
+use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Serializer;
 use Symfony\Component\Validator\ConstraintViolationInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
- * Converts {@see ConstraintViolationListInterface} to a JSON API error representation.
+ * Converts {@see \Symfony\Component\Validator\ConstraintViolationListInterface} to a JSON API error representation.
  *
  * @author Héctor Hurtarte <hectorh30@gmail.com>
  */
@@ -30,14 +32,25 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, Ca
 {
     public const FORMAT = 'jsonapi';
 
-    public function __construct(private readonly PropertyMetadataFactoryInterface $propertyMetadataFactory, private readonly ?NameConverterInterface $nameConverter = null)
+    private $nameConverter;
+    /**
+     * @var LegacyPropertyMetadataFactoryInterface|PropertyMetadataFactoryInterface
+     */
+    private $propertyMetadataFactory;
+
+    public function __construct($propertyMetadataFactory, NameConverterInterface $nameConverter = null)
     {
+        $this->propertyMetadataFactory = $propertyMetadataFactory;
+        $this->nameConverter = $nameConverter;
     }
 
     /**
-     * {@inheritdoc}
+     * @param mixed      $object
+     * @param mixed|null $format
+     *
+     * @return array
      */
-    public function normalize(mixed $object, ?string $format = null, array $context = []): array
+    public function normalize($object, $format = null, array $context = [])
     {
         $violations = [];
         foreach ($object as $violation) {
@@ -55,31 +68,20 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, Ca
     /**
      * {@inheritdoc}
      */
-    public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
+    public function supportsNormalization($data, $format = null, array $context = []): bool
     {
         return self::FORMAT === $format && $data instanceof ConstraintViolationListInterface;
     }
 
-    public function getSupportedTypes($format): array
-    {
-        return self::FORMAT === $format ? [ConstraintViolationListInterface::class => true] : [];
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     public function hasCacheableSupportsMethod(): bool
     {
-        if (method_exists(Serializer::class, 'getSupportedTypes')) {
-            trigger_deprecation(
-                'api-platform/core',
-                '3.1',
-                'The "%s()" method is deprecated, use "getSupportedTypes()" instead.',
-                __METHOD__
-            );
-        }
-
         return true;
     }
 
-    private function getSourcePointerFromViolation(ConstraintViolationInterface $violation): string
+    private function getSourcePointerFromViolation(ConstraintViolationInterface $violation)
     {
         $fieldName = $violation->getPropertyPath();
 
@@ -87,7 +89,8 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, Ca
             return 'data';
         }
 
-        $class = $violation->getRoot()::class;
+        $class = \get_class($violation->getRoot());
+        /** @var ApiProperty|PropertyMetadata */
         $propertyMetadata = $this->propertyMetadataFactory
             ->create(
                 // Im quite sure this requires some thought in case of validations over relationships
@@ -99,7 +102,8 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, Ca
             $fieldName = $this->nameConverter->normalize($fieldName, $class, self::FORMAT);
         }
 
-        $type = $propertyMetadata->getBuiltinTypes()[0] ?? null;
+        // TODO: 3.0 support multiple types, default value of types will be [] instead of null
+        $type = $propertyMetadata instanceof PropertyMetadata ? $propertyMetadata->getType() : ($propertyMetadata->getBuiltinTypes()[0] ?? null);
         if ($type && null !== $type->getClassName()) {
             return "data/relationships/$fieldName";
         }
@@ -107,3 +111,5 @@ final class ConstraintViolationListNormalizer implements NormalizerInterface, Ca
         return "data/attributes/$fieldName";
     }
 }
+
+class_alias(ConstraintViolationListNormalizer::class, \ApiPlatform\Core\JsonApi\Serializer\ConstraintViolationListNormalizer::class);

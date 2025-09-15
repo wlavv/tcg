@@ -27,7 +27,7 @@
 
 import BigNumber from 'bignumber.js';
 import {transform as numberCommaTransform} from '@js/app/utils/number-comma-transformer';
-import {isUndefined} from '@components/typeguard';
+import {isUndefined} from '@PSTypes/typeguard';
 
 import NameValuePair = JQuery.NameValuePair;
 

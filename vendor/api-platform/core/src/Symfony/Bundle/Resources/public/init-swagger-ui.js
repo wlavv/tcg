@@ -9,7 +9,7 @@ window.onload = function() {
 
         self.disconnect();
 
-        op.querySelector('.opblock-summary-control').click();
+        op.querySelector('.opblock-summary').click();
         const tryOutObserver = new MutationObserver(function (mutations, self) {
             const tryOut = op.querySelector('.try-out__btn');
             if (!tryOut) return;
@@ -45,7 +45,6 @@ window.onload = function() {
         spec: data.spec,
         dom_id: '#swagger-ui',
         validatorUrl: null,
-        deepLinking: true,
         oauth2RedirectUrl: data.oauth.redirectUrl,
         presets: [
             SwaggerUIBundle.presets.apis,

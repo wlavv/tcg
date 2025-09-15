@@ -33,7 +33,6 @@ use PrestaShop\PrestaShop\Core\Domain\Country\ValueObject\CountryZipCodeFormat;
 use PrestaShop\PrestaShop\Core\Domain\Currency\ValueObject\AlphaIsoCode;
 use PrestaShop\PrestaShop\Core\Domain\Language\ValueObject\IsoCode;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Ean13;
-use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Gtin;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Isbn;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Reference;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\Upc;
@@ -52,7 +51,7 @@ class TypedRegexValidator extends ConstraintValidator
     public const CATALOG_CHARS = '<>;=#{}';
     public const GENERIC_NAME_CHARS = '<>={}';
     public const MESSAGE_CHARS = '<>{}';
-    public const NAME_CHARS = '0-9!<>,;?=+()@#"{}_$%:';
+    public const NAME_CHARS = '0-9!<>,;?=+()@#"�{}_$%:';
 
     /**
      * @var ConfigurationInterface
@@ -85,22 +84,15 @@ class TypedRegexValidator extends ConstraintValidator
             throw new UnexpectedTypeException($value, 'string');
         }
 
+        $pattern = $this->getPattern($constraint->type);
         $value = $this->sanitize($value, $constraint->type);
 
-        if (in_array($constraint->type, [TypedRegex::CLEAN_HTML_ALLOW_IFRAME, TypedRegex::CLEAN_HTML_NO_IFRAME], true)) {
-            $isValid = $this->validateCleanHTML($value, TypedRegex::CLEAN_HTML_ALLOW_IFRAME === $constraint->type);
-
-            if (!$isValid) {
-                $this->buildViolation($constraint, $value);
-            }
-
-            return;
-        }
-
-        $pattern = $this->getPattern($constraint->type);
-
         if (!$this->match($pattern, $constraint->type, $value)) {
-            $this->buildViolation($constraint, $value);
+            $this->context->buildViolation($constraint->message)
+                ->setTranslationDomain('Admin.Notifications.Error')
+                ->setParameter('%s', $this->formatValue($value))
+                ->addViolation()
+            ;
         }
     }
 
@@ -146,8 +138,6 @@ class TypedRegexValidator extends ConstraintValidator
                 return Upc::VALID_PATTERN;
             case TypedRegex::TYPE_EAN_13:
                 return Ean13::VALID_PATTERN;
-            case TypedRegex::TYPE_GTIN:
-                return Gtin::VALID_PATTERN;
             case TypedRegex::TYPE_ISBN:
                 return Isbn::VALID_PATTERN;
             case TypedRegex::TYPE_REFERENCE:
@@ -166,8 +156,6 @@ class TypedRegexValidator extends ConstraintValidator
                 }
 
                 return '/^[_a-zA-Z0-9\-]+$/';
-            case TypedRegex::TYPE_IMAGE_TYPE_NAME:
-                return '/^[a-zA-Z0-9_ -]+$/';
             default:
                 $definedTypes = implode(', ', array_values((new ReflectionClass(TypedRegex::class))->getConstants()));
                 throw new InvalidArgumentException(sprintf('Type "%s" is not defined. Defined types are: %s', $type, $definedTypes));
@@ -213,43 +201,5 @@ class TypedRegexValidator extends ConstraintValidator
         }
 
         return $match;
-    }
-
-    private function buildViolation(TypedRegex $constraint, string $value): void
-    {
-        $this->context->buildViolation($constraint->message)
-            ->setTranslationDomain('Admin.Notifications.Error')
-            ->setParameter('%s', $this->formatValue($value))
-            ->addViolation()
-        ;
-    }
-
-    /**
-     * Custom method for HTML validation as it is a bit more complicated
-     *
-     * @param string $value
-     * @param bool $allowIframe
-     *
-     * @return bool
-     */
-    private function validateCleanHTML(string $value, bool $allowIframe): bool
-    {
-        $events = 'onmousedown|onmousemove|onmmouseup|onmouseover|onmouseout|onload|onunload|onfocus|onblur|onchange';
-        $events .= '|onsubmit|ondblclick|onclick|onkeydown|onkeyup|onkeypress|onmouseenter|onmouseleave|onerror|onselect|onreset|onabort|ondragdrop|onresize|onactivate|onafterprint|onmoveend';
-        $events .= '|onafterupdate|onbeforeactivate|onbeforecopy|onbeforecut|onbeforedeactivate|onbeforeeditfocus|onbeforepaste|onbeforeprint|onbeforeunload|onbeforeupdate|onmove';
-        $events .= '|onbounce|oncellchange|oncontextmenu|oncontrolselect|oncopy|oncut|ondataavailable|ondatasetchanged|ondatasetcomplete|ondeactivate|ondrag|ondragend|ondragenter|onmousewheel';
-        $events .= '|ondragleave|ondragover|ondragstart|ondrop|onerrorupdate|onfilterchange|onfinish|onfocusin|onfocusout|onhashchange|onhelp|oninput|onlosecapture|onmessage|onmouseup|onmovestart';
-        $events .= '|onoffline|ononline|onpaste|onpropertychange|onreadystatechange|onresizeend|onresizestart|onrowenter|onrowexit|onrowsdelete|onrowsinserted|onscroll|onsearch|onselectionchange';
-        $events .= '|onselectstart|onstart|onstop';
-
-        if (preg_match('/<[\s]*script/ims', $value) || preg_match('/(' . $events . ')[\s]*=/ims', $value) || preg_match('/.*script\:/ims', $value)) {
-            return false;
-        }
-
-        if (!$allowIframe && preg_match('/<[\s]*(i?frame|form|input|embed|object)/ims', $value)) {
-            return false;
-        }
-
-        return true;
     }
 }

@@ -43,7 +43,7 @@ export default class EmployeeForm {
 
   constructor() {
     this.shopChoiceTreeSelector = employeeFormMap.shopChoiceTree;
-    this.shopChoiceTree = new window.prestashop.component.ChoiceTree(this.shopChoiceTreeSelector);
+    this.shopChoiceTree = new ChoiceTree(this.shopChoiceTreeSelector);
     this.employeeProfileSelector = employeeFormMap.profileSelect;
     this.tabsDropdownSelector = employeeFormMap.defaultPageSelect;
 
@@ -88,9 +88,6 @@ export default class EmployeeForm {
 
     // Reload tabs dropdown when employee profile is changed.
     $(document).on('change', this.employeeProfileSelector, (event) => {
-      const $tabsDropdown = $(this.tabsDropdownSelector);
-      $tabsDropdown.empty();
-      $tabsDropdown.prop('disabled', true);
       $.get(
         getTabsUrl,
         {
@@ -140,7 +137,6 @@ export default class EmployeeForm {
         );
       }
     });
-    $tabsDropdown.prop('disabled', false);
   }
 
   /**

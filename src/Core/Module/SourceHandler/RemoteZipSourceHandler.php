@@ -80,7 +80,7 @@ class RemoteZipSourceHandler implements SourceHandlerInterface
 
         try {
             $response = $this->httpClient->request('HEAD', $source);
-        } catch (TransportExceptionInterface) {
+        } catch (TransportExceptionInterface $e) {
             return false;
         }
 
@@ -98,13 +98,10 @@ class RemoteZipSourceHandler implements SourceHandlerInterface
             $this->moduleName = $moduleName[1];
         }
 
-        $contentType = isset($headers['content-type']) ? reset($headers['content-type']) : null;
-
         if (!empty($this->moduleName)
             && $response->getStatusCode() === 200
-            && (
-                $contentType === 'application/zip' || $contentType === 'application/octet-stream'
-            )
+            && isset($headers['content-type'])
+            && reset($headers['content-type']) === 'application/zip'
         ) {
             $this->handledSource = $source;
 

@@ -18,9 +18,8 @@ use ApiPlatform\Metadata\GraphQl\Query;
 use ApiPlatform\Metadata\GraphQl\Subscription;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceNameCollectionFactoryInterface;
-use GraphQL\Type\Definition\NamedType;
 use GraphQL\Type\Definition\ObjectType;
-use GraphQL\Type\Definition\Type;
+use GraphQL\Type\Definition\WrappingType;
 use GraphQL\Type\Schema;
 
 /**
@@ -32,11 +31,19 @@ use GraphQL\Type\Schema;
  */
 final class SchemaBuilder implements SchemaBuilderInterface
 {
-    public function __construct(private readonly ResourceNameCollectionFactoryInterface $resourceNameCollectionFactory, private readonly ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, private readonly TypesFactoryInterface $typesFactory, private readonly TypesContainerInterface $typesContainer, private readonly FieldsBuilderEnumInterface|FieldsBuilderInterface $fieldsBuilder)
+    private $resourceNameCollectionFactory;
+    private $resourceMetadataCollectionFactory;
+    private $typesFactory;
+    private $typesContainer;
+    private $fieldsBuilder;
+
+    public function __construct(ResourceNameCollectionFactoryInterface $resourceNameCollectionFactory, ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, TypesFactoryInterface $typesFactory, TypesContainerInterface $typesContainer, FieldsBuilderInterface $fieldsBuilder)
     {
-        if ($this->fieldsBuilder instanceof FieldsBuilderInterface) {
-            @trigger_error(\sprintf('$fieldsBuilder argument of SchemaBuilder implementing "%s" is deprecated since API Platform 3.1. It has to implement "%s" instead.', FieldsBuilderInterface::class, FieldsBuilderEnumInterface::class), \E_USER_DEPRECATED);
-        }
+        $this->resourceNameCollectionFactory = $resourceNameCollectionFactory;
+        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
+        $this->typesFactory = $typesFactory;
+        $this->typesContainer = $typesContainer;
+        $this->fieldsBuilder = $fieldsBuilder;
     }
 
     public function getSchema(): Schema
@@ -53,8 +60,20 @@ final class SchemaBuilder implements SchemaBuilderInterface
         foreach ($this->resourceNameCollectionFactory->create() as $resourceClass) {
             $resourceMetadataCollection = $this->resourceMetadataCollectionFactory->create($resourceClass);
             foreach ($resourceMetadataCollection as $resourceMetadata) {
-                foreach ($resourceMetadata->getGraphQlOperations() ?? [] as $operation) {
+                foreach ($resourceMetadata->getGraphQlOperations() ?? [] as $operationName => $operation) {
                     $configuration = null !== $operation->getArgs() ? ['args' => $operation->getArgs()] : [];
+
+                    // TODO: 3.0 remove these
+                    if ('item_query' === $operationName) {
+                        $queryFields += $this->fieldsBuilder->getItemQueryFields($resourceClass, $operation, $configuration);
+                        continue;
+                    }
+
+                    if ('collection_query' === $operationName) {
+                        $queryFields += $this->fieldsBuilder->getCollectionQueryFields($resourceClass, $operation, $configuration);
+
+                        continue;
+                    }
 
                     if ($operation instanceof Query && $operation instanceof CollectionOperationInterface) {
                         $queryFields += $this->fieldsBuilder->getCollectionQueryFields($resourceClass, $operation, $configuration);
@@ -79,43 +98,34 @@ final class SchemaBuilder implements SchemaBuilderInterface
             }
         }
 
-        $queryType = new ObjectType([
-            'name' => 'Query',
-            'fields' => $queryFields,
-        ]);
-        $this->typesContainer->set('Query', $queryType);
-
         $schema = [
-            'query' => $queryType,
-            'typeLoader' => function (string $typeName): ?NamedType {
-                try {
-                    $type = $this->typesContainer->get($typeName);
-                } catch (TypeNotFoundException) {
-                    return null;
+            'query' => new ObjectType([
+                'name' => 'Query',
+                'fields' => $queryFields,
+            ]),
+            'typeLoader' => function ($name) {
+                $type = $this->typesContainer->get($name);
+
+                if ($type instanceof WrappingType) {
+                    return $type->getWrappedType(true);
                 }
 
-                return Type::getNamedType($type);
+                return $type;
             },
         ];
 
         if ($mutationFields) {
-            $mutationType = new ObjectType([
+            $schema['mutation'] = new ObjectType([
                 'name' => 'Mutation',
                 'fields' => $mutationFields,
             ]);
-            $this->typesContainer->set('Mutation', $mutationType);
-
-            $schema['mutation'] = $mutationType;
         }
 
         if ($subscriptionFields) {
-            $subscriptionType = new ObjectType([
+            $schema['subscription'] = new ObjectType([
                 'name' => 'Subscription',
                 'fields' => $subscriptionFields,
             ]);
-            $this->typesContainer->set('Subscription', $subscriptionType);
-
-            $schema['subscription'] = $subscriptionType;
         }
 
         return new Schema($schema);

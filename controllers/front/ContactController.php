@@ -35,14 +35,14 @@ class ContactControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         parent::initContent();
 
         $this->setTemplate('contact');
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -57,7 +57,7 @@ class ContactControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         return $this->context->link->getPageLink('contact');
     }

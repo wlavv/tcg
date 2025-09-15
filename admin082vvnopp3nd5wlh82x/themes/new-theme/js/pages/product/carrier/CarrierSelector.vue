@@ -155,19 +155,19 @@
 .carrier-selector {
   .control-label {
     font-weight: 600;
-    color: var(--#{$cdk}primary-800);
-    margin-bottom: var(--#{$cdk}size-16);
+    color: #000;
+    margin-bottom: 1rem;
   }
 
   &-line {
     display: flex;
     align-items: flex-start;
     flex-wrap: wrap;
-    margin: 0 calc(-1 * var(--#{$cdk}size-6));
+    margin: 0 -0.35rem;
   }
 
   #selected-carriers {
-    margin-left: var(--#{$cdk}size-10);
+    margin-left: 10px;
     ul {
       padding: 0;
       li {

@@ -21,13 +21,17 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Module;
 
+use Exception;
 use Module as LegacyModule;
+use PaymentModule;
 use PhpParser;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 use PrestaShop\Module\Mbo\Helpers\UrlHelper;
 use PrestaShopBundle\Service\Routing\Router;
 use Psr\Log\LoggerInterface;
+use stdClass;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
+use Validate;
 
 /**
  * Builds a Module object with the data provided by Addons, the database, the Core and some static links
@@ -69,14 +73,14 @@ class ModuleBuilder implements ModuleBuilderInterface
     public function __construct(
         Router $router,
         LoggerInterface $logger,
-        string $moduleDirectory,
+        string $moduleDirectory
     ) {
         $this->router = $router;
         $this->logger = $logger;
         $this->moduleDirectory = $moduleDirectory;
     }
 
-    public function build(\stdClass $module, ?array $database = null): Module
+    public function build(stdClass $module, ?array $database = null): Module
     {
         /* Convert module to array */
         $attributes = json_decode(json_encode($module), true);
@@ -105,7 +109,7 @@ class ModuleBuilder implements ModuleBuilderInterface
             }
 
             $mainClassAttributes['parent_class'] = get_parent_class($module->name);
-            $mainClassAttributes['is_paymentModule'] = is_subclass_of($module->name, \PaymentModule::class);
+            $mainClassAttributes['is_paymentModule'] = is_subclass_of($module->name, PaymentModule::class);
             $mainClassAttributes['is_configurable'] = (int) method_exists($tmpModule, 'getContent');
 
             $disk['is_valid'] = 1;
@@ -154,7 +158,7 @@ class ModuleBuilder implements ModuleBuilderInterface
      */
     protected function isModuleMainClassValid(string $name): bool
     {
-        if (!\Validate::isModuleName($name)) {
+        if (!Validate::isModuleName($name)) {
             return false;
         }
 
@@ -196,7 +200,7 @@ class ModuleBuilder implements ModuleBuilderInterface
         $requireCorrect = function ($name) use ($filePath, $logger, $logContextData) {
             try {
                 require_once $filePath;
-            } catch (\Exception $e) {
+            } catch (Exception $e) {
                 $logger->error(
                     sprintf(
                         'Error while loading file of module %s. %s',

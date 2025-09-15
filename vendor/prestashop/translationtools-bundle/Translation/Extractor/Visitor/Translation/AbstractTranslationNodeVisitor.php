@@ -25,6 +25,9 @@ abstract class AbstractTranslationNodeVisitor extends NodeVisitorAbstract implem
         $this->translations = $collection;
     }
 
+    /**
+     * {@inheritDoc}
+     */
     public function getTranslationCollection()
     {
         return $this->translations;

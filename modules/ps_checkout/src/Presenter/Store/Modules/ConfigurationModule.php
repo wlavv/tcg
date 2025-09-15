@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -28,19 +27,55 @@ use PrestaShop\Module\PrestashopCheckout\Logger\LoggerFactory;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalPayLaterConfiguration;
 use PrestaShop\Module\PrestashopCheckout\Presenter\PresenterInterface;
+use Ps_checkout;
 
 /**
  * Construct the configuration module
  */
 class ConfigurationModule implements PresenterInterface
 {
+    /**
+     * @var PayPalPayLaterConfiguration
+     */
+    private $payLaterConfiguration;
+
+    /**
+     * @var ExpressCheckoutConfiguration
+     */
+    private $ecConfiguration;
+
+    /**
+     * @var PayPalConfiguration
+     */
+    private $paypalConfiguration;
+
+    /**
+     * @var FundingSourceProvider
+     */
+    private $fundingSourceProvider;
+    /**
+     * @var Ps_checkout
+     */
+    private $module;
+
+    /**
+     * @param PayPalPayLaterConfiguration $payLaterConfiguration
+     * @param ExpressCheckoutConfiguration $ecConfiguration
+     * @param PayPalConfiguration $paypalConfiguration
+     * @param FundingSourceProvider $fundingSourceProvider
+     */
     public function __construct(
-        private PayPalPayLaterConfiguration $payLaterConfiguration,
-        private ExpressCheckoutConfiguration $ecConfiguration,
-        private PayPalConfiguration $paypalConfiguration,
-        private FundingSourceProvider $fundingSourceProvider,
-        private \Ps_checkout $psCheckout,
+        PayPalPayLaterConfiguration $payLaterConfiguration,
+        ExpressCheckoutConfiguration $ecConfiguration,
+        PayPalConfiguration $paypalConfiguration,
+        FundingSourceProvider $fundingSourceProvider,
+        Ps_checkout $module
     ) {
+        $this->payLaterConfiguration = $payLaterConfiguration;
+        $this->ecConfiguration = $ecConfiguration;
+        $this->paypalConfiguration = $paypalConfiguration;
+        $this->fundingSourceProvider = $fundingSourceProvider;
+        $this->module = $module;
     }
 
     /**
@@ -148,7 +183,7 @@ class ConfigurationModule implements PresenterInterface
         $nonDecimalCurrencies = ['HUF', 'JPY', 'TWD'];
 
         // Enabled currencies for PrestaShop Checkout
-        $enabledCurrencies = \Currency::getPaymentCurrencies($this->psCheckout->id);
+        $enabledCurrencies = \Currency::getPaymentCurrencies($this->module->id);
 
         $misConfiguredCurrencies = [];
 
@@ -164,5 +199,19 @@ class ConfigurationModule implements PresenterInterface
             'showError' => !empty($misConfiguredCurrencies),
             'currencies' => $implodedMisconfiguredCurrencies,
         ];
+    }
+
+    /**
+     * @param array $currency
+     *
+     * @return bool
+     */
+    private function checkCurrencyPrecision($currency)
+    {
+        if (isset($currency['precision'])) {
+            return (int) $currency['precision'] !== 0;
+        }
+
+        return (int) $currency['decimals'] !== 0;
     }
 }

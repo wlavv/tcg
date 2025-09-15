@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -27,6 +26,7 @@ use Country;
 use Currency;
 use Customer;
 use Language;
+use PrestaShopException;
 use Shop;
 
 /**
@@ -50,25 +50,25 @@ class ContextStateManager
     ];
 
     /**
-     * @var \Context
+     * @var Context
      */
     private $context;
 
     /**
      * @var array|null
      */
-    private $contextFieldsStack;
+    private $contextFieldsStack = null;
 
     /**
-     * @param \Context|null $context
+     * @param Context|null $context
      */
-    public function __construct(?\Context $context = null)
+    public function __construct(Context $context = null)
     {
-        $this->context = null === $context ? \Context::getContext() : $context;
+        $this->context = null === $context ? Context::getContext() : $context;
     }
 
     /**
-     * @return \Context
+     * @return Context
      */
     public function getContext()
     {
@@ -78,11 +78,11 @@ class ContextStateManager
     /**
      * Sets context cart and saves previous value
      *
-     * @param \Cart|null $cart
+     * @param Cart|null $cart
      *
      * @return self
      */
-    public function setCart(?\Cart $cart = null)
+    public function setCart(Cart $cart = null)
     {
         $this->saveContextField('cart');
         $this->getContext()->cart = $cart;
@@ -93,11 +93,11 @@ class ContextStateManager
     /**
      * Sets context country and saves previous value
      *
-     * @param \Country|null $country
+     * @param Country|null $country
      *
      * @return self
      */
-    public function setCountry(?\Country $country = null)
+    public function setCountry(Country $country = null)
     {
         $this->saveContextField('country');
         $this->getContext()->country = $country;
@@ -108,11 +108,11 @@ class ContextStateManager
     /**
      * Sets context currency and saves previous value
      *
-     * @param \Currency|null $currency
+     * @param Currency|null $currency
      *
      * @return self
      */
-    public function setCurrency(?\Currency $currency = null)
+    public function setCurrency(Currency $currency = null)
     {
         $this->saveContextField('currency');
         $this->getContext()->currency = $currency;
@@ -123,16 +123,20 @@ class ContextStateManager
     /**
      * Sets context language and saves previous value
      *
-     * @param \Language|null $language
+     * @param Language|null $language
      *
      * @return self
      */
-    public function setLanguage(?\Language $language = null)
+    public function setLanguage(Language $language = null)
     {
         $this->saveContextField('language');
         $this->getContext()->language = $language;
 
-        $this->getContext()->getTranslator()->setLocale($language->locale);
+        if ($language
+            && method_exists($this->getContext(), 'getTranslator')
+            && property_exists($language, 'locale')) {
+            $this->getContext()->getTranslator()->setLocale($language->locale);
+        }
 
         return $this;
     }
@@ -140,11 +144,11 @@ class ContextStateManager
     /**
      * Sets context customer and saves previous value
      *
-     * @param \Customer|null $customer
+     * @param Customer|null $customer
      *
      * @return self
      */
-    public function setCustomer(?\Customer $customer = null)
+    public function setCustomer(Customer $customer = null)
     {
         $this->saveContextField('customer');
         $this->getContext()->customer = $customer;
@@ -155,17 +159,17 @@ class ContextStateManager
     /**
      * Sets context shop and saves previous value
      *
-     * @param \Shop $shop
+     * @param Shop $shop
      *
      * @return self
      *
-     * @throws \PrestaShopException
+     * @throws PrestaShopException
      */
-    public function setShop(\Shop $shop)
+    public function setShop(Shop $shop)
     {
         $this->saveContextField('shop');
         $this->getContext()->shop = $shop;
-        \Shop::setContext(\Shop::CONTEXT_SHOP, $shop->id);
+        Shop::setContext(Shop::CONTEXT_SHOP, $shop->id);
 
         return $this;
     }
@@ -178,17 +182,17 @@ class ContextStateManager
      *
      * @return self
      *
-     * @throws \PrestaShopException
+     * @throws PrestaShopException
      */
     public function setShopContext($shopContext, $shopContextId = null)
     {
         $this->saveContextField('shopContext');
 
-        if ($shopContext === \Shop::CONTEXT_SHOP) {
-            $this->getContext()->shop = new \Shop($shopContextId);
+        if ($shopContext === Shop::CONTEXT_SHOP) {
+            $this->getContext()->shop = new Shop($shopContextId);
         }
 
-        \Shop::setContext($shopContext, $shopContextId);
+        Shop::setContext($shopContext, $shopContextId);
 
         return $this;
     }
@@ -266,7 +270,7 @@ class ContextStateManager
                 case 'shop':
                 case 'shopContext':
                     $this->contextFieldsStack[$currentStashIndex]['shop'] = $this->getContext()->shop;
-                    $this->contextFieldsStack[$currentStashIndex]['shopContext'] = \Shop::getContext();
+                    $this->contextFieldsStack[$currentStashIndex]['shopContext'] = Shop::getContext();
                     break;
                 default:
                     $this->contextFieldsStack[$currentStashIndex][$fieldName] = $this->getContext()->$fieldName;
@@ -289,7 +293,13 @@ class ContextStateManager
                 $this->restoreShopContext($currentStashIndex);
             }
 
-            $this->getContext()->getTranslator()->setLocale($this->contextFieldsStack[$currentStashIndex][$fieldName]->locale);
+            if ('language' === $fieldName
+                && $this->contextFieldsStack[$currentStashIndex][$fieldName] instanceof Language
+                && method_exists($this->getContext(), 'getTranslator')
+                && property_exists($this->contextFieldsStack[$currentStashIndex][$fieldName], 'locale')
+            ) {
+                $this->getContext()->getTranslator()->setLocale($this->contextFieldsStack[$currentStashIndex][$fieldName]->locale);
+            }
 
             $this->getContext()->$fieldName = $this->contextFieldsStack[$currentStashIndex][$fieldName];
             unset($this->contextFieldsStack[$currentStashIndex][$fieldName]);
@@ -320,11 +330,11 @@ class ContextStateManager
     private function restoreShopContext($currentStashIndex)
     {
         $shop = $this->contextFieldsStack[$currentStashIndex]['shop'];
-        $shopId = $shop instanceof \Shop ? $shop->id : null;
+        $shopId = $shop instanceof Shop ? $shop->id : null;
         $shopContext = $this->contextFieldsStack[$currentStashIndex]['shopContext'];
 
         if (null !== $shopContext) {
-            \Shop::setContext($shopContext, $shopId);
+            Shop::setContext($shopContext, $shopId);
         }
 
         unset($this->contextFieldsStack[$currentStashIndex]['shopContext']);

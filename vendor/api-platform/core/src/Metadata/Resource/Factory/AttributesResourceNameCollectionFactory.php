@@ -17,7 +17,7 @@ use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\GraphQl\Operation as GraphQlOperation;
 use ApiPlatform\Metadata\HttpOperation;
 use ApiPlatform\Metadata\Resource\ResourceNameCollection;
-use ApiPlatform\Metadata\Util\ReflectionClassRecursiveIterator;
+use ApiPlatform\Util\ReflectionClassRecursiveIterator;
 
 /**
  * Creates a resource name collection from {@see ApiResource} annotations.
@@ -26,11 +26,16 @@ use ApiPlatform\Metadata\Util\ReflectionClassRecursiveIterator;
  */
 final class AttributesResourceNameCollectionFactory implements ResourceNameCollectionFactoryInterface
 {
+    private $paths;
+    private $decorated;
+
     /**
      * @param string[] $paths
      */
-    public function __construct(private readonly array $paths, private readonly ?ResourceNameCollectionFactoryInterface $decorated = null)
+    public function __construct(array $paths, ResourceNameCollectionFactoryInterface $decorated = null)
     {
+        $this->paths = $paths;
+        $this->decorated = $decorated;
     }
 
     /**
@@ -47,7 +52,7 @@ final class AttributesResourceNameCollectionFactory implements ResourceNameColle
         }
 
         foreach (ReflectionClassRecursiveIterator::getReflectionClassesFromDirectories($this->paths) as $className => $reflectionClass) {
-            if ($this->isResource($reflectionClass)) {
+            if (\PHP_VERSION_ID >= 80000 && $this->isResource($reflectionClass)) {
                 $classes[$className] = true;
             }
         }
@@ -57,7 +62,7 @@ final class AttributesResourceNameCollectionFactory implements ResourceNameColle
 
     private function isResource(\ReflectionClass $reflectionClass): bool
     {
-        if ($reflectionClass->getAttributes(ApiResource::class, \ReflectionAttribute::IS_INSTANCEOF)) {
+        if ($reflectionClass->getAttributes(ApiResource::class)) {
             return true;
         }
 

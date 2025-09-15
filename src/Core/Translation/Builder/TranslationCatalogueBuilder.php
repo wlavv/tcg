@@ -83,7 +83,7 @@ class TranslationCatalogueBuilder
         string $domain,
         array $search
     ): array {
-        $this->validateParameters($providerDefinition, $domain);
+        $this->validateParameters($providerDefinition, $locale, $search, $domain);
 
         // When building tree, we keep 3 leaves of Domain i.e OneTwoThreeFour will become OneTwoThree_four
         // see PrestaShop\PrestaShop\Core\Translation\Builder\Map\Domain::mergeTree
@@ -167,7 +167,7 @@ class TranslationCatalogueBuilder
         array $search,
         ?string $domain = null
     ): Catalogue {
-        $this->validateParameters($providerDefinition);
+        $this->validateParameters($providerDefinition, $locale, $search);
 
         $provider = $this->catalogueProviderFactory->getProvider($providerDefinition);
 
@@ -214,12 +214,16 @@ class TranslationCatalogueBuilder
 
     /**
      * @param ProviderDefinitionInterface $providerDefinition Translation storage provider configuration
+     * @param string $locale
+     * @param array $search
      * @param string|null $domain
      *
      * @throws UnexpectedTranslationTypeException
      */
     private function validateParameters(
         ProviderDefinitionInterface $providerDefinition,
+        string $locale,
+        array $search,
         ?string $domain = null
     ): void {
         if (!in_array($providerDefinition->getType(), ProviderDefinitionInterface::ALLOWED_TYPES)) {

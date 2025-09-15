@@ -13,11 +13,10 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Elasticsearch\Extension;
 
+use ApiPlatform\Api\ResourceClassResolverInterface;
 use ApiPlatform\Elasticsearch\Util\FieldDatatypeTrait;
 use ApiPlatform\Metadata\HttpOperation;
 use ApiPlatform\Metadata\Operation;
-use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
-use ApiPlatform\Metadata\ResourceClassResolverInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
 
 /**
@@ -33,10 +32,15 @@ final class SortExtension implements RequestBodySearchCollectionExtensionInterfa
 {
     use FieldDatatypeTrait;
 
-    public function __construct(PropertyMetadataFactoryInterface $propertyMetadataFactory, ResourceClassResolverInterface $resourceClassResolver, private readonly ?NameConverterInterface $nameConverter = null, private readonly ?string $defaultDirection = null)
+    private $defaultDirection;
+    private $nameConverter;
+
+    public function __construct($propertyMetadataFactory, ResourceClassResolverInterface $resourceClassResolver, ?NameConverterInterface $nameConverter = null, ?string $defaultDirection = null)
     {
         $this->propertyMetadataFactory = $propertyMetadataFactory;
         $this->resourceClassResolver = $resourceClassResolver;
+        $this->nameConverter = $nameConverter;
+        $this->defaultDirection = $defaultDirection;
     }
 
     /**
@@ -47,8 +51,8 @@ final class SortExtension implements RequestBodySearchCollectionExtensionInterfa
         $orders = [];
 
         if (
-            $operation
-            && null !== ($defaultOrder = $operation->getOrder())
+            $operation &&
+            null !== ($defaultOrder = $operation->getOrder())
             && \is_array($defaultOrder)
         ) {
             foreach ($defaultOrder as $property => $direction) {

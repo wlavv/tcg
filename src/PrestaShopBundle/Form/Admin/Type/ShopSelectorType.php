@@ -28,11 +28,9 @@ declare(strict_types=1);
 
 namespace PrestaShopBundle\Form\Admin\Type;
 
-use PrestaShop\PrestaShop\Core\Context\ShopContext;
 use PrestaShopBundle\Entity\Repository\ShopRepository;
 use PrestaShopBundle\Entity\Shop;
 use PrestaShopBundle\Entity\ShopGroup;
-use Symfony\Component\Form\AbstractType;
 use Symfony\Component\Form\CallbackTransformer;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
@@ -43,47 +41,55 @@ use Symfony\Component\OptionsResolver\OptionsResolver;
 /**
  * This form type is used to select one or multiple shops, it is used with the
  */
-class ShopSelectorType extends AbstractType
+class ShopSelectorType extends ChoiceType
 {
+    /**
+     * @var ShopRepository
+     */
+    private $shopRepository;
+
+    /**
+     * @var ShopGroup[]
+     */
+    private $shopGroups;
+
+    /**
+     * @var int|null
+     */
+    private $contextShopId;
+
     public function __construct(
-        private readonly ShopRepository $shopRepository,
-        /**
-         * @var ShopGroup[]
-         */
-        private readonly array $shopGroups,
-        private readonly ShopContext $shopContext,
+        ShopRepository $shopRepository,
+        array $shopGroups,
+        ?int $contextShopId
     ) {
+        parent::__construct();
+        $this->shopRepository = $shopRepository;
+        $this->shopGroups = $shopGroups;
+        $this->contextShopId = $contextShopId;
     }
 
-    public function getParent(): string
+    public function configureOptions(OptionsResolver $resolver)
     {
-        return ChoiceType::class;
-    }
-
-    public function configureOptions(OptionsResolver $resolver): void
-    {
+        parent::configureOptions($resolver);
         $resolver->setDefaults([
             'multiple' => false,
             'choices' => $this->getShopChoices(),
             'choice_label' => 'name',
             'choice_value' => 'id',
+            'block_prefix' => 'shop_selector',
             'label' => false,
             'form_theme' => '@PrestaShop/Admin/TwigTemplateForm/multishop.html.twig',
         ]);
     }
 
-    public function getBlockPrefix(): string
-    {
-        return 'shop_selector';
-    }
-
-    public function buildView(FormView $view, FormInterface $form, array $options): void
+    public function buildView(FormView $view, FormInterface $form, array $options)
     {
         parent::buildView($view, $form, $options);
-        $view->vars['contextShopId'] = $this->shopContext->getShopConstraint()->getShopId()?->getValue();
+        $view->vars['contextShopId'] = $this->contextShopId;
     }
 
-    public function buildForm(FormBuilderInterface $builder, array $options): void
+    public function buildForm(FormBuilderInterface $builder, array $options)
     {
         parent::buildForm($builder, $options);
         $builder->addModelTransformer(new CallbackTransformer(

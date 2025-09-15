@@ -2,13 +2,12 @@ services:
   _defaults:
     public: true
 
-  PrestaShop\PrestaShop\Adapter\Feature\CombinationFeature:
-    public: false
-    arguments: [ '@prestashop.adapter.legacy.configuration' ]
   prestashop.adapter.combination_feature:
-    alias: 'PrestaShop\PrestaShop\Adapter\Feature\CombinationFeature'
+    class: 'PrestaShop\PrestaShop\Adapter\Feature\CombinationFeature'
+    arguments: [ '@prestashop.adapter.legacy.configuration' ]
 
-  PrestaShop\PrestaShop\Adapter\Feature\FeatureFeature:
+  prestashop.adapter.feature.feature:
+    class: 'PrestaShop\PrestaShop\Adapter\Feature\FeatureFeature'
     arguments: [ '@prestashop.adapter.legacy.configuration' ]
 
   prestashop.adapter.group.feature:
@@ -25,6 +24,3 @@ services:
 
   prestashop.adapter.multistore_feature:
     alias: prestashop.adapter.feature.multistore
-
-  prestashop.adapter.feature.feature:
-    alias: 'PrestaShop\PrestaShop\Adapter\Feature\FeatureFeature'

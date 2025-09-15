@@ -1,0 +1,72 @@
+/* Profile home 11 */
+/***************************************************
+  Mixins Themes 
+/***************************************************/
+/* Mixin Normal*/
+/* Mixin Clear */
+/* Mixin Border */
+/*background RGBA
+============================================*/
+/***************************************************
+  Mixins RTL Themes 
+/***************************************************/
+/************************************ 
+	Override Bootstrap 
+*************************************/
+/**
+ * Web Application Prefix Apply For Making Owner Styles
+ */
+/**
+ *   Blocks Layout Selectors 
+ */
+/***********************************************************************/
+#index #page {
+  max-width: 1710px;
+  margin: auto; }
+
+.box-cate-product:before {
+  display: none; }
+.box-cate-product .title_block {
+  text-align: center;
+  margin: 0px 0px 15px 0px; }
+  .rtl .box-cate-product .title_block {
+    margin: 0px 0px 15px 0px; }
+.box-cate-product .sub-title-ap-group {
+  text-align: center;
+  max-width: 560px;
+  margin: 0 auto 60px;
+  font-size: 15px;
+  line-height: 24px; }
+  @media (max-width: 991px) {
+    .box-cate-product .sub-title-ap-group {
+      margin: 0 auto 30px; } }
+@media (max-width: 767px) {
+  .box-cate-product {
+    display: -webkit-box;
+    display: -moz-box;
+    display: box;
+    display: -webkit-flex;
+    display: -moz-flex;
+    display: -ms-flexbox;
+    display: flex;
+    flex-direction: column; }
+    .box-cate-product .title_block, .box-cate-product .sub-title-ap-group {
+      order: -2; }
+    .box-cate-product .ApColumn:nth-child(4) {
+      order: -1;
+      margin-bottom: 15px; } }
+
+.box-blog {
+  position: relative; }
+  .box-blog:before {
+    content: '';
+    width: calc(100% - 30px);
+    height: 1px;
+    background-color: #eeeeee;
+    position: absolute;
+    top: 0;
+    left: 0px;
+    right: 0px;
+    margin: auto; }
+
+/*# sourceMappingURL=profile2373955820.css.map */

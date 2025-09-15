@@ -78,8 +78,8 @@
 					</div>
 				</div>
 				<script type="text/javascript">
-					$(function(){
-						$('a.useSpecialSyntax').on('click', function(){
+					$(document).ready(function(){
+						$('a.useSpecialSyntax').click(function(){
 							var syntax = $(this).find('img').attr('alt');
 							$('#BoxUseSpecialSyntax .syntax span').html(syntax+".");
 						});

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,7 +20,7 @@
 
 use PrestaShop\Module\PrestashopCheckout\Cart\Exception\CartException;
 use PrestaShop\Module\PrestashopCheckout\Cart\ValueObject\CartId;
-use PrestaShop\Module\PrestashopCheckout\CommandBus\QueryBusInterface;
+use PrestaShop\Module\PrestashopCheckout\CommandBus\CommandBusInterface;
 use PrestaShop\Module\PrestashopCheckout\Controller\AbstractFrontController;
 use PrestaShop\Module\PrestashopCheckout\PayPal\ApplePay\Query\GetApplePayPaymentRequestQuery;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration;
@@ -36,7 +35,10 @@ class Ps_CheckoutApplepayModuleFrontController extends AbstractFrontController
      */
     public $module;
 
-    private QueryBusInterface $queryBus;
+    /**
+     * @var CommandBusInterface
+     */
+    private $commandBus;
 
     /**
      * @see FrontController::postProcess()
@@ -59,7 +61,7 @@ class Ps_CheckoutApplepayModuleFrontController extends AbstractFrontController
                 }
             }
 
-            $this->queryBus = $this->module->getService('ps_checkout.bus.query');
+            $this->commandBus = $this->module->getService('ps_checkout.bus.command');
 
             switch ($action) {
                 case 'getPaymentRequest':
@@ -103,7 +105,7 @@ class Ps_CheckoutApplepayModuleFrontController extends AbstractFrontController
     {
         $cartId = new CartId($this->context->cart->id);
         $query = new GetApplePayPaymentRequestQuery($cartId);
-        $paymentRequest = $this->queryBus->handle($query);
+        $paymentRequest = $this->commandBus->handle($query);
 
         $this->exitWithResponse([
             'httpCode' => 200,

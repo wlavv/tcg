@@ -20,7 +20,7 @@ namespace Symfony\Component\Workflow;
  */
 final class TransitionBlockerList implements \IteratorAggregate, \Countable
 {
-    private array $blockers;
+    private $blockers;
 
     /**
      * @param TransitionBlocker[] $blockers

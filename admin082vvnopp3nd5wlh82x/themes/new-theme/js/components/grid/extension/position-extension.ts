@@ -23,9 +23,9 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-import {Grid} from '@PSTypes/grid';
+import {Grid} from '@js/types/grid';
 import GridMap from '@components/grid/grid-map';
-import {isUndefined} from '@components/typeguard';
+import {isUndefined} from '@PSTypes/typeguard';
 import 'tablednd/dist/jquery.tablednd.min';
 
 const {$} = window;
@@ -70,16 +70,13 @@ export default class PositionExtension {
     grid
       .getContainer()
       .find('.js-drag-handle')
-      .on(
-        'mouseenter',
-        function () {
+      .hover(
+        function hover() {
           $(this)
             .closest('tr')
             .addClass('hover');
         },
-      ).on(
-        'mouseleave',
-        function () {
+        function stopHover() {
           $(this)
             .closest('tr')
             .removeClass('hover');
@@ -293,12 +290,10 @@ export default class PositionExtension {
    */
   private setReorderButtonLabel(): void {
     const rearrangeButton = this.getReorderButton();
-
-    if (this.isPositionsReorderActive()) {
-      rearrangeButton.hide();
-    } else {
-      rearrangeButton.data('label-reorder');
-    }
+    const label = this.isPositionsReorderActive()
+      ? rearrangeButton.data('label-save')
+      : rearrangeButton.data('label-reorder');
+    rearrangeButton.html(label);
   }
 
   /**

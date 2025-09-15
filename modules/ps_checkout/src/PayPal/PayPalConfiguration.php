@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -56,10 +55,20 @@ class PayPalConfiguration
     const PS_CHECKOUT_DOMAIN_REGISTERED_SANDBOX = 'PS_CHECKOUT_DOMAIN_REGISTERED_SANDBOX';
     const PS_CHECKOUT_DOMAIN_REGISTERED_LIVE = 'PS_CHECKOUT_DOMAIN_REGISTERED_LIVE';
 
-    public function __construct(
-        private PrestaShopConfiguration $configuration,
-        private PayPalCodeRepository $codeRepository,
-    ) {
+    /**
+     * @var PrestaShopConfiguration
+     */
+    private $configuration;
+
+    /**
+     * @var PayPalCodeRepository
+     */
+    private $codeRepository;
+
+    public function __construct(PrestaShopConfiguration $configuration, PayPalCodeRepository $codeRepository)
+    {
+        $this->configuration = $configuration;
+        $this->codeRepository = $codeRepository;
     }
 
     /**

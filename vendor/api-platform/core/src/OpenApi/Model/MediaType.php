@@ -17,8 +17,17 @@ final class MediaType
 {
     use ExtensionTrait;
 
-    public function __construct(private ?\ArrayObject $schema = null, private $example = null, private ?\ArrayObject $examples = null, private ?Encoding $encoding = null)
+    private $schema;
+    private $example;
+    private $examples;
+    private $encoding;
+
+    public function __construct(\ArrayObject $schema = null, $example = null, \ArrayObject $examples = null, Encoding $encoding = null)
     {
+        $this->schema = $schema;
+        $this->example = $example;
+        $this->examples = $examples;
+        $this->encoding = $encoding;
     }
 
     public function getSchema(): ?\ArrayObject
@@ -73,3 +82,5 @@ final class MediaType
         return $clone;
     }
 }
+
+class_alias(MediaType::class, \ApiPlatform\Core\OpenApi\Model\MediaType::class);

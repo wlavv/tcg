@@ -39,7 +39,7 @@ class AddressesControllerCore extends FrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         parent::init();
 
@@ -53,13 +53,13 @@ class AddressesControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         parent::initContent();
         $this->setTemplate('customer/addresses');
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 

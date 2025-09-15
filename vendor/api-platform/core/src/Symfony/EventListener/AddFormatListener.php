@@ -14,13 +14,11 @@ declare(strict_types=1);
 namespace ApiPlatform\Symfony\EventListener;
 
 use ApiPlatform\Api\FormatMatcher;
-use ApiPlatform\Metadata\Error as ErrorOperation;
-use ApiPlatform\Metadata\HttpOperation;
+use ApiPlatform\Core\Api\FormatsProviderInterface;
+use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
-use ApiPlatform\State\ProviderInterface;
-use ApiPlatform\State\Util\OperationRequestInitiatorTrait;
-use ApiPlatform\Symfony\Util\RequestAttributesExtractor;
-use Negotiation\Exception\InvalidArgument;
+use ApiPlatform\Util\OperationRequestInitiatorTrait;
+use ApiPlatform\Util\RequestAttributesExtractor;
 use Negotiation\Negotiator;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
@@ -36,22 +34,36 @@ final class AddFormatListener
 {
     use OperationRequestInitiatorTrait;
 
-    private ?Negotiator $negotiator;
-    private ?ProviderInterface $provider = null;
+    private $negotiator;
+    private $resourceMetadataFactory;
+    private $formats = [];
+    private $formatsProvider;
+    private $formatMatcher;
 
     /**
-     * @param ProviderInterface|Negotiator $negotiator
+     * @param ResourceMetadataCollectionFactoryInterface|ResourceMetadataFactoryInterface|FormatsProviderInterface|array $resourceMetadataFactory
      */
-    public function __construct($negotiator, ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory = null, private readonly array $formats = [], private readonly array $errorFormats = [], private readonly array $docsFormats = [], private readonly ?bool $eventsBackwardCompatibility = null) // @phpstan-ignore-line
+    public function __construct(Negotiator $negotiator, $resourceMetadataFactory, array $formats = [])
     {
-        if ($negotiator instanceof ProviderInterface) {
-            $this->provider = $negotiator;
-        } else {
-            trigger_deprecation('api-platform/core', '3.3', 'Use a "%s" as first argument in "%s" instead of "%s".', ProviderInterface::class, self::class, Negotiator::class);
-            $this->negotiator = $negotiator;
+        if (!$resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface && !$resourceMetadataFactory instanceof ResourceMetadataFactoryInterface) {
+            trigger_deprecation('api-plaform/core', '2.5', sprintf('Passing an array or an instance of "%s" as 2nd parameter of the constructor of "%s" is deprecated since API Platform 2.5, pass an instance of "%s" instead', FormatsProviderInterface::class, __CLASS__, ResourceMetadataFactoryInterface::class));
         }
 
-        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
+        if (!$resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface && $resourceMetadataFactory instanceof ResourceMetadataFactoryInterface) {
+            trigger_deprecation('api-platform/core', '2.7', sprintf('Use "%s" instead of "%s".', ResourceMetadataCollectionFactoryInterface::class, ResourceMetadataFactoryInterface::class));
+        }
+
+        $this->negotiator = $negotiator;
+        $this->resourceMetadataFactory = $resourceMetadataFactory instanceof ResourceMetadataFactoryInterface ? $resourceMetadataFactory : null;
+        $this->formats = $formats;
+
+        $this->resourceMetadataCollectionFactory = $resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface ? $resourceMetadataFactory : null;
+
+        if (\is_array($resourceMetadataFactory)) {
+            $this->formats = $resourceMetadataFactory;
+        } elseif ($resourceMetadataFactory instanceof FormatsProviderInterface) {
+            $this->formatsProvider = $resourceMetadataFactory;
+        }
     }
 
     /**
@@ -65,43 +77,6 @@ final class AddFormatListener
         $request = $event->getRequest();
         $operation = $this->initializeOperation($request);
 
-        // TODO: legacy code
-        if ($request->attributes->get('_api_exception_action')) {
-            return;
-        }
-
-        $attributes = RequestAttributesExtractor::extractAttributes($request);
-        if (!($attributes['respond'] ?? $request->attributes->getBoolean('_api_respond'))) {
-            return;
-        }
-
-        if ($operation && $this->provider) {
-            $this->provider->provide($operation, $request->attributes->get('_api_uri_variables') ?? [], [
-                'request' => $request,
-                'uri_variables' => $request->attributes->get('_api_uri_variables') ?? [],
-                'resource_class' => $operation->getClass(),
-            ]);
-
-            return;
-        }
-
-        // TODO: the code below needs to be removed in 4.x
-        if ($this->provider && !$operation) {
-            return;
-        }
-
-        if ('api_platform.action.entrypoint' === $request->attributes->get('_controller')) {
-            return;
-        }
-
-        if ('api_platform.symfony.main_controller' === $operation?->getController() || $request->attributes->get('_api_platform_disable_listeners')) {
-            return;
-        }
-
-        if ($operation instanceof ErrorOperation) {
-            return;
-        }
-
         if (!(
             $request->attributes->has('_api_resource_class')
             || $request->attributes->getBoolean('_api_respond', false)
@@ -110,21 +85,32 @@ final class AddFormatListener
             return;
         }
 
-        $formats = $operation?->getOutputFormats() ?? ('api_doc' === $request->attributes->get('_route') ? $this->docsFormats : $this->formats);
+        $attributes = RequestAttributesExtractor::extractAttributes($request);
+        $formats = $this->formats;
+
+        // BC check to be removed in 3.0
+        if ($this->resourceMetadataFactory instanceof ResourceMetadataFactoryInterface && $attributes) {
+            // TODO: Subresource operation metadata aren't available by default, for now we have to fallback on default formats.
+            // TODO: A better approach would be to always populate the subresource operation array.
+            $formats = $this
+                ->resourceMetadataFactory
+                ->create($attributes['resource_class'])
+                ->getOperationAttribute($attributes, 'output_formats', $this->formats, true);
+        } elseif ($this->formatsProvider instanceof FormatsProviderInterface) {
+            $formats = $this->formatsProvider->getFormatsFromAttributes($attributes);
+        } elseif ($operation && $operation->getOutputFormats()) {
+            $formats = $operation->getOutputFormats();
+        }
 
         $this->addRequestFormats($request, $formats);
+        $this->formatMatcher = new FormatMatcher($formats);
 
         // Empty strings must be converted to null because the Symfony router doesn't support parameter typing before 3.2 (_format)
         if (null === $routeFormat = $request->attributes->get('_format') ?: null) {
             $flattenedMimeTypes = $this->flattenMimeTypes($formats);
             $mimeTypes = array_keys($flattenedMimeTypes);
         } elseif (!isset($formats[$routeFormat])) {
-            if (!$request->attributes->get('data') instanceof \Exception) {
-                throw new NotFoundHttpException(\sprintf('Format "%s" is not supported', $routeFormat));
-            }
-            $this->setRequestErrorFormat($operation, $request);
-
-            return;
+            throw new NotFoundHttpException(sprintf('Format "%s" is not supported', $routeFormat));
         } else {
             $mimeTypes = Request::getMimeTypes($routeFormat);
             $flattenedMimeTypes = $this->flattenMimeTypes([$routeFormat => $mimeTypes]);
@@ -133,26 +119,12 @@ final class AddFormatListener
         // First, try to guess the format from the Accept header
         /** @var string|null $accept */
         $accept = $request->headers->get('Accept');
-
         if (null !== $accept) {
-            $mediaType = null;
-            try {
-                $mediaType = $this->negotiator->getBest($accept, $mimeTypes);
-            } catch (InvalidArgument) {
+            if (null === $mediaType = $this->negotiator->getBest($accept, $mimeTypes)) {
                 throw $this->getNotAcceptableHttpException($accept, $flattenedMimeTypes);
             }
 
-            if (null === $mediaType) {
-                if (!$request->attributes->get('data') instanceof \Exception) {
-                    throw $this->getNotAcceptableHttpException($accept, $flattenedMimeTypes);
-                }
-
-                $this->setRequestErrorFormat($operation, $request);
-
-                return;
-            }
-            $formatMatcher = new FormatMatcher($formats);
-            $request->setRequestFormat($formatMatcher->getFormat($mediaType->getType()));
+            $request->setRequestFormat($this->formatMatcher->getFormat($mediaType->getType()));
 
             return;
         }
@@ -163,12 +135,6 @@ final class AddFormatListener
             $mimeType = $request->getMimeType($requestFormat);
 
             if (isset($flattenedMimeTypes[$mimeType])) {
-                return;
-            }
-
-            if ($request->attributes->get('data') instanceof \Exception) {
-                $this->setRequestErrorFormat($operation, $request);
-
                 return;
             }
 
@@ -215,31 +181,12 @@ final class AddFormatListener
      */
     private function getNotAcceptableHttpException(string $accept, array $mimeTypes): NotAcceptableHttpException
     {
-        return new NotAcceptableHttpException(\sprintf(
+        return new NotAcceptableHttpException(sprintf(
             'Requested format "%s" is not supported. Supported MIME types are "%s".',
             $accept,
             implode('", "', array_keys($mimeTypes))
         ));
     }
-
-    public function setRequestErrorFormat(?HttpOperation $operation, Request $request): void
-    {
-        $errorResourceFormats = array_merge($operation?->getOutputFormats() ?? [], $operation?->getFormats() ?? [], $this->errorFormats);
-
-        $flattened = $this->flattenMimeTypes($errorResourceFormats);
-        if ($flattened[$accept = $request->headers->get('Accept')] ?? false) {
-            $request->setRequestFormat($flattened[$accept]);
-
-            return;
-        }
-
-        if (isset($errorResourceFormats['jsonproblem'])) {
-            $request->setRequestFormat('jsonproblem');
-            $request->setFormat('jsonproblem', $errorResourceFormats['jsonproblem']);
-
-            return;
-        }
-
-        $request->setRequestFormat(array_key_first($errorResourceFormats));
-    }
 }
+
+class_alias(AddFormatListener::class, \ApiPlatform\Core\EventListener\AddFormatListener::class);

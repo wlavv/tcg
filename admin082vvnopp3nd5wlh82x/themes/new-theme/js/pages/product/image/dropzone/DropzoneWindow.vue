@@ -337,11 +337,10 @@
 .product-page {
   .dropzone-window {
     width: 45%;
-    flex-shrink: 0;
-    background-color: var(--#{$cdk}primary-200);
+    background-color: darken(#ffffff, 2%);
     align-self: stretch;
-    padding: var(--#{$cdk}size-16);
-    min-width: var(--#{$cdk}size-320);
+    padding: 1rem;
+    min-width: 20rem;
 
     &-filemanager {
       display: none;
@@ -351,7 +350,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: var(--#{$cdk}size-8);
+      margin-bottom: 0.5rem;
 
       label {
         margin-bottom: 0;
@@ -359,7 +358,7 @@
 
       .dropdown {
         > button {
-          padding-right: var(--#{$cdk}size-4);
+          padding-right: 0.25rem;
         }
 
         &-item {
@@ -369,7 +368,7 @@
     }
 
     textarea {
-      margin-bottom: var(--#{$cdk}size-16);
+      margin-bottom: 1rem;
     }
 
     &-button {
@@ -380,31 +379,27 @@
     }
 
     &-checkbox {
-      margin-bottom: var(--#{$cdk}size-16);
+      margin-bottom: 1rem;
 
       label {
-        font-size: var(--#{$cdk}size-14);
+        font-size: 0.875rem;
       }
     }
 
     &-select,
     &-unselect {
       font-weight: 600;
-      font-size: var(--#{$cdk}size-16);
-      color: var(--#{$cdk}primary-800);
+      font-size: 0.925rem;
+      color: $primary;
       cursor: pointer;
-      margin-top: var(--#{$cdk}size-8);
-
-      &:hover {
-        text-decoration: underline;
-      }
+      margin-top: 0.5rem;
     }
 
     &-number {
-      font-size: var(--#{$cdk}size-16);
+      font-size: 1rem;
 
       span {
-        color: var(--#{$cdk}primary-800);
+        color: $primary;
         font-weight: 600;
       }
     }
@@ -413,7 +408,7 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 var(--#{$cdk}size-16);
+      padding: 0 1rem;
 
       p {
         margin-bottom: 0;
@@ -421,10 +416,10 @@
 
       .material-icons {
         cursor: pointer;
-        color: var(--#{$cdk}primary-500);
+        color: $gray-500;
         transition: 0.25s ease-out;
-        font-size: var(--#{$cdk}size-24);
-        margin: 0 var(--#{$cdk}size-4);
+        font-size: 1.5rem;
+        margin: 0 0.25rem;
 
         &:last-child {
           margin-right: 0;
@@ -435,12 +430,12 @@
         }
 
         &:hover {
-          color: var(--#{$cdk}primary-800);
+          color: primary;
         }
       }
     }
 
-    @include media-breakpoint-down(sm) {
+    @include media-breakpoint-down(xs) {
       width: 100%;
       min-width: 100%;
     }

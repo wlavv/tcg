@@ -17,8 +17,19 @@ final class Encoding
 {
     use ExtensionTrait;
 
-    public function __construct(private string $contentType = '', private ?\ArrayObject $headers = null, private string $style = '', private bool $explode = false, private bool $allowReserved = false)
+    private $contentType;
+    private $headers;
+    private $style;
+    private $explode;
+    private $allowReserved;
+
+    public function __construct(string $contentType = '', \ArrayObject $headers = null, string $style = '', bool $explode = false, bool $allowReserved = false)
     {
+        $this->contentType = $contentType;
+        $this->headers = $headers;
+        $this->style = $style;
+        $this->explode = $explode;
+        $this->allowReserved = $allowReserved;
     }
 
     public function getContentType(): string
@@ -96,3 +107,5 @@ final class Encoding
         return $clone;
     }
 }
+
+class_alias(Encoding::class, \ApiPlatform\Core\OpenApi\Model\Encoding::class);

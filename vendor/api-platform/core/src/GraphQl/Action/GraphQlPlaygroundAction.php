@@ -26,8 +26,19 @@ use Twig\Environment as TwigEnvironment;
  */
 final class GraphQlPlaygroundAction
 {
-    public function __construct(private readonly TwigEnvironment $twig, private readonly RouterInterface $router, private readonly bool $graphQlPlaygroundEnabled = false, private readonly string $title = '', private $assetPackage = null)
+    private $twig;
+    private $router;
+    private $graphQlPlaygroundEnabled;
+    private $title;
+    private $assetPackage;
+
+    public function __construct(TwigEnvironment $twig, RouterInterface $router, bool $graphQlPlaygroundEnabled = false, string $title = '', $assetPackage = null)
     {
+        $this->twig = $twig;
+        $this->router = $router;
+        $this->graphQlPlaygroundEnabled = $graphQlPlaygroundEnabled;
+        $this->title = $title;
+        $this->assetPackage = $assetPackage;
     }
 
     public function __invoke(Request $request): Response
@@ -37,9 +48,11 @@ final class GraphQlPlaygroundAction
                 'title' => $this->title,
                 'graphql_playground_data' => ['entrypoint' => $this->router->generate('api_graphql_entrypoint')],
                 'assetPackage' => $this->assetPackage,
-            ]), 200, ['content-type' => 'text/html']);
+            ]));
         }
 
         throw new BadRequestHttpException('GraphQL Playground is not enabled.');
     }
 }
+
+class_alias(GraphQlPlaygroundAction::class, \ApiPlatform\Core\GraphQl\Action\GraphQlPlaygroundAction::class);

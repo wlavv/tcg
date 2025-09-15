@@ -3,14 +3,16 @@
 {shop_url}
 
 Parabéns!
+
 Foi feita uma encomenda em {shop_name} pelo cliente: {firstname} {lastname} ({email})
 
 Detalhes da encomenda
 
 Encomenda: {order_name} Realizada a {date}
+
 Pagamento: {payment}
 
-Referência	Produto	Preço unitário	Quantidade	Preço total  {items}
+Referência	Produto	Preço unitário	Quantidade	Preço total   {items}
 Produtos	{total_products}
 Descontos	{total_discounts}
 Embrulho de presente	{total_wrapping}
@@ -21,6 +23,7 @@ Total pago	{total_paid}
 Transportadora
 
 Transportadora: {carrier}
+
 Pagamento: {payment}
 
 Endereço de entrega
@@ -36,4 +39,5 @@ Mensagem do cliente:
 {message}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

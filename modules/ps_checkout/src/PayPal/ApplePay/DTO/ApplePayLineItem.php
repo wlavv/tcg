@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -20,6 +19,8 @@
  */
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\ApplePay\DTO;
+
+use DateTime;
 
 class ApplePayLineItem
 {
@@ -51,9 +52,9 @@ class ApplePayLineItem
      */
     private $paymentTiming;
     /**
-     * @var \DateTime|null
+     * @var DateTime|null
      */
-    private $recurringPaymentStartDate;
+    private $recurringPaymentStartDate = null;
     /**
      * @var self::RECURRING_PAYMENT_INTERVAL_UNIT_DAY|self::RECURRING_PAYMENT_INTERVAL_UNIT_WEEK|self::RECURRING_PAYMENT_INTERVAL_UNIT_MONTH|self::RECURRING_PAYMENT_INTERVAL_UNIT_YEAR
      */
@@ -63,13 +64,13 @@ class ApplePayLineItem
      */
     private $recurringPaymentIntervalCount;
     /**
-     * @var \DateTime|null
+     * @var DateTime|null
      */
-    private $recurringPaymentEndDate;
+    private $recurringPaymentEndDate = null;
     /**
-     * @var \DateTime|null
+     * @var DateTime|null
      */
-    private $deferredPaymentDate;
+    private $deferredPaymentDate = null;
     /**
      * @var string
      */
@@ -156,7 +157,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @param \DateTime $recurringPaymentStartDate
+     * @param DateTime $recurringPaymentStartDate
      *
      * @return ApplePayLineItem
      */
@@ -168,7 +169,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
     public function getRecurringPaymentStartDate()
     {
@@ -216,7 +217,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @param \DateTime $recurringPaymentEndDate
+     * @param DateTime $recurringPaymentEndDate
      *
      * @return ApplePayLineItem
      */
@@ -228,7 +229,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
     public function getRecurringPaymentEndDate()
     {
@@ -236,7 +237,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @param \DateTime $deferredPaymentDate
+     * @param DateTime $deferredPaymentDate
      *
      * @return ApplePayLineItem
      */
@@ -248,7 +249,7 @@ class ApplePayLineItem
     }
 
     /**
-     * @return \DateTime
+     * @return DateTime
      */
     public function getDeferredPaymentDate()
     {
@@ -285,11 +286,11 @@ class ApplePayLineItem
             'label' => $this->label,
             'amount' => $this->amount,
             'paymentTiming' => $this->paymentTiming,
-            'recurringPaymentStartDate' => $this->recurringPaymentStartDate ? $this->recurringPaymentStartDate->format(\DateTime::ATOM) : null,
+            'recurringPaymentStartDate' => $this->recurringPaymentStartDate ? $this->recurringPaymentStartDate->format(DateTime::ATOM) : null,
             'recurringPaymentIntervalUnit' => $this->recurringPaymentIntervalUnit,
             'recurringPaymentIntervalCount' => $this->recurringPaymentIntervalCount,
-            'recurringPaymentEndDate' => $this->recurringPaymentEndDate ? $this->recurringPaymentEndDate->format(\DateTime::ATOM) : null,
-            'deferredPaymentDate' => $this->deferredPaymentDate ? $this->deferredPaymentDate->format(\DateTime::ATOM) : null,
+            'recurringPaymentEndDate' => $this->recurringPaymentEndDate ? $this->recurringPaymentEndDate->format(DateTime::ATOM) : null,
+            'deferredPaymentDate' => $this->deferredPaymentDate ? $this->deferredPaymentDate->format(DateTime::ATOM) : null,
             'automaticReloadPaymentThresholdAmount' => $this->automaticReloadPaymentThresholdAmount,
         ]);
     }

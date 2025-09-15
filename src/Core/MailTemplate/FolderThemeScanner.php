@@ -45,13 +45,6 @@ final class FolderThemeScanner
      */
     private $baseThemeFolder;
 
-    private $themeTwigNamespace;
-
-    public function __construct(
-        private string $moduleDirectory = _PS_MODULE_DIR_,
-    ) {
-    }
-
     /**
      * @param string $mailThemeFolder
      *
@@ -67,14 +60,6 @@ final class FolderThemeScanner
         $mailTheme = new Theme(basename($mailThemeFolder));
         $this->baseThemeFolder = dirname($mailThemeFolder);
 
-        // If the scanned directory is in the modules folder we need to adapt the Twig namespace
-        if (str_starts_with($this->baseThemeFolder, $this->moduleDirectory)) {
-            $moduleRelativePath = str_replace($this->moduleDirectory, '', $this->baseThemeFolder);
-            $this->themeTwigNamespace = '@Modules/' . $moduleRelativePath;
-        } else {
-            $this->themeTwigNamespace = '@MailThemes';
-        }
-
         $finder = new Finder();
         $finder->files()->in($mailThemeFolder);
         if ($finder->count() > 0) {
@@ -87,9 +72,9 @@ final class FolderThemeScanner
     /**
      * @param string $mailThemeFolder
      *
-     * @return LayoutCollectionInterface
-     *
      * @throws TypeException
+     *
+     * @return LayoutCollectionInterface
      */
     private function findThemeLayouts($mailThemeFolder)
     {
@@ -136,7 +121,7 @@ final class FolderThemeScanner
 
         /* @var SplFileInfo $moduleFolder */
         foreach ($moduleFinder as $moduleFolder) {
-            $this->addLayoutsFromFolder($collection, $moduleFolder->getPathname(), $moduleFolder->getFilename());
+            $this->addLayoutsFromFolder($collection, $moduleFolder->getRealPath(), $moduleFolder->getFilename());
         }
     }
 
@@ -155,7 +140,7 @@ final class FolderThemeScanner
         $finder->files()->in($folder)->sortByName();
         /** @var SplFileInfo $fileInfo */
         foreach ($finder as $fileInfo) {
-            // Get filename without any extension (ex: account.html.twig -> account)
+            //Get filename without any extension (ex: account.html.twig -> account)
             $layoutName = preg_replace('/\..+/', '', $fileInfo->getBasename());
             if (!isset($layoutFiles[$layoutName])) {
                 $layoutFiles[$layoutName] = [
@@ -205,8 +190,6 @@ final class FolderThemeScanner
 
     private function getTemplatePath(SplFileInfo $fileInfo): string
     {
-        $templateRelativePath = substr($fileInfo->getPathname(), strlen($this->baseThemeFolder));
-
-        return $this->themeTwigNamespace . $templateRelativePath;
+        return '@MailThemes' . substr($fileInfo->getRealPath(), strlen($this->baseThemeFolder));
     }
 }

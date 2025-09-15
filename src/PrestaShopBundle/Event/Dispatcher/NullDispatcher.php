@@ -46,27 +46,28 @@ class NullDispatcher implements EventDispatcherInterface, HookDispatcherInterfac
      * @param object $event
      * @param string|null $eventName
      *
-     * @return object
+     * @return object|void
      */
-    public function dispatch(object $event, ?string $eventName = null): object
+    public function dispatch($event, string $eventName = null)
     {
-        return $event;
     }
 
     /**
      * @param null $eventName
+     *
+     * @return array|void
      */
-    public function getListeners($eventName = null): array
+    public function getListeners($eventName = null)
     {
-        return [];
     }
 
     /**
      * @param null $eventName
+     *
+     * @return bool|void
      */
-    public function hasListeners($eventName = null): bool
+    public function hasListeners($eventName = null)
     {
-        return false;
     }
 
     public function removeListener($eventName, $listener)
@@ -80,10 +81,11 @@ class NullDispatcher implements EventDispatcherInterface, HookDispatcherInterfac
     /**
      * @param string $eventName
      * @param callable $listener
+     *
+     * @return int|void|null
      */
-    public function getListenerPriority($eventName, $listener): ?int
+    public function getListenerPriority($eventName, $listener)
     {
-        return null;
     }
 
     public function dispatchHook(HookInterface $hook)

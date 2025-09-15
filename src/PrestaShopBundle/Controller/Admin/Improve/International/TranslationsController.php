@@ -26,22 +26,13 @@
 
 namespace PrestaShopBundle\Controller\Admin\Improve\International;
 
-use PrestaShop\PrestaShop\Adapter\LegacyContext;
-use PrestaShop\PrestaShop\Adapter\Translations\TranslationRouteFinder;
+use PrestaShop\PrestaShop\Adapter\Shop\Context;
 use PrestaShop\PrestaShop\Core\Form\FormHandlerInterface;
-use PrestaShop\PrestaShop\Core\Kpi\Row\HookableKpiRowFactory;
 use PrestaShop\PrestaShop\Core\Language\Copier\LanguageCopierConfig;
-use PrestaShop\PrestaShop\Core\Language\Copier\LanguageCopierInterface;
-use PrestaShop\PrestaShop\Core\Language\LanguageRepositoryInterface;
-use PrestaShop\PrestaShop\Core\Language\Pack\Import\LanguagePackImporterInterface;
-use PrestaShop\PrestaShop\Core\Translation\Export\TranslationCatalogueExporter;
 use PrestaShop\PrestaShop\Core\Translation\Storage\Provider\Definition\ProviderDefinitionInterface;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
-use PrestaShopBundle\Controller\Attribute\AllShopContext;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
 use PrestaShopBundle\Exception\InvalidModuleException;
-use PrestaShopBundle\Security\Attribute\AdminSecurity;
-use PrestaShopBundle\Translation\Exporter\ThemeExporter;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use PrestaShopBundle\Security\Annotation\AdminSecurity;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -51,8 +42,7 @@ use Symfony\Component\HttpFoundation\ResponseHeaderBag;
 /**
  * Admin controller for the International pages.
  */
-#[AllShopContext]
-class TranslationsController extends PrestaShopAdminController
+class TranslationsController extends FrameworkBundleAdminController
 {
     public const CONTROLLER_NAME = 'ADMINTRANSLATIONS';
 
@@ -63,36 +53,36 @@ class TranslationsController extends PrestaShopAdminController
 
     /**
      * Renders the translation page
+     *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))")
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function overviewAction(): Response
+    public function overviewAction()
     {
         return $this->render('@PrestaShop/Admin/Improve/International/Translations/overview.html.twig', [
-            'is_shop_context' => $this->getShopContext()->getShopConstraint()->isSingleShopContext(),
-            'layoutTitle' => $this->trans('Translations', [], 'Admin.Navigation.Menu'),
+            'is_shop_context' => (new Context())->isShopContext(),
+            'layoutTitle' => $this->trans('Translations', 'Admin.Navigation.Menu'),
         ]);
     }
 
     /**
      * Extract theme using locale and theme name.
      *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return BinaryFileResponse
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function exportThemeAction(
-        Request $request,
-        LanguageRepositoryInterface $langRepository,
-        #[Autowire(service: 'prestashop.translation.theme.exporter')]
-        ThemeExporter $themeExporter
-    ): Response {
+    public function exportThemeAction(Request $request)
+    {
         $themeName = $request->request->get('theme-name');
         $isoCode = $request->request->get('iso_code');
 
-        $locale = $langRepository->getOneByIsoCode($isoCode)->getLocale();
+        $langRepository = $this->get('prestashop.core.admin.lang.repository');
+        $locale = $langRepository->getLocaleByIsoCode($isoCode);
 
-        $zipFile = $themeExporter->createZipArchive($themeName, $locale, true);
+        $themeExporter = $this->get('prestashop.translation.theme.exporter');
+        $zipFile = $themeExporter->createZipArchive($themeName, $locale, _PS_ROOT_DIR_ . DIRECTORY_SEPARATOR);
 
         $response = new BinaryFileResponse($zipFile);
         $response->deleteFileAfterSend(true);
@@ -105,33 +95,24 @@ class TranslationsController extends PrestaShopAdminController
     /**
      * Show translations settings page.
      *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return Response
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function showSettingsAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.admin.translations_settings.modify_translations.form_handler')]
-        FormHandlerInterface $modifyTranslationsFormHandler,
-        #[Autowire(service: 'prestashop.admin.translations_settings.add_update_language.form_handler')]
-        FormHandlerInterface $addUpdateLanguageFormHandler,
-        #[Autowire(service: 'prestashop.admin.translations_settings.export_catalogues.form_handler')]
-        FormHandlerInterface $exportTranslationCataloguesFormHandler,
-        #[Autowire(service: 'prestashop.admin.translations_settings.copy_language.form_handler')]
-        FormHandlerInterface $copyLanguageFormHandler,
-        LegacyContext $legacyContext,
-        #[Autowire(service: 'prestashop.core.kpi_row.factory.translations_page')]
-        HookableKpiRowFactory $kpiRowFactory
-    ): Response {
+    public function showSettingsAction(Request $request)
+    {
         $legacyController = $request->attributes->get('_legacy_controller');
-        $modifyTranslationsForm = $modifyTranslationsFormHandler->getForm();
-        $addUpdateLanguageForm = $addUpdateLanguageFormHandler->getForm();
-        $exportCataloguesForm = $exportTranslationCataloguesFormHandler->getForm();
-        $copyLanguageForm = $copyLanguageFormHandler->getForm();
+        $legacyContext = $this->get('prestashop.adapter.legacy.context');
+        $kpiRowFactory = $this->get('prestashop.core.kpi_row.factory.translations_page');
+        $modifyTranslationsForm = $this->getModifyTranslationsFormHandler()->getForm();
+        $addUpdateLanguageForm = $this->getAddUpdateLanguageTranslationsFormHandler()->getForm();
+        $exportCataloguesForm = $this->getExportTranslationCataloguesFormHandler()->getForm();
+        $copyLanguageForm = $this->getCopyLanguageTranslationsFormHandler()->getForm();
 
         return $this->render('@PrestaShop/Admin/Improve/International/Translations/translations_settings.html.twig', [
-            'layoutTitle' => $this->trans('Translations', [], 'Admin.Navigation.Menu'),
+            'layoutTitle' => $this->trans('Translations', 'Admin.Navigation.Menu'),
             'enableSidebar' => true,
             'help_link' => $this->generateSidebarLink($legacyController),
             'kpiRow' => $kpiRowFactory->build(),
@@ -146,21 +127,20 @@ class TranslationsController extends PrestaShopAdminController
     /**
      * Modify translations action.
      *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return RedirectResponse
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))")]
-    public function modifyTranslationsAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.adapter.translation_route_finder')]
-        TranslationRouteFinder $routeFinder
-    ): RedirectResponse {
+    public function modifyTranslationsAction(Request $request)
+    {
         try {
-            $route = $routeFinder->findRoute($request);
-            $routeParameters = $routeFinder->findRouteParameters($request);
+            $routeFinder = $this->get('prestashop.adapter.translation_route_finder');
+            $route = $routeFinder->findRoute($request->query);
+            $routeParameters = $routeFinder->findRouteParameters($request->query);
         } catch (InvalidModuleException $e) {
-            $this->addFlash('error', $this->trans('An error has occurred, this module does not exist: %s', [$e->getMessage()], 'Admin.International.Notification'));
+            $this->addFlash('error', $this->trans('An error has occurred, this module does not exist: %s', 'Admin.International.Notification', [$e->getMessage()]));
 
             return $this->redirectToRoute('admin_international_translations_show_settings');
         }
@@ -172,18 +152,15 @@ class TranslationsController extends PrestaShopAdminController
     /**
      * Add language pack for new languages and updates for the existing ones action.
      *
+     * @AdminSecurity("is_granted('create', request.get('_legacy_controller'))"))
+     *
      * @param Request $request
      *
      * @return RedirectResponse
      */
-    #[AdminSecurity("is_granted('create', request.get('_legacy_controller'))")]
-    public function addUpdateLanguageAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.admin.translations_settings.add_update_language.form_handler')]
-        FormHandlerInterface $formHandler,
-        #[Autowire(service: 'prestashop.adapter.language.pack.importer')]
-        LanguagePackImporterInterface $languagePackImporter
-    ): RedirectResponse {
+    public function addUpdateLanguageAction(Request $request)
+    {
+        $formHandler = $this->getAddUpdateLanguageTranslationsFormHandler();
         $addUpdateLanguageForm = $formHandler->getForm();
         $addUpdateLanguageForm->handleRequest($request);
 
@@ -191,12 +168,13 @@ class TranslationsController extends PrestaShopAdminController
             $data = $addUpdateLanguageForm->getData();
             $isoCode = $data['iso_localization_pack'];
 
+            $languagePackImporter = $this->get('prestashop.adapter.language.pack.importer');
             $errors = $languagePackImporter->import($isoCode);
 
             if (empty($errors)) {
                 $this->addFlash(
                     'success',
-                    $this->trans('The translations have been successfully added.', [], 'Admin.International.Notification')
+                    $this->trans('The translations have been successfully added.', 'Admin.International.Notification')
                 );
 
                 return $this->redirectToRoute('admin_international_translations_show_settings');
@@ -213,19 +191,15 @@ class TranslationsController extends PrestaShopAdminController
     /**
      * Extract catalogues using locale.
      *
+     * @AdminSecurity("is_granted('create', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return BinaryFileResponse|RedirectResponse
      */
-    #[AdminSecurity("is_granted('create', request.get('_legacy_controller'))")]
-    public function exportCataloguesAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.admin.translations_settings.export_catalogues.form_handler')]
-        FormHandlerInterface $formHandler,
-        LanguageRepositoryInterface $langRepository,
-        #[Autowire(service: 'prestashop.translation.export.translation_catalogue')]
-        TranslationCatalogueExporter $translationCatalogueExporter
-    ): BinaryFileResponse|RedirectResponse {
+    public function exportCataloguesAction(Request $request)
+    {
+        $formHandler = $this->getExportTranslationCataloguesFormHandler();
         $exportTranslationCataloguesForm = $formHandler->getForm();
         $exportTranslationCataloguesForm->handleRequest($request);
 
@@ -291,15 +265,16 @@ class TranslationsController extends PrestaShopAdminController
             if (empty($selections)) {
                 $this->addFlash(
                     'error',
-                    $this->trans('You must select at least one translation type to export translations.', [], 'Admin.International.Notification')
+                    $this->trans('You must select at least one translation type to export translations.', 'Admin.International.Notification')
                 );
 
                 return $this->redirectToRoute('admin_international_translations_show_settings');
             }
 
-            $locale = $langRepository->getOneByIsoCode($isoCode)->getLocale();
+            $langRepository = $this->get('prestashop.core.admin.lang.repository');
+            $locale = $langRepository->getLocaleByIsoCode($isoCode);
 
-            $zipFilename = $translationCatalogueExporter->export($selections, $locale);
+            $zipFilename = $this->get('prestashop.translation.export.translation_catalogue')->export($selections, $locale);
 
             $response = new BinaryFileResponse($zipFilename);
             $response->deleteFileAfterSend(true);
@@ -313,22 +288,20 @@ class TranslationsController extends PrestaShopAdminController
     /**
      * Copy language action.
      *
+     * @AdminSecurity("is_granted('create', request.get('_legacy_controller'))")
+     *
      * @param Request $request
      *
      * @return RedirectResponse
      */
-    #[AdminSecurity("is_granted('create', request.get('_legacy_controller'))")]
-    public function copyLanguageAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.admin.translations_settings.copy_language.form_handler')]
-        FormHandlerInterface $formHandler,
-        #[Autowire(service: 'prestashop.adapter.language.copier')]
-        LanguageCopierInterface $languageCopier
-    ): RedirectResponse {
+    public function copyLanguageAction(Request $request)
+    {
+        $formHandler = $this->getCopyLanguageTranslationsFormHandler();
         $form = $formHandler->getForm();
         $form->handleRequest($request);
 
         if ($form->isSubmitted()) {
+            $languageCopier = $this->get('prestashop.adapter.language.copier');
             $data = $form->getData();
             $languageCopierConfig = new LanguageCopierConfig(
                 $data['from_theme'],
@@ -338,15 +311,47 @@ class TranslationsController extends PrestaShopAdminController
             );
 
             if ($errors = $languageCopier->copy($languageCopierConfig)) {
-                $this->addFlashErrors($errors);
+                $this->flashErrors($errors);
             } else {
                 $this->addFlash(
                     'success',
-                    $this->trans('The translation was successfully copied.', [], 'Admin.International.Notification')
+                    $this->trans('The translation was successfully copied.', 'Admin.International.Notification')
                 );
             }
         }
 
         return $this->redirectToRoute('admin_international_translations_show_settings');
+    }
+
+    /**
+     * @return FormHandlerInterface
+     */
+    private function getModifyTranslationsFormHandler(): FormHandlerInterface
+    {
+        return $this->get('prestashop.admin.translations_settings.modify_translations.form_handler');
+    }
+
+    /**
+     * @return FormHandlerInterface
+     */
+    private function getAddUpdateLanguageTranslationsFormHandler(): FormHandlerInterface
+    {
+        return $this->get('prestashop.admin.translations_settings.add_update_language.form_handler');
+    }
+
+    /**
+     * @return FormHandlerInterface
+     */
+    private function getCopyLanguageTranslationsFormHandler(): FormHandlerInterface
+    {
+        return $this->get('prestashop.admin.translations_settings.copy_language.form_handler');
+    }
+
+    /**
+     * @return FormHandlerInterface
+     */
+    private function getExportTranslationCataloguesFormHandler(): FormHandlerInterface
+    {
+        return $this->get('prestashop.admin.translations_settings.export_catalogues.form_handler');
     }
 }

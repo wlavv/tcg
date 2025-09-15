@@ -170,11 +170,11 @@ class ModuleOverrideChecker
     */
     private function getClassPropertiesFromContent(string $content): array
     {
-        $propertyPattern = '/(public|private|protected)\s*(\w+)?\s+\$(\w+)/';
+        $propertyPattern = '/(public|private|protected)\s+\$(\w+)/';
         $properties = [];
 
         if (preg_match_all($propertyPattern, $content, $matches)) {
-            $properties = $matches[3];
+            $properties = $matches[2];
         }
 
         return $properties;

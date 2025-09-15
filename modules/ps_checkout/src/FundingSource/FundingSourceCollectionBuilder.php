@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -23,10 +22,24 @@ namespace PrestaShop\Module\PrestashopCheckout\FundingSource;
 
 class FundingSourceCollectionBuilder
 {
-    public function __construct(
-        private FundingSourceConfiguration $configuration,
-        private FundingSourceEligibilityConstraint $eligibilityConstraint,
-    ) {
+    /**
+     * @var FundingSourceConfiguration
+     */
+    private $configuration;
+
+    /**
+     * @var FundingSourceEligibilityConstraint
+     */
+    private $eligibilityConstraint;
+
+    /**
+     * @param FundingSourceConfiguration $configuration
+     * @param FundingSourceEligibilityConstraint $eligibilityConstraint
+     */
+    public function __construct(FundingSourceConfiguration $configuration, FundingSourceEligibilityConstraint $eligibilityConstraint)
+    {
+        $this->configuration = $configuration;
+        $this->eligibilityConstraint = $eligibilityConstraint;
     }
 
     /**

@@ -23,8 +23,7 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 import SpecificPriceMap from '@pages/product/specific-price/specific-price-map';
-import SpecificPriceEventMap from '@pages/product/specific-price/specific-price-event-map';
-import CustomerSearchInput from '@components/form/customer-search-input';
+import EntitySearchInput from '@components/entity-search-input';
 
 export default class CustomerSelector {
   constructor() {
@@ -32,32 +31,38 @@ export default class CustomerSelector {
   }
 
   private init(): void {
+    let searchInputOptions: OptionsObject = {
+      responseTransformer: (response: any) => {
+        if (!response || response.customers.length === 0) {
+          return [];
+        }
+
+        return Object.values(response.customers);
+      },
+    };
+
     // This check is here for when the multishop is not enabled.
     // The selector returned by the this.getShopIdSelect does not exist when multishop is not enabled.
-    const shopIdSelect = this.getShopIdSelect();
-    const customerSearchInput = this.initCustomerSearchInput();
-
-    if (shopIdSelect !== null) {
+    if (this.getShopIdSelect() !== null) {
+      searchInputOptions = {
+        ...searchInputOptions,
+        extraQueryParams: () => ({
+          shopId: Number(this.getShopIdSelect().value) ?? null,
+        }),
+      };
+      const customerSearchInput = this.initCustomerSearchInput(searchInputOptions);
       // clear selected customers whenever shop is changed, because customers may differ between shops
-      shopIdSelect.addEventListener('change', () => customerSearchInput.setValues([]));
+      this.getShopIdSelect().addEventListener('change', () => customerSearchInput.setValues([]));
+    } else {
+      this.initCustomerSearchInput(searchInputOptions);
     }
   }
 
-  private initCustomerSearchInput(): CustomerSearchInput {
-    return new CustomerSearchInput(
-      SpecificPriceMap.customerSearchContainer,
-      SpecificPriceMap.customerItem,
-      () => Number(this.getShopIdSelect()?.value) ?? null,
-      SpecificPriceEventMap.switchCustomer,
-    );
+  private initCustomerSearchInput(options: OptionsObject): EntitySearchInput {
+    return new EntitySearchInput($(SpecificPriceMap.customerSearchContainer), options);
   }
 
-  /**
-   * ShopIdSelector might not exist in some forms, and it is legit. In that case it returns null.
-   *
-   * @private
-   */
-  private getShopIdSelect(): HTMLSelectElement|null {
+  private getShopIdSelect(): HTMLSelectElement {
     return <HTMLSelectElement> document.querySelector(
       `${SpecificPriceMap.formContainer} ${SpecificPriceMap.shopIdSelect}`,
     );

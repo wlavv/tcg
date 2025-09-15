@@ -25,8 +25,11 @@ use ApiPlatform\Metadata\Resource\ResourceMetadataCollection;
  */
 final class InputOutputResourceMetadataCollectionFactory implements ResourceMetadataCollectionFactoryInterface
 {
-    public function __construct(private readonly ResourceMetadataCollectionFactoryInterface $decorated)
+    private $decorated;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $decorated)
     {
+        $this->decorated = $decorated;
     }
 
     /**
@@ -54,7 +57,12 @@ final class InputOutputResourceMetadataCollectionFactory implements ResourceMeta
         return $resourceMetadataCollection;
     }
 
-    private function getTransformedOperations(Operations|array $operations, ApiResource $resourceMetadata): Operations|array
+    /**
+     * @param Operations|array $operations
+     *
+     * @return Operations|array
+     */
+    private function getTransformedOperations($operations, ApiResource $resourceMetadata)
     {
         foreach ($operations as $key => $operation) {
             $operation = $operation->withInput(null !== $operation->getInput() ? $this->transformInputOutput($operation->getInput()) : $resourceMetadata->getInput());
@@ -65,8 +73,8 @@ final class InputOutputResourceMetadataCollectionFactory implements ResourceMeta
                 && \array_key_exists('class', $operation->getInput())
                 && null === $operation->getInput()['class']
             ) {
-                $operation = $operation->withDeserialize(null === $operation->canDeserialize() ? false : $operation->canDeserialize());
-                $operation = $operation->withValidate(null === $operation->canValidate() ? false : $operation->canValidate());
+                $operation = $operation->withDeserialize(false);
+                $operation = $operation->withValidate(false);
             }
 
             if (
@@ -74,9 +82,8 @@ final class InputOutputResourceMetadataCollectionFactory implements ResourceMeta
                 && $operation->getOutput()
                 && \array_key_exists('class', $operation->getOutput())
                 && null === $operation->getOutput()['class']
-                && null === $operation->getStatus()
             ) {
-                $operation = $operation->withStatus(204);
+                $operation = $operation->withStatus($operation->getStatus() ?? 204);
             }
 
             $operations instanceof Operations ? $operations->add($key, $operation) : $operations[$key] = $operation;
@@ -85,7 +92,7 @@ final class InputOutputResourceMetadataCollectionFactory implements ResourceMeta
         return $operations;
     }
 
-    private function transformInputOutput(mixed $attribute): ?array
+    private function transformInputOutput($attribute): ?array
     {
         if (false === $attribute) {
             return ['class' => null];

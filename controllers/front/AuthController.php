@@ -32,14 +32,7 @@ class AuthControllerCore extends FrontController
     /** @var bool */
     public $auth = false;
 
-    /**
-     * Check if the controller is available for the current user/visitor.
-     *
-     * @see Controller::checkAccess()
-     *
-     * @return bool
-     */
-    public function checkAccess(): bool
+    public function checkAccess()
     {
         if ($this->context->customer->isLogged() && !$this->ajax) {
             $this->redirect_after = $this->authRedirection ? urlencode($this->authRedirection) : 'my-account';
@@ -49,15 +42,10 @@ class AuthControllerCore extends FrontController
         return parent::checkAccess();
     }
 
-    /**
-     * Assign template vars related to page content.
-     *
-     * @see FrontController::initContent()
-     */
-    public function initContent(): void
+    public function initContent()
     {
         if (Tools::isSubmit('create_account')) {
-            $this->redirectWithNotifications('registration');
+            return $this->redirectWithNotifications('registration');
         }
 
         $should_redirect = false;
@@ -85,22 +73,22 @@ class AuthControllerCore extends FrontController
             if (Tools::urlBelongsToShop($back)) {
                 // Checks to see if "back" is a fully qualified
                 // URL that is on OUR domain, with the right protocol
-                $this->redirectWithNotifications($back);
+                return $this->redirectWithNotifications($back);
             }
 
             // Well we're not redirecting to a URL,
             // so...
             if ($this->authRedirection) {
                 // We may need to go there if defined
-                $this->redirectWithNotifications($this->authRedirection);
+                return $this->redirectWithNotifications($this->authRedirection);
             }
 
             // go home
-            $this->redirectWithNotifications(__PS_BASE_URI__);
+            return $this->redirectWithNotifications(__PS_BASE_URI__);
         }
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -115,7 +103,7 @@ class AuthControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         return $this->context->link->getPageLink('authentication');
     }

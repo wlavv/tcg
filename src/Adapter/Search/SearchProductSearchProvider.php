@@ -32,7 +32,6 @@ use PrestaShop\PrestaShop\Core\Product\Search\ProductSearchProviderInterface;
 use PrestaShop\PrestaShop\Core\Product\Search\ProductSearchQuery;
 use PrestaShop\PrestaShop\Core\Product\Search\ProductSearchResult;
 use PrestaShop\PrestaShop\Core\Product\Search\SortOrder;
-use PrestaShop\PrestaShop\Core\Product\Search\SortOrdersCollection;
 use Search;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Tools;
@@ -49,16 +48,10 @@ class SearchProductSearchProvider implements ProductSearchProviderInterface
      */
     private $translator;
 
-    /**
-     * @var SortOrdersCollection
-     */
-    private $sortOrdersCollection;
-
     public function __construct(
         TranslatorInterface $translator
     ) {
         $this->translator = $translator;
-        $this->sortOrdersCollection = new SortOrdersCollection($this->translator);
     }
 
     /**
@@ -71,7 +64,7 @@ class SearchProductSearchProvider implements ProductSearchProviderInterface
         $products = [];
         $count = 0;
 
-        if ($string = $query->getSearchString()) {
+        if (($string = $query->getSearchString())) {
             $queryString = Tools::replaceAccentedChars(urldecode($string));
 
             $result = Search::find(
@@ -95,7 +88,7 @@ class SearchProductSearchProvider implements ProductSearchProviderInterface
                 // deprecated since 1.7.x
                 'expr' => $queryString,
             ]);
-        } elseif ($tag = $query->getSearchTag()) {
+        } elseif (($tag = $query->getSearchTag())) {
             $queryString = urldecode($tag);
 
             $products = Search::searchTag(
@@ -138,15 +131,24 @@ class SearchProductSearchProvider implements ProductSearchProviderInterface
                 ->setProducts($products)
                 ->setTotalProductsCount($count);
 
-            // We use default set of sort orders + option to sort by position (relevance), which makes sense only here and on category page
             $result->setAvailableSortOrders(
-                array_merge(
-                    [
-                        (new SortOrder('product', 'position', 'desc'))->setLabel(
-                            $this->translator->trans('Relevance', [], 'Shop.Theme.Catalog')
-                        ),
-                    ],
-                    $this->sortOrdersCollection->getDefaults())
+                [
+                    (new SortOrder('product', 'position', 'desc'))->setLabel(
+                        $this->translator->trans('Relevance', [], 'Shop.Theme.Catalog')
+                    ),
+                    (new SortOrder('product', 'name', 'asc'))->setLabel(
+                        $this->translator->trans('Name, A to Z', [], 'Shop.Theme.Catalog')
+                    ),
+                    (new SortOrder('product', 'name', 'desc'))->setLabel(
+                        $this->translator->trans('Name, Z to A', [], 'Shop.Theme.Catalog')
+                    ),
+                    (new SortOrder('product', 'price', 'asc'))->setLabel(
+                        $this->translator->trans('Price, low to high', [], 'Shop.Theme.Catalog')
+                    ),
+                    (new SortOrder('product', 'price', 'desc'))->setLabel(
+                        $this->translator->trans('Price, high to low', [], 'Shop.Theme.Catalog')
+                    ),
+                ]
             );
         }
 

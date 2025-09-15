@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -28,8 +27,14 @@ use PrestaShop\Module\PrestashopCheckout\Presenter\Cart\CartPresenter;
 
 class GetGooglePayTransactionInfoQueryHandler
 {
-    public function __construct(private GooglePayTransactionInfoBuilder $builder)
+    /**
+     * @var GooglePayTransactionInfoBuilder
+     */
+    private $builder;
+
+    public function __construct(GooglePayTransactionInfoBuilder $builder)
     {
+        $this->builder = $builder;
     }
 
     /**
@@ -39,7 +44,7 @@ class GetGooglePayTransactionInfoQueryHandler
      *
      * @throws PsCheckoutException
      */
-    public function __invoke(GetGooglePayTransactionInfoQuery $query)
+    public function handle(GetGooglePayTransactionInfoQuery $query)
     {
         $cartPresenter = (new CartPresenter())->present();
         $orderPayloadBuilder = new OrderPayloadBuilder($cartPresenter);

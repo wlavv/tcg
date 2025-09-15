@@ -100,7 +100,7 @@ class TranslationService
      */
     private function getResourcesDirectory()
     {
-        return $this->container->getParameter('kernel.project_dir') . '/app/Resources';
+        return $this->container->getParameter('kernel.root_dir') . '/Resources';
     }
 
     /**
@@ -188,9 +188,7 @@ class TranslationService
      * @return array
      *
      * @throws Exception
-     *
      * @todo: we need module information here
-     *
      * @todo: we need to improve the Vuejs application to send the information
      */
     public function listDomainTranslation(

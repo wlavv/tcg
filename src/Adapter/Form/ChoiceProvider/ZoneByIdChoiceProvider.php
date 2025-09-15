@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\Form\ChoiceProvider;
 
 use PrestaShop\PrestaShop\Core\Form\ConfigurableFormChoiceProviderInterface;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceFormatter;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Zone;
 
@@ -45,11 +44,14 @@ class ZoneByIdChoiceProvider implements ConfigurableFormChoiceProviderInterface
     {
         $options = $this->resolveOptions($options);
 
-        return FormChoiceFormatter::formatFormChoices(
-            Zone::getZones($options['active'], $options['active_first']),
-            'id_zone',
-            'name'
-        );
+        $zones = Zone::getZones($options['active'], $options['active_first']);
+        $choices = [];
+
+        foreach ($zones as $zone) {
+            $choices[$zone['name']] = (int) $zone['id_zone'];
+        }
+
+        return $choices;
     }
 
     private function resolveOptions(array $options): array

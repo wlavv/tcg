@@ -41,25 +41,25 @@ class AdminLeoWidgetsController extends ModuleAdminControllerCore
         
         $this->fields_list = array(
             'id_btmegamenu_widgets' => array(
-                'title' => $this->trans('ID'),
+                'title' => $this->l('ID'),
                 'align' => 'center',
                 'width' => 50,
                 'class' => 'fixed-width-xs'
             ),
             'key_widget' => array(
-                'title' => $this->trans('Widget Key'),
+                'title' => $this->l('Widget Key'),
                 'filter_key' => 'a!key_widget',
                 'type' => 'text',
                 'width' => 140,
             ),
             'name' => array(
-                'title' => $this->trans('Widget Name'),
+                'title' => $this->l('Widget Name'),
                 'width' => 140,
                 'type' => 'text',
                 'filter_key' => 'a!name'
             ),
             'type' => array(
-                'title' => $this->trans('Widget Type'),
+                'title' => $this->l('Widget Type'),
                 'width' => 50,
                 'type' => 'text',
                 'filter_key' => 'a!type'
@@ -67,18 +67,18 @@ class AdminLeoWidgetsController extends ModuleAdminControllerCore
         );
         $this->bulk_actions = array(
             'delete' => array(
-                'text' => $this->trans('Delete selected'),
-                'confirm' => $this->trans('Delete selected items?'),
+                'text' => $this->l('Delete selected'),
+                'confirm' => $this->l('Delete selected items?'),
                 'icon' => 'icon-trash'
             ),
             'correctlink' => array(
-                'text' => $this->trans('Correct Image Link'),
-                'confirm' => $this->trans('Are you sure you want to change image url from old theme to new theme?'),
+                'text' => $this->l('Correct Image Link'),
+                'confirm' => $this->l('Are you sure you want to change image url from old theme to new theme?'),
                 'icon' => 'icon-edit'
             ),
             'insertLang' => array(
-                'text' => $this->trans('Auto Input Data for New Lang'),
-                'confirm' => $this->trans('Auto insert data for new language?'),
+                'text' => $this->l('Auto Input Data for New Lang'),
+                'confirm' => $this->l('Auto insert data for new language?'),
                 'icon' => 'icon-edit'
             ),
         );
@@ -264,7 +264,7 @@ class AdminLeoWidgetsController extends ModuleAdminControllerCore
                     } else {
                         $model->clearCaches();
                         if (Tools::isSubmit('saveandstayleowidget')) {
-                            $this->confirmations[] = $this->trans('Update successful');
+                            $this->confirmations[] = $this->l('Update successful');
                             Tools::redirectAdmin(self::$currentIndex.'&id_btmegamenu_widgets='.$model->id.'&updatebtmegamenu_widgets&token='.$this->token.'&conf=4');
                         } else {
                             Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token.'&conf=4');
@@ -277,7 +277,7 @@ class AdminLeoWidgetsController extends ModuleAdminControllerCore
                     } else {
                         $model->clearCaches();
                         if (Tools::isSubmit('saveandstayleowidget')) {
-                            $this->confirmations[] = $this->trans('Update successful');
+                            $this->confirmations[] = $this->l('Update successful');
                             Tools::redirectAdmin(self::$currentIndex.'&id_btmegamenu_widgets='.$model->id.'&updatebtmegamenu_widgets&token='.$this->token.'&conf=4');
                         } else {
                             Tools::redirectAdmin(self::$currentIndex.'&token='.$this->token.'&conf=4');

@@ -86,7 +86,6 @@ class PDFGeneratorCore extends TCPDF
         'lt' => 'dejavusans',
         'lv' => 'dejavusans',
         'tr' => 'dejavusans',
-        'ro' => 'dejavusans',
         'ko' => 'cid0kr',
         'zh' => 'cid0cs',
         'tw' => 'cid0cs',
@@ -197,9 +196,9 @@ class PDFGeneratorCore extends TCPDF
      * @param string $filename
      * @param bool|string $display true:display to user, false:save, 'I','D','S' as fpdf display
      *
-     * @return string HTML rendered
-     *
      * @throws PrestaShopException
+     *
+     * @return string HTML rendered
      */
     public function render($filename, $display = true)
     {

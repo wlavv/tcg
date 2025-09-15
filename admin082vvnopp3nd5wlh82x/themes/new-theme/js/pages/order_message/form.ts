@@ -22,11 +22,10 @@
  * @copyright Since 2007 PrestaShop SA and Contributors
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
+import TranslatableInput from '@components/translatable-input';
+
+const {$} = window;
 
 $(() => {
-  window.prestashop.component.initComponents(
-    [
-      'TranslatableInput',
-    ],
-  );
+  new TranslatableInput();
 });

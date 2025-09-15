@@ -19,10 +19,13 @@ use ApiPlatform\Metadata\GraphQl\Operation;
  * Deserialize stage of GraphQL resolvers.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated
  */
 interface DeserializeStageInterface
 {
-    public function __invoke(?object $objectToPopulate, string $resourceClass, Operation $operation, array $context): ?object;
+    /**
+     * @param object|null $objectToPopulate
+     *
+     * @return object|null
+     */
+    public function __invoke($objectToPopulate, string $resourceClass, Operation $operation, array $context);
 }

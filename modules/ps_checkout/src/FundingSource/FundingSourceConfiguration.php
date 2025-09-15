@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -23,8 +22,17 @@ namespace PrestaShop\Module\PrestashopCheckout\FundingSource;
 
 class FundingSourceConfiguration
 {
-    public function __construct(private FundingSourceConfigurationRepository $repository)
+    /**
+     * @var FundingSourceConfigurationRepository
+     */
+    private $repository;
+
+    /**
+     * @param FundingSourceConfigurationRepository $repository
+     */
+    public function __construct(FundingSourceConfigurationRepository $repository)
     {
+        $this->repository = $repository;
     }
 
     /**

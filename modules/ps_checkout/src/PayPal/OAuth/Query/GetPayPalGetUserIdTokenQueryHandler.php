@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,17 +20,36 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\OAuth\Query;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\PayPal\OAuth\OAuthService;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration;
 use PrestaShop\Module\PrestashopCheckout\Repository\PayPalCustomerRepository;
 
 class GetPayPalGetUserIdTokenQueryHandler
 {
-    public function __construct(
-        private OAuthService $OAuthService,
-        private PayPalCustomerRepository $customerRepository,
-        private PayPalConfiguration $payPalConfiguration,
-    ) {
+    /**
+     * @var OAuthService
+     */
+    private $OAuthService;
+
+    /**
+     * @var PayPalCustomerRepository
+     */
+    private $customerRepository;
+    /**
+     * @var PayPalConfiguration
+     */
+    private $payPalConfiguration;
+
+    /**
+     * @param OAuthService $OAuthService
+     * @param PayPalCustomerRepository $customerRepository
+     */
+    public function __construct(OAuthService $OAuthService, PayPalCustomerRepository $customerRepository, PayPalConfiguration $payPalConfiguration)
+    {
+        $this->OAuthService = $OAuthService;
+        $this->customerRepository = $customerRepository;
+        $this->payPalConfiguration = $payPalConfiguration;
     }
 
     /**
@@ -39,9 +57,9 @@ class GetPayPalGetUserIdTokenQueryHandler
      *
      * @return GetPayPalGetUserIdTokenQueryResult
      *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function __invoke(GetPayPalGetUserIdTokenQuery $query)
+    public function handle(GetPayPalGetUserIdTokenQuery $query)
     {
         $customerIdPayPal = $query->getCustomerId() ? $this->customerRepository->findPayPalCustomerIdByCustomerId($query->getCustomerId()) : null;
         $merchantId = $this->payPalConfiguration->getMerchantId();

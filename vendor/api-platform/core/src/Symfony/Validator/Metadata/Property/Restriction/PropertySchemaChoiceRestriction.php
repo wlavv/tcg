@@ -52,14 +52,9 @@ final class PropertySchemaChoiceRestriction implements PropertySchemaRestriction
 
         $restriction['type'] = 'array';
 
-        $types = array_values(array_unique(array_map(fn (mixed $choice) => \is_string($choice) ? 'string' : 'number', $choices)));
-
-        if ($count = \count($types)) {
-            if (1 === $count) {
-                $types = $types[0];
-            }
-
-            $restriction['items'] = ['type' => $types, 'enum' => $choices];
+        $type = $propertyMetadata->getBuiltinTypes()[0] ?? null;
+        if ($type) {
+            $restriction['items'] = ['type' => Type::BUILTIN_TYPE_STRING === $type->getBuiltinType() ? 'string' : 'number', 'enum' => $choices];
         }
 
         if (null !== $constraint->min) {
@@ -78,19 +73,6 @@ final class PropertySchemaChoiceRestriction implements PropertySchemaRestriction
      */
     public function supports(Constraint $constraint, ApiProperty $propertyMetadata): bool
     {
-        $types = array_map(static fn (Type $type) => $type->getBuiltinType(), $propertyMetadata->getBuiltinTypes() ?? []);
-        if ($propertyMetadata->getExtraProperties()['nested_schema'] ?? false) {
-            $types = [Type::BUILTIN_TYPE_STRING];
-        }
-
-        if (
-            null !== ($builtinType = $propertyMetadata->getBuiltinTypes()[0] ?? null)
-            && $builtinType->isCollection()
-            && \count($builtinType->getCollectionValueTypes())
-        ) {
-            $types = array_unique(array_merge($types, array_map(static fn (Type $type) => $type->getBuiltinType(), $builtinType->getCollectionValueTypes())));
-        }
-
-        return $constraint instanceof Choice && \count($types) && array_intersect($types, [Type::BUILTIN_TYPE_STRING, Type::BUILTIN_TYPE_INT, Type::BUILTIN_TYPE_FLOAT]);
+        return $constraint instanceof Choice && null !== ($type = $propertyMetadata->getBuiltinTypes()[0] ?? null) && \in_array($type->getBuiltinType(), [Type::BUILTIN_TYPE_STRING, Type::BUILTIN_TYPE_INT, Type::BUILTIN_TYPE_FLOAT], true);
     }
 }

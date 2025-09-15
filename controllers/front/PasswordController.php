@@ -51,7 +51,7 @@ class PasswordControllerCore extends FrontController
      *
      * @see FrontController::postProcess()
      */
-    public function postProcess(): void
+    public function postProcess()
     {
         $this->setTemplate('customer/password-email');
 
@@ -64,7 +64,7 @@ class PasswordControllerCore extends FrontController
         }
     }
 
-    protected function sendRenewPasswordLink(): void
+    protected function sendRenewPasswordLink()
     {
         if (!($email = $this->IDNConverter->emailToUtf8(trim(Tools::getValue('email')))) || !Validate::isEmail($email)) {
             $this->errors[] = $this->trans('Invalid email address.', [], 'Shop.Notifications.Error');
@@ -122,7 +122,7 @@ class PasswordControllerCore extends FrontController
         }
     }
 
-    protected function changePassword(): void
+    protected function changePassword()
     {
         $token = Tools::getValue('token');
         $id_customer = (int) Tools::getValue('id_customer');
@@ -161,7 +161,7 @@ class PasswordControllerCore extends FrontController
                         $this->errors[] = $this->trans('The confirmation password doesn\'t match.', [], 'Shop.Notifications.Error');
                     }
 
-                    if (!Validate::isAcceptablePasswordLength($passwd)) {
+                    if (!Validate::isPlaintextPassword($passwd)) {
                         $this->errors[] = $this->trans('The password is not in a valid format.', [], 'Shop.Notifications.Error');
                     }
                 }
@@ -208,12 +208,7 @@ class PasswordControllerCore extends FrontController
             } else {
                 // Both password fields posted. Check if all is right and store new password properly.
                 if (!$reset_token || (strtotime($customer->last_passwd_gen . '+' . (int) Configuration::get('PS_PASSWD_TIME_FRONT') . ' minutes') - time()) > 0) {
-                    Tools::redirect($this->context->link->getPageLink(
-                        'authentication',
-                        null,
-                        null,
-                        ['error_regen_pwd' => 1]
-                    ));
+                    Tools::redirect('index.php?controller=authentication&error_regen_pwd');
                 } else {
                     $customer->passwd = $this->get('hashing')->hash($password = Tools::getValue('passwd'), _COOKIE_KEY_);
                     $customer->last_passwd_gen = date('Y-m-d H:i:s', time());
@@ -248,7 +243,7 @@ class PasswordControllerCore extends FrontController
                             ]);
                             $this->success[] = $this->trans('Your password has been successfully reset and a confirmation has been sent to your email address: %s', [$customer->email], 'Shop.Notifications.Success');
                             $this->context->updateCustomer($customer);
-                            $this->redirectWithNotifications($this->context->link->getPageLink('my-account'));
+                            $this->redirectWithNotifications('index.php?controller=my-account');
                         } else {
                             $this->errors[] = $this->trans('An error occurred while sending the email.', [], 'Shop.Notifications.Error');
                         }
@@ -263,9 +258,9 @@ class PasswordControllerCore extends FrontController
     }
 
     /**
-     * @return void
+     * @return bool
      */
-    public function display(): void
+    public function display()
     {
         $this->context->smarty->assign(
             [
@@ -279,12 +274,14 @@ class PasswordControllerCore extends FrontController
         );
 
         $this->smartyOutputContent($this->template);
+
+        return true;
     }
 
     /**
      * @return array
      */
-    protected function getErrors(): array
+    protected function getErrors()
     {
         $notifications = $this->prepareNotifications();
 
@@ -299,7 +296,7 @@ class PasswordControllerCore extends FrontController
     /**
      * @return array
      */
-    protected function getSuccesses(): array
+    protected function getSuccesses()
     {
         $notifications = $this->prepareNotifications();
 
@@ -312,7 +309,7 @@ class PasswordControllerCore extends FrontController
         return $successes;
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -327,7 +324,7 @@ class PasswordControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         return $this->context->link->getPageLink('password');
     }

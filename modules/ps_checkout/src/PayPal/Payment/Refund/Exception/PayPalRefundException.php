@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,7 +20,9 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Payment\Refund\Exception;
 
-class PayPalRefundException extends \Exception
+use Exception;
+
+class PayPalRefundException extends Exception
 {
     const INVALID_ORDER_ID = 1;
     const INVALID_TRANSACTION_ID = 2;

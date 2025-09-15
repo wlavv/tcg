@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,9 +20,14 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\ApplePay;
 
+use Configuration;
+use Exception;
+use Hook;
+use Module;
 use PrestaShop\Module\PrestashopCheckout\PayPal\ApplePay\Exception\ApplePaySetupException;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration;
 use PrestaShop\Module\PrestashopCheckout\System\SystemConfiguration;
+use Shop;
 
 class AppleSetup
 {
@@ -65,12 +69,12 @@ class AppleSetup
     public function registerModuleRoutesHook()
     {
         try {
-            $module = \Module::getInstanceByName('ps_checkout');
-            $shopList = \Shop::getCompleteListOfShopsID();
-            if (!\Hook::registerHook($module, 'moduleRoutes', $shopList)) {
+            $module = Module::getInstanceByName('ps_checkout');
+            $shopList = Shop::getCompleteListOfShopsID();
+            if (!Hook::registerHook($module, 'moduleRoutes', $shopList)) {
                 throw new ApplePaySetupException('Failed to register moduleRoutes hook for ps_checkout.', ApplePaySetupException::FAILED_REGISTER_HOOK);
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             throw new ApplePaySetupException('Failed to register moduleRoutes hook for ps_checkout.', ApplePaySetupException::ERROR_REGISTER_HOOK, $e);
         }
     }
@@ -144,7 +148,7 @@ class AppleSetup
      */
     public function checkPrestaShopIsAtDomainRoot()
     {
-        $defaultShop = new \Shop((int) \Configuration::get('PS_SHOP_DEFAULT'));
+        $defaultShop = new Shop((int) Configuration::get('PS_SHOP_DEFAULT'));
 
         if (!$defaultShop->physical_uri) {
             throw new ApplePaySetupException('Unable to retrieve the base URI of the shop.', ApplePaySetupException::UNABLE_RETRIEVE_BASE_URI);

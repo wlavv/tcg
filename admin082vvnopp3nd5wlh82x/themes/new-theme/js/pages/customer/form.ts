@@ -23,14 +23,12 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
+import ChoiceTable from '@components/choice-table';
 import CustomerForm from './CustomerForm';
 
 $(() => {
   new CustomerForm();
 
-  window.prestashop.component.initComponents(
-    [
-      'ChoiceTable',
-    ],
-  );
+  // needed for "Group access" input in Add/Edit customer forms
+  new ChoiceTable();
 });

@@ -26,14 +26,12 @@
 
 namespace PrestaShopBundle\Controller\Admin\Improve\Modules;
 
-use PrestaShop\PrestaShop\Adapter\Presenter\Module\ModulePresenter;
 use PrestaShop\PrestaShop\Core\Module\ModuleCollection;
-use PrestaShop\PrestaShop\Core\Module\ModuleRepository;
 use PrestaShop\PrestaShop\Core\Module\ModuleRepositoryInterface;
-use PrestaShop\PrestaShop\Core\Security\Permission;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
+use PrestaShopBundle\Security\Voter\PageVoter;
 
-abstract class ModuleAbstractController extends PrestaShopAdminController
+abstract class ModuleAbstractController extends FrameworkBundleAdminController
 {
     public const CONTROLLER_NAME = 'ADMINMODULESSF';
 
@@ -41,39 +39,29 @@ abstract class ModuleAbstractController extends PrestaShopAdminController
     public const UPDATABLE_MODULE_TYPE = 'to_update';
     public const TOTAL_MODULE_TYPE = 'count';
 
-    public static function getSubscribedServices(): array
+    final protected function getNotificationPageData(ModuleCollection $moduleCollection): array
     {
-        return parent::getSubscribedServices() + [
-            ModuleRepository::class => ModuleRepository::class,
-            ModulePresenter::class => ModulePresenter::class,
-        ];
-    }
+        $modulePresenter = $this->get('prestashop.adapter.presenter.module');
+        $moduleRepository = $this->getModuleRepository();
 
-    protected function getNotificationPageData(ModuleCollection $moduleCollection): array
-    {
-        $this->getModuleRepository()->setActionUrls($moduleCollection);
+        $moduleRepository->setActionUrls($moduleCollection);
 
         return [
             'enableSidebar' => true,
             'layoutHeaderToolbarBtn' => $this->getToolbarButtons(),
-            'layoutTitle' => $this->trans('Module notifications', [], 'Admin.Navigation.Menu'),
+            'layoutTitle' => $this->trans('Module notifications', 'Admin.Modules.Feature'),
             'help_link' => $this->generateSidebarLink('AdminModules'),
-            'modules' => $this->getModulePresenter()->presentCollection($moduleCollection),
+            'modules' => $modulePresenter->presentCollection($moduleCollection),
             'requireBulkActions' => false,
             'requireFilterStatus' => false,
-            'level' => $this->getAuthorizationLevel($this::CONTROLLER_NAME),
-            'errorMessage' => $this->trans('You do not have permission to add this.', [], 'Admin.Notifications.Error'),
+            'level' => $this->authorizationLevel($this::CONTROLLER_NAME),
+            'errorMessage' => $this->trans('You do not have permission to add this.', 'Admin.Notifications.Error'),
         ];
-    }
-
-    protected function getModulePresenter(): ModulePresenter
-    {
-        return $this->container->get(ModulePresenter::class);
     }
 
     protected function getModuleRepository(): ModuleRepositoryInterface
     {
-        return $this->container->get(ModuleRepository::class);
+        return $this->get('prestashop.core.admin.module.repository');
     }
 
     /**
@@ -81,17 +69,23 @@ abstract class ModuleAbstractController extends PrestaShopAdminController
      *
      * @return array
      */
-    protected function getToolbarButtons(): array
+    protected function getToolbarButtons()
     {
         // toolbarButtons
         $toolbarButtons = [];
 
-        if ($this->isGranted(Permission::CREATE, self::CONTROLLER_NAME) || $this->isGranted(Permission::DELETE, self::CONTROLLER_NAME)) {
+        if (!in_array(
+            $this->authorizationLevel($this::CONTROLLER_NAME),
+            [
+                PageVoter::LEVEL_READ,
+                PageVoter::LEVEL_UPDATE,
+            ]
+        )) {
             $toolbarButtons['add_module'] = [
                 'href' => '#',
-                'desc' => $this->trans('Upload a module', [], 'Admin.Modules.Feature'),
+                'desc' => $this->trans('Upload a module', 'Admin.Modules.Feature'),
                 'icon' => 'cloud_upload',
-                'help' => $this->trans('Upload a module', [], 'Admin.Modules.Feature'),
+                'help' => $this->trans('Upload a module', 'Admin.Modules.Feature'),
             ];
         }
 

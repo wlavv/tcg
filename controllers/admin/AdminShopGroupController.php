@@ -84,11 +84,6 @@ class AdminShopGroupControllerCore extends AdminController
         return Configuration::get('PS_MULTISHOP_FEATURE_ACTIVE');
     }
 
-    /**
-     * AdminController::initContent() override.
-     *
-     * @see AdminController::initContent()
-     */
     public function initContent()
     {
         parent::initContent();
@@ -368,7 +363,7 @@ class AdminShopGroupControllerCore extends AdminController
      */
     protected function afterAdd($new_shop_group)
     {
-        // Reset available quantitites
+        //Reset available quantitites
         StockAvailable::resetProductFromStockAvailableByShopGroup($new_shop_group);
     }
 
@@ -379,7 +374,7 @@ class AdminShopGroupControllerCore extends AdminController
      */
     protected function afterUpdate($new_shop_group)
     {
-        // Reset available quantitites
+        //Reset available quantitites
         StockAvailable::resetProductFromStockAvailableByShopGroup($new_shop_group);
     }
 

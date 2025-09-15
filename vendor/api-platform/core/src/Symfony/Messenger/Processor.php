@@ -15,8 +15,8 @@ namespace ApiPlatform\Symfony\Messenger;
 
 use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
-use ApiPlatform\Metadata\Util\ClassInfoTrait;
 use ApiPlatform\State\ProcessorInterface;
+use ApiPlatform\Util\ClassInfoTrait;
 use Symfony\Component\Messenger\Envelope;
 use Symfony\Component\Messenger\MessageBusInterface;
 use Symfony\Component\Messenger\Stamp\HandledStamp;
@@ -31,7 +31,10 @@ final class Processor implements ProcessorInterface
         $this->messageBus = $messageBus;
     }
 
-    private function persist(mixed $data, array $context = []): mixed
+    /**
+     * {@inheritdoc}
+     */
+    private function persist($data, array $context = [])
     {
         $envelope = $this->dispatch(
             (new Envelope($data))
@@ -46,7 +49,10 @@ final class Processor implements ProcessorInterface
         return $handledStamp->getResult();
     }
 
-    private function remove(mixed $data): void
+    /**
+     * {@inheritdoc}
+     */
+    private function remove($data, array $context = [])
     {
         $this->dispatch(
             (new Envelope($data))
@@ -54,14 +60,12 @@ final class Processor implements ProcessorInterface
         );
     }
 
-    public function process(mixed $data, Operation $operation, array $uriVariables = [], array $context = []): mixed
+    public function process($data, Operation $operation, array $uriVariables = [], array $context = [])
     {
         if ($operation instanceof DeleteOperationInterface) {
-            $this->remove($data);
-
-            return $data;
+            return $this->remove($data);
         }
 
-        return $this->persist($data, $context);
+        return $this->persist($data);
     }
 }

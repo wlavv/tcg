@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Repository;
 
+use Exception;
+use PrestaShop\Module\PrestashopCheckout\Configuration\PrestaShopConfiguration;
 use PrestaShop\Module\PrestashopCheckout\Entity\PsAccount;
 use PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts;
 
@@ -29,13 +30,21 @@ use PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts;
  */
 class PsAccountRepository
 {
+    /** @var PrestaShopConfiguration */
+    private $configuration;
+
     private $psAccountsService;
 
-    public function __construct(PsAccounts $psAccountsFacade)
+    /**
+     * @param PrestaShopConfiguration $configuration
+     * @param PsAccounts $psAccountsFacade
+     */
+    public function __construct(PrestaShopConfiguration $configuration, PsAccounts $psAccountsFacade)
     {
+        $this->configuration = $configuration;
         try {
             $this->psAccountsService = $psAccountsFacade->getPsAccountsService();
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             $this->psAccountsService = false;
         }
     }
@@ -101,7 +110,7 @@ class PsAccountRepository
 
         try {
             return (string) $this->psAccountsService->getOrRefreshToken();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
@@ -163,7 +172,7 @@ class PsAccountRepository
     /**
      * @return bool
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function isEmailValidated()
     {
@@ -185,7 +194,7 @@ class PsAccountRepository
 
         try {
             return $this->psAccountsService->isAccountLinked();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }

@@ -13,4 +13,5 @@ Mensagem:
 {message}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

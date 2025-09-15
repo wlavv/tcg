@@ -38,7 +38,7 @@ class CustomerNameValidatorFactory implements ConstraintValidatorFactoryInterfac
      *
      * @return ConstraintValidatorInterface
      */
-    public function getInstance(Constraint $constraint): ConstraintValidatorInterface
+    public function getInstance(Constraint $constraint)
     {
         return new CustomerNameValidator();
     }

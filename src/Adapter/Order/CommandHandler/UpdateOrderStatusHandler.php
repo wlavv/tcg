@@ -28,30 +28,21 @@ namespace PrestaShop\PrestaShop\Adapter\Order\CommandHandler;
 
 use Carrier;
 use Configuration;
+use Context;
 use OrderHistory;
 use OrderState;
 use PrestaShop\PrestaShop\Adapter\Order\AbstractOrderHandler;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
-use PrestaShop\PrestaShop\Core\Context\EmployeeContext;
 use PrestaShop\PrestaShop\Core\Domain\Order\Command\UpdateOrderStatusCommand;
 use PrestaShop\PrestaShop\Core\Domain\Order\CommandHandler\UpdateOrderStatusHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\ChangeOrderStatusException;
 use PrestaShop\PrestaShop\Core\Domain\Order\Exception\OrderException;
-use PrestaShop\PrestaShop\Core\Mutation\MutationTracker;
-use PrestaShopBundle\Entity\MutationAction;
+use StockAvailable;
 
 /**
  * @internal
  */
-#[AsCommandHandler]
 final class UpdateOrderStatusHandler extends AbstractOrderHandler implements UpdateOrderStatusHandlerInterface
 {
-    public function __construct(
-        private EmployeeContext $employeeContext,
-        private MutationTracker $mutationTracker,
-    ) {
-    }
-
     /**
      * {@inheritdoc}
      */
@@ -72,7 +63,7 @@ final class UpdateOrderStatusHandler extends AbstractOrderHandler implements Upd
         // Create new OrderHistory
         $history = new OrderHistory();
         $history->id_order = $order->id;
-        $history->id_employee = (int) $this->employeeContext->getEmployee()?->getId();
+        $history->id_employee = (int) Context::getContext()->employee->id;
 
         $useExistingPayments = false;
         if (!$order->hasInvoice()) {
@@ -91,8 +82,17 @@ final class UpdateOrderStatusHandler extends AbstractOrderHandler implements Upd
         }
 
         // Save all changes
-        if ($history->addWithemail(true, $templateVars)) {
-            $this->mutationTracker->addMutationForApiClient('order_history', (int) $history->id, MutationAction::CREATE);
+        $historyAdded = $history->addWithemail(true, $templateVars);
+
+        if ($historyAdded) {
+            // synchronizes quantities if needed..
+            if (Configuration::get('PS_ADVANCED_STOCK_MANAGEMENT')) {
+                foreach ($order->getProducts() as $product) {
+                    if (StockAvailable::dependsOnStock($product['product_id'])) {
+                        StockAvailable::synchronize($product['product_id'], (int) $product['id_shop']);
+                    }
+                }
+            }
 
             return;
         }

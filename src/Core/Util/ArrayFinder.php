@@ -30,7 +30,6 @@ namespace PrestaShop\PrestaShop\Core\Util;
 
 use ArrayAccess;
 use Countable;
-use ReturnTypeWillChange;
 use Symfony\Component\PropertyAccess\Exception\UnexpectedTypeException;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessor;
@@ -83,7 +82,7 @@ class ArrayFinder implements ArrayAccess, Countable
      * $arrayFinder->get('a.e.9');
      * $arrayFinder->get('4');
      */
-    public function get(?string $path = null, $default = null)
+    public function get(string $path = null, $default = null)
     {
         if ($path === null) {
             return $this->array;
@@ -92,7 +91,7 @@ class ArrayFinder implements ArrayAccess, Countable
 
         try {
             $value = $this->propertyAccessor->getValue($this->array, $path);
-        } catch (UnexpectedTypeException) {
+        } catch (UnexpectedTypeException $e) {
             // If a value within the path is neither object nor array
             return null;
         }
@@ -138,8 +137,8 @@ class ArrayFinder implements ArrayAccess, Countable
         }
 
         return $this->propertyAccessor->isReadable(
-            $this->array,
-            $this->convertDotPathToArrayPath($offset))
+                $this->array,
+                $this->convertDotPathToArrayPath($offset))
             && ($this->get($offset) !== null)
         ;
     }
@@ -151,7 +150,7 @@ class ArrayFinder implements ArrayAccess, Countable
      * $arrayFinder[4];
      * $arrayFinder['a'];
      */
-    #[ReturnTypeWillChange]
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         if (is_int($offset)) {

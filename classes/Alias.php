@@ -41,7 +41,7 @@ class AliasCore extends ObjectModel
         'primary' => 'id_alias',
         'fields' => [
             'search' => ['type' => self::TYPE_STRING, 'validate' => 'isValidSearch', 'required' => true, 'size' => 255],
-            'alias' => ['type' => self::TYPE_STRING, 'validate' => 'isValidSearch', 'required' => true, 'size' => 191],
+            'alias' => ['type' => self::TYPE_STRING, 'validate' => 'isValidSearch', 'required' => true, 'size' => 255],
             'active' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
         ],
     ];
@@ -56,6 +56,7 @@ class AliasCore extends ObjectModel
     public function __construct($id = null, $alias = null, $search = null)
     {
         $this->def = Alias::getDefinition($this);
+        $this->setDefinitionRetrocompatibility();
 
         if ($id) {
             parent::__construct($id);

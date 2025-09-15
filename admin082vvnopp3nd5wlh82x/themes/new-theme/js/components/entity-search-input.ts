@@ -28,7 +28,7 @@ import ComponentsMap from '@components/components-map';
 import ConfirmModal from '@components/modal';
 // @ts-ignore-next-line
 import Bloodhound from 'typeahead.js';
-import {isUndefined} from '@components/typeguard';
+import {isUndefined} from '@PSTypes/typeguard';
 
 const EntitySearchInputMap = ComponentsMap.entitySearchInput;
 

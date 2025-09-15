@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Customer\ValueObject;
 
+use InvalidArgumentException;
+
 class PayPalCustomerId
 {
     /**
@@ -31,7 +32,7 @@ class PayPalCustomerId
     /**
      * @param string $customerId
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct($customerId)
     {
@@ -48,26 +49,26 @@ class PayPalCustomerId
     }
 
     /**
-     * @param string|mixed $customerId
+     * @param string $customerId
      *
      * @return void
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function assertIsValid($customerId)
     {
         if (!is_string($customerId)) {
-            throw new \InvalidArgumentException('PayPal Customer ID must be a string.');
+            throw new InvalidArgumentException('PayPal Customer ID must be a string.');
         }
 
         $length = strlen($customerId);
 
         if ($length < 1 || $length > 22) {
-            throw new \InvalidArgumentException('PayPal Customer ID must be between 1 and 22 characters long.');
+            throw new InvalidArgumentException('PayPal Customer ID must be between 1 and 22 characters long.');
         }
 
         if (preg_match('/^[0-9a-zA-Z_-]+$/', $customerId) !== 1) {
-            throw new \InvalidArgumentException('PayPal Customer ID must be alphanumeric.');
+            throw new InvalidArgumentException('PayPal Customer ID must be alphanumeric.');
         }
     }
 }

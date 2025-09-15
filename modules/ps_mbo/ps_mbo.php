@@ -31,22 +31,24 @@ if (file_exists($autoloadPath)) {
 
 use PrestaShop\Module\Mbo\Accounts\Provider\AccountsDataProvider;
 use PrestaShop\Module\Mbo\Addons\Subscriber\ModuleManagementEventSubscriber;
+use PrestaShop\Module\Mbo\Api\Security\AdminAuthenticationProvider;
 use PrestaShop\Module\Mbo\Helpers\Config;
-use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
-use PrestaShop\PrestaShop\Core\Module\ModuleRepository;
+use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
 use PrestaShopBundle\Event\ModuleManagementEvent;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\Dotenv\Dotenv;
+use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 
 class ps_mbo extends Module
 {
     use PrestaShop\Module\Mbo\Traits\HaveTabs;
     use PrestaShop\Module\Mbo\Traits\UseHooks;
-    use PrestaShop\Module\Mbo\Traits\HaveConfigurationPage;
+    use PrestaShop\Module\Mbo\Traits\HaveShopOnExternalService;
 
     /**
      * @var string
      */
-    public const VERSION = '5.0.1';
+    public const VERSION = '4.12.0';
 
     public const CONTROLLERS_WITH_CONNECTION_TOOLBAR = [
         'AdminModulesManage',
@@ -61,11 +63,17 @@ class ps_mbo extends Module
 
     public $configurationList = [
         'PS_MBO_SHOP_ADMIN_UUID' => '', // 'ADMIN' because there will be only one for all shops in a multishop context
+        'PS_MBO_SHOP_ADMIN_MAIL' => '',
         'PS_MBO_LAST_PS_VERSION_API_CONFIG' => '',
     ];
 
     /**
-     * @var PrestaShop\Module\Mbo\DependencyInjection\ServiceContainer
+     * @var ContainerInterface
+     */
+    protected $container;
+
+    /**
+     * @var \PrestaShop\Module\Mbo\DependencyInjection\ServiceContainer
      */
     private $serviceContainer;
 
@@ -85,18 +93,14 @@ class ps_mbo extends Module
     public function __construct()
     {
         $this->name = 'ps_mbo';
-        // This value must be hard-coded to respect Addons rules, so we must make sure that the const value is always synced with this one
-        $this->version = '5.0.1';
-        if ($this->version !== self::VERSION) {
-            throw new PrestaShopException('The values from ps_mbo::$version and ps_mbo::VERSION must be identical');
-        }
+        $this->version = '4.12.0';
         $this->author = 'PrestaShop';
         $this->tab = 'administration';
         $this->module_key = '6cad5414354fbef755c7df4ef1ab74eb';
         $this->need_instance = 0;
         $this->ps_versions_compliancy = [
-            'min' => '9.0.0',
-            'max' => '9.99.99',
+            'min' => '8.0.2',
+            'max' => '8.99.99',
         ];
 
         parent::__construct();
@@ -126,11 +130,7 @@ class ps_mbo extends Module
     public function install(): bool
     {
         try {
-            /** @var PrestaShop\PsAccountsInstaller\Installer\Installer|null $installer */
-            $installer = $this->get(PrestaShop\PsAccountsInstaller\Installer\Installer::class);
-            if ($installer) {
-                $installer->install();
-            }
+            $this->getService('mbo.ps_accounts.installer')->install();
         } catch (Exception $e) {
             ErrorHelper::reportError($e);
         }
@@ -140,6 +140,8 @@ class ps_mbo extends Module
             // Do come extra operations on modules' registration like modifying orders
             $this->installHooks();
 
+            $this->getAdminAuthenticationProvider()->clearCache();
+            $this->getAdminAuthenticationProvider()->createApiUser();
             $this->postponeTabsTranslations();
 
             return true;
@@ -160,6 +162,16 @@ class ps_mbo extends Module
             return false;
         }
 
+        $this->getAdminAuthenticationProvider()->deletePossibleApiUser();
+        $this->getAdminAuthenticationProvider()->clearCache();
+
+        $lockFiles = ['registerShop', 'updateShop', 'createApiUser'];
+        foreach ($lockFiles as $lockFile) {
+            if (file_exists($this->moduleCacheDir . $lockFile . '.lock')) {
+                unlink($this->moduleCacheDir . $lockFile . '.lock');
+            }
+        }
+
         foreach (array_keys($this->configurationList) as $name) {
             Configuration::deleteByName($name);
         }
@@ -169,7 +181,7 @@ class ps_mbo extends Module
 
         $this->uninstallTables();
 
-        /** @var Symfony\Component\EventDispatcher\EventDispatcher $eventDispatcher */
+        /** @var \Symfony\Component\EventDispatcher\EventDispatcherInterface $eventDispatcher */
         $eventDispatcher = $this->get('event_dispatcher');
         if (!$eventDispatcher->hasListeners(ModuleManagementEvent::UNINSTALL)) {
             return true;
@@ -178,14 +190,12 @@ class ps_mbo extends Module
         // Execute them first
         foreach ($eventDispatcher->getListeners(ModuleManagementEvent::UNINSTALL) as $listener) {
             if ($listener[0] instanceof ModuleManagementEventSubscriber) {
-                /** @var ModuleRepository $moduleRepository */
-                $moduleRepository = $this->get(ModuleRepository::class);
-                $legacyModule = $moduleRepository->getModule('ps_mbo');
-                $listener[0]->{(string) $listener[1]}(new ModuleManagementEvent($legacyModule));
+                $legacyModule = $this->get('prestashop.core.admin.module.repository')->getModule('ps_mbo');
+                $listener[0]->{(string)$listener[1]}(new ModuleManagementEvent($legacyModule));
             }
         }
 
-        // And then remove them
+        //And then remove them
         foreach ($eventDispatcher->getListeners(ModuleManagementEvent::UNINSTALL) as $listener) {
             if ($listener[0] instanceof ModuleManagementEventSubscriber) {
                 $eventDispatcher->removeSubscriber($listener[0]);
@@ -227,6 +237,9 @@ class ps_mbo extends Module
         $this->updateTabs();
         $this->postponeTabsTranslations();
 
+        // Register online services
+        $this->registerShop();
+
         return true;
     }
 
@@ -254,7 +267,25 @@ class ps_mbo extends Module
         // Restore previous context
         Shop::setContext($previousContextType, $previousContextShopId);
 
+        // Unregister from online services
+        $this->unregisterShop();
+
         return $this->handleTabAction('uninstall');
+    }
+
+    /**
+     * Override of native function to always retrieve Symfony container instead of legacy admin
+     * container on legacy context.
+     *
+     * {@inheritdoc}
+     */
+    public function get($serviceName)
+    {
+        if (null === $this->container) {
+            $this->container = SymfonyContainer::getInstance();
+        }
+
+        return $this->container->get($serviceName);
     }
 
     /**
@@ -265,7 +296,7 @@ class ps_mbo extends Module
     public function getService($serviceName)
     {
         if ($this->serviceContainer === null) {
-            $this->serviceContainer = new PrestaShop\Module\Mbo\DependencyInjection\ServiceContainer(
+            $this->serviceContainer = new \PrestaShop\Module\Mbo\DependencyInjection\ServiceContainer(
                 $this->name . str_replace('.', '', $this->version),
                 $this->getLocalPath()
             );
@@ -298,7 +329,7 @@ class ps_mbo extends Module
         }
 
         // If active = 1
-        // in the module table, the module must be associated to at least one shop to be considered as active
+        //in the module table, the module must be associated to at least one shop to be considered as active
         $result = Db::getInstance()->getRow('SELECT m.`id_module` as `active`, ms.`id_module` as `shop_active`
         FROM `' . _DB_PREFIX_ . 'module` m
         LEFT JOIN `' . _DB_PREFIX_ . 'module_shop` ms ON m.`id_module` = ms.`id_module`
@@ -308,6 +339,30 @@ class ps_mbo extends Module
         } else {
             return false;
         }
+    }
+
+    /**
+     * Get an existing or build an instance of AdminAuthenticationProvider
+     *
+     * @return \PrestaShop\Module\Mbo\Api\Security\AdminAuthenticationProvider
+     *
+     * @throws \Exception
+     */
+    public function getAdminAuthenticationProvider(): AdminAuthenticationProvider
+    {
+        if (null === $this->container) {
+            $this->container = SymfonyContainer::getInstance();
+        }
+
+        return null !== $this->container && $this->container->has('mbo.security.admin_authentication.provider') ?
+            $this->get('mbo.security.admin_authentication.provider') :
+            new AdminAuthenticationProvider(
+                $this->get('doctrine.dbal.default_connection'),
+                $this->context,
+                $this->get('prestashop.core.crypto.hashing'),
+                $this->get('doctrine.cache.provider'),
+                $this->container->getParameter('database_prefix')
+            );
     }
 
     public function installTables(?string $table = null): bool
@@ -339,10 +394,9 @@ class ps_mbo extends Module
     public function getAccountsDataProvider(): ?AccountsDataProvider
     {
         try {
-            return $this->get(AccountsDataProvider::class);
-        } catch (Exception $e) {
+            return $this->getService('mbo.accounts.data_provider');
+        } catch (\Exception $e) {
             ErrorHelper::reportError($e);
-
             return null;
         }
     }
@@ -399,15 +453,13 @@ class ps_mbo extends Module
      */
     private function loadEnv(): void
     {
-        $dotenv = new Dotenv();
-        $dotenv->usePutenv();
+        $dotenv = new Dotenv(true);
         $dotenv->loadEnv(__DIR__ . '/.env');
     }
 
     private function isPsAccountEnabled(): bool
     {
-        /** @var PrestaShop\PsAccountsInstaller\Installer\Installer|null $accountsInstaller */
-        $accountsInstaller = $this->get(PrestaShop\PsAccountsInstaller\Installer\Installer::class);
+        $accountsInstaller = $this->get('mbo.ps_accounts.installer');
 
         return null !== $accountsInstaller && $accountsInstaller->isModuleEnabled();
     }

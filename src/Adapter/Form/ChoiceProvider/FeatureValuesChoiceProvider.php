@@ -31,7 +31,6 @@ namespace PrestaShop\PrestaShop\Adapter\Form\ChoiceProvider;
 use PrestaShop\PrestaShop\Adapter\Feature\Repository\FeatureValueRepository;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
 use PrestaShop\PrestaShop\Core\Form\ConfigurableFormChoiceProviderInterface;
-use PrestaShop\PrestaShop\Core\Form\FormChoiceFormatter;
 
 class FeatureValuesChoiceProvider implements ConfigurableFormChoiceProviderInterface
 {
@@ -75,16 +74,15 @@ class FeatureValuesChoiceProvider implements ConfigurableFormChoiceProviderInter
         if (isset($options['custom'])) {
             $filters['custom'] = $options['custom'];
         }
-
-        // Get cache key and if this is the first time we are accessing it,
-        // we build the options
         $cacheKey = md5(serialize($filters));
-        if (empty($this->cacheFeatureValueChoices[$cacheKey])) {
-            $this->cacheFeatureValueChoices[$cacheKey] = FormChoiceFormatter::formatFormChoices(
-                $this->featureValueRepository->getFeatureValuesByLang($this->contextLanguageId, $filters),
-                'id_feature_value',
-                'value'
-            );
+        if (!empty($this->cacheFeatureValueChoices[$cacheKey])) {
+            return $this->cacheFeatureValueChoices[$cacheKey];
+        }
+
+        $featureValues = $this->featureValueRepository->getFeatureValuesByLang($this->contextLanguageId, $filters);
+        $this->cacheFeatureValueChoices[$cacheKey] = [];
+        foreach ($featureValues as $feature) {
+            $this->cacheFeatureValueChoices[$cacheKey][$feature['value']] = (int) $feature['id_feature_value'];
         }
 
         return $this->cacheFeatureValueChoices[$cacheKey];

@@ -21,15 +21,16 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
+use Exception;
 use PrestaShop\Module\Mbo\Addons\ApiClient;
 use PrestaShop\Module\Mbo\Exception\ExpectedServiceNotFoundException;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 use PrestaShop\Module\Mbo\Module\ActionsManager;
 use PrestaShop\Module\Mbo\Service\HookExceptionHolder;
-use PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer;
 use PrestaShop\PrestaShop\Core\Cache\Clearer\CacheClearerInterface;
 use PrestaShop\PrestaShop\Core\File\Exception\FileNotFoundException;
 use PrestaShop\PrestaShop\Core\Module\SourceHandler\SourceHandlerNotFoundException;
+use Tools;
 
 trait UseActionBeforeUpgradeModule
 {
@@ -41,27 +42,25 @@ trait UseActionBeforeUpgradeModule
      */
     public function hookActionBeforeUpgradeModule(array $params): void
     {
-        if (isset($params['source']) && !$params['source']) {
+        if(isset($params['source']) && !$params['source']){
             $this->purgeCache();
-
             return;
         }
 
         $moduleName = (string) $params['moduleName'];
 
         try {
-            /** @var ApiClient|null $addonsClient */
+            /** @var ApiClient $addonsClient */
             $addonsClient = $this->get('mbo.addons.client.api');
             if (null === $addonsClient) {
                 throw new ExpectedServiceNotFoundException('Unable to get Addons ApiClient');
             }
         } catch (\Exception $e) {
             ErrorHelper::reportError($e);
-
             return;
         }
 
-        $moduleId = (int) \Tools::getValue('module_id');
+        $moduleId = (int) Tools::getValue('module_id');
 
         if (!$moduleId) {
             $addon = $addonsClient->getModuleByName($moduleName);
@@ -74,20 +73,19 @@ trait UseActionBeforeUpgradeModule
         }
 
         try {
-            /** @var ActionsManager|null $actionsManager */
+            /** @var ActionsManager $actionsManager */
             $actionsManager = $this->get('mbo.modules.actions_manager');
             if (null === $actionsManager) {
                 throw new ExpectedServiceNotFoundException('Unable to get ActionsManager');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
-
             return;
         }
 
         try {
             $actionsManager->install($moduleId);
-        } catch (\Exception $e) {
+        } catch(\Exception $e) {
             /** @var HookExceptionHolder $hookExceptionHolder */
             $hookExceptionHolder = $this->get('mbo.hook_exception_holder');
             if (null !== $hookExceptionHolder) {
@@ -104,8 +102,8 @@ trait UseActionBeforeUpgradeModule
     private function purgeCache(): void
     {
         try {
-            /** @var CacheClearerInterface|null $cacheClearer */
-            $cacheClearer = $this->get(SymfonyCacheClearer::class);
+            /** @var CacheClearerInterface $cacheClearer */
+            $cacheClearer = $this->get('mbo.symfony_cache_clearer');
             if (null === $cacheClearer) {
                 throw new ExpectedServiceNotFoundException('Unable to get MboCacheClearer service');
             }

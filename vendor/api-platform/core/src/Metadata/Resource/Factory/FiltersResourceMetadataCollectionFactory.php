@@ -13,9 +13,10 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Metadata\Resource\Factory;
 
-use ApiPlatform\Metadata\Exception\ResourceClassNotFoundException;
+use ApiPlatform\Exception\ResourceClassNotFoundException;
 use ApiPlatform\Metadata\Resource\ResourceMetadataCollection;
-use ApiPlatform\Metadata\Util\AttributeFilterExtractorTrait;
+use ApiPlatform\Util\AnnotationFilterExtractorTrait;
+use Doctrine\Common\Annotations\Reader;
 
 /**
  * Creates a resource metadata from {@see Resource} annotations.
@@ -24,10 +25,17 @@ use ApiPlatform\Metadata\Util\AttributeFilterExtractorTrait;
  */
 final class FiltersResourceMetadataCollectionFactory implements ResourceMetadataCollectionFactoryInterface
 {
-    use AttributeFilterExtractorTrait;
+    use AnnotationFilterExtractorTrait;
 
-    public function __construct(private readonly ?ResourceMetadataCollectionFactoryInterface $decorated = null)
+    private $decorated;
+    private $reader;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $decorated = null, ?Reader $reader = null)
     {
+        $this->decorated = $decorated;
+        if ($reader) {
+            $this->reader = $reader;
+        }
     }
 
     /**
@@ -43,35 +51,28 @@ final class FiltersResourceMetadataCollectionFactory implements ResourceMetadata
 
         try {
             $reflectionClass = new \ReflectionClass($resourceClass);
-        } catch (\ReflectionException) {
-            throw new ResourceClassNotFoundException(\sprintf('Resource "%s" not found.', $resourceClass));
+        } catch (\ReflectionException $reflectionException) {
+            throw new ResourceClassNotFoundException(sprintf('Resource "%s" not found.', $resourceClass));
         }
 
-        $classFilters = $this->readFilterAttributes($reflectionClass);
-        $filters = [];
+        $filters = array_keys($this->readFilterAnnotations($reflectionClass, $this->reader));
 
-        foreach ($classFilters as $id => [$args, $filterClass, $attribute]) {
-            if (!$attribute->alias) {
-                $filters[] = $id;
-            }
+        if (\count($filters)) {
+            trigger_deprecation('api-platform/core', '2.7', 'Use php attributes instead of doctrine annotations to declare filters.');
         }
 
         foreach ($resourceMetadataCollection as $i => $resource) {
-            foreach ($operations = $resource->getOperations() ?? [] as $operationName => $operation) {
+            foreach ($operations = $resource->getOperations() as $operationName => $operation) {
                 $operations->add($operationName, $operation->withFilters(array_unique(array_merge($resource->getFilters() ?? [], $operation->getFilters() ?? [], $filters))));
             }
 
-            if ($operations) {
-                $resourceMetadataCollection[$i] = $resource->withOperations($operations);
-            }
+            $resourceMetadataCollection[$i] = $resource->withOperations($operations);
 
             foreach ($graphQlOperations = $resource->getGraphQlOperations() ?? [] as $operationName => $operation) {
                 $graphQlOperations[$operationName] = $operation->withFilters(array_unique(array_merge($resource->getFilters() ?? [], $operation->getFilters() ?? [], $filters)));
             }
 
-            if ($graphQlOperations) {
-                $resourceMetadataCollection[$i] = $resource->withGraphQlOperations($graphQlOperations);
-            }
+            $resourceMetadataCollection[$i] = $resource->withGraphQlOperations($graphQlOperations);
         }
 
         return $resourceMetadataCollection;

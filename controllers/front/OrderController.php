@@ -1,4 +1,5 @@
 <?php
+
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -68,13 +69,13 @@ class OrderControllerCore extends FrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         parent::init();
         $this->cartChecksum = new CartChecksum(new AddressChecksum());
     }
 
-    public function postProcess(): void
+    public function postProcess()
     {
         parent::postProcess();
 
@@ -98,7 +99,7 @@ class OrderControllerCore extends FrontController
                 $context->cart = $duplication['cart'];
                 CartRule::autoAddToCart($context);
                 $this->context->cookie->write();
-                Tools::redirect($this->context->link->getPageLink('order'));
+                Tools::redirect('index.php?controller=order');
             }
         }
 
@@ -108,7 +109,7 @@ class OrderControllerCore extends FrontController
     /**
      * @return CheckoutProcess
      */
-    public function getCheckoutProcess(): CheckoutProcess
+    public function getCheckoutProcess()
     {
         return $this->checkoutProcess;
     }
@@ -116,7 +117,7 @@ class OrderControllerCore extends FrontController
     /**
      * @return CheckoutSession
      */
-    public function getCheckoutSession(): CheckoutSession
+    public function getCheckoutSession()
     {
         $deliveryOptionsFinder = new DeliveryOptionsFinder(
             $this->context,
@@ -133,7 +134,7 @@ class OrderControllerCore extends FrontController
         return $session;
     }
 
-    protected function bootstrap(): void
+    protected function bootstrap()
     {
         $translator = $this->getTranslator();
         $session = $this->getCheckoutSession();
@@ -205,7 +206,7 @@ class OrderControllerCore extends FrontController
         }
     }
 
-    public function displayAjaxselectDeliveryOption(): void
+    public function displayAjaxselectDeliveryOption()
     {
         $cart = $this->cart_presenter->present(
             $this->context->cart,
@@ -229,9 +230,9 @@ class OrderControllerCore extends FrontController
             'cartUrl' => '',
         ];
 
-        if ($this->context->cart->isAllProductsInStock() !== true
-            || $this->context->cart->checkAllProductsAreStillAvailableInThisState() !== true
-            || $this->context->cart->checkAllProductsHaveMinimalQuantities() !== true) {
+        if ($this->context->cart->isAllProductsInStock() !== true ||
+            $this->context->cart->checkAllProductsAreStillAvailableInThisState() !== true ||
+            $this->context->cart->checkAllProductsHaveMinimalQuantities() !== true) {
             $responseData['errors'] = true;
             $responseData['cartUrl'] = $this->context->link->getPageLink('cart', null, null, ['action' => 'show']);
         }
@@ -240,12 +241,7 @@ class OrderControllerCore extends FrontController
         $this->ajaxRender(json_encode($responseData));
     }
 
-    /**
-     * Assign template vars related to page content.
-     *
-     * @see FrontController::initContent()
-     */
-    public function initContent(): void
+    public function initContent()
     {
         if (Configuration::isCatalogMode()) {
             Tools::redirect('index.php');
@@ -267,9 +263,9 @@ class OrderControllerCore extends FrontController
         }
 
         // Check that products are still orderable, at any point in checkout
-        if ($this->context->cart->isAllProductsInStock() !== true
-            || $this->context->cart->checkAllProductsAreStillAvailableInThisState() !== true
-            || $this->context->cart->checkAllProductsHaveMinimalQuantities() !== true) {
+        if ($this->context->cart->isAllProductsInStock() !== true ||
+            $this->context->cart->checkAllProductsAreStillAvailableInThisState() !== true ||
+            $this->context->cart->checkAllProductsHaveMinimalQuantities() !== true) {
             $shouldRedirectToCart = true;
         }
 
@@ -289,7 +285,7 @@ class OrderControllerCore extends FrontController
 
         if (!$this->checkoutProcess->hasErrors()) {
             if ($_SERVER['REQUEST_METHOD'] !== 'GET' && !$this->ajax) {
-                $this->redirectWithNotifications(
+                return $this->redirectWithNotifications(
                     $this->checkoutProcess->getCheckoutSession()->getCheckoutURL()
                 );
             }
@@ -305,7 +301,7 @@ class OrderControllerCore extends FrontController
         $this->setTemplate('checkout/checkout');
     }
 
-    public function displayAjaxAddressForm(): void
+    public function displayAjaxAddressForm()
     {
         $addressForm = $this->makeAddressForm();
 
@@ -346,7 +342,7 @@ class OrderControllerCore extends FrontController
      *
      * @return string|bool
      */
-    protected function getDefaultTermsAndConditions(): string|bool
+    protected function getDefaultTermsAndConditions()
     {
         $cms = new CMS((int) Configuration::get('PS_CONDITIONS_CMS_ID'), $this->context->language->id);
 
@@ -406,7 +402,7 @@ class OrderControllerCore extends FrontController
                     !Product::getTaxCalculationMethod((int) $this->context->cart->id_customer)
                     && (int) Configuration::get('PS_TAX')
                 )
-                ->setDisplayTaxesLabel(Configuration::get('PS_TAX'))
+                ->setDisplayTaxesLabel((Configuration::get('PS_TAX') && !Configuration::get('AEUC_LABEL_TAX_INC_EXC')))
                 ->setGiftCost(
                     $this->context->cart->getGiftWrappingPrice(
                         $checkoutDeliveryStep->getIncludeTaxes()

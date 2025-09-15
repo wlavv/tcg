@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Api;
 
+use ApiPlatform\Core\Metadata\Property\Factory\PropertyMetadataFactoryInterface as LegacyPropertyMetadataFactoryInterface;
 use ApiPlatform\Exception\InvalidUriVariableException;
 use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
@@ -27,35 +28,35 @@ use Symfony\Component\PropertyInfo\Type;
 final class UriVariablesConverter implements UriVariablesConverterInterface
 {
     /**
-     * @param iterable<UriVariableTransformerInterface> $uriVariableTransformers
+     * @var LegacyPropertyMetadataFactoryInterface|PropertyMetadataFactoryInterface
      */
-    public function __construct(private readonly PropertyMetadataFactoryInterface $propertyMetadataFactory, private readonly ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, private readonly iterable $uriVariableTransformers)
+    private $propertyMetadataFactory;
+    private $uriVariableTransformers;
+    private $resourceMetadataCollectionFactory;
+
+    /**
+     * @param iterable<UriVariableTransformerInterface> $uriVariableTransformers
+     * @param mixed                                     $propertyMetadataFactory
+     */
+    public function __construct($propertyMetadataFactory, ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, iterable $uriVariableTransformers)
     {
+        $this->propertyMetadataFactory = $propertyMetadataFactory;
+        $this->uriVariableTransformers = $uriVariableTransformers;
+        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
     }
 
     /**
      * {@inheritdoc}
-     *
-     * To handle the composite identifiers type correctly, use an `uri_variables_map` that maps uriVariables to their uriVariablesDefinition.
-     * Indeed, a composite identifier will already be parsed, and their corresponding properties will be the parameterName and not the defined
-     * identifiers.
      */
     public function convert(array $uriVariables, string $class, array $context = []): array
     {
         $operation = $context['operation'] ?? $this->resourceMetadataCollectionFactory->create($class)->getOperation();
-        $context += ['operation' => $operation];
+        $context = $context + ['operation' => $operation];
         $uriVariablesDefinitions = $operation->getUriVariables() ?? [];
 
         foreach ($uriVariables as $parameterName => $value) {
-            $uriVariableDefinition = $context['uri_variables_map'][$parameterName] ?? $uriVariablesDefinitions[$parameterName] ?? $uriVariablesDefinitions['id'] ?? new Link();
-
-            // When a composite identifier is used, we assume that the parameterName is the property to find our type
-            $properties = $uriVariableDefinition->getIdentifiers() ?? [$parameterName];
-            if ($uriVariableDefinition->getCompositeIdentifier()) {
-                $properties = [$parameterName];
-            }
-
-            if (!$types = $this->getIdentifierTypes($uriVariableDefinition->getFromClass() ?? $class, $properties)) {
+            $uriVariableDefinition = $uriVariablesDefinitions[$parameterName] ?? $uriVariablesDefinitions['id'] ?? new Link();
+            if ([] === $types = $this->getIdentifierTypes($uriVariableDefinition->getFromClass() ?? $class, $uriVariableDefinition->getIdentifiers() ?? [$parameterName])) {
                 continue;
             }
 
@@ -68,7 +69,7 @@ final class UriVariablesConverter implements UriVariablesConverterInterface
                     $uriVariables[$parameterName] = $uriVariableTransformer->transform($value, $types, $context);
                     break;
                 } catch (InvalidUriVariableException $e) {
-                    throw new InvalidUriVariableException(\sprintf('Identifier "%s" could not be transformed.', $parameterName), $e->getCode(), $e);
+                    throw new InvalidUriVariableException(sprintf('Identifier "%s" could not be transformed.', $parameterName), $e->getCode(), $e);
                 }
             }
         }

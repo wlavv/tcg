@@ -27,7 +27,6 @@
 namespace PrestaShop\PrestaShop\Adapter\Language\CommandHandler;
 
 use PrestaShop\PrestaShop\Adapter\File\RobotsTextFileGenerator;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\Language\Command\BulkDeleteLanguagesCommand;
 use PrestaShop\PrestaShop\Core\Domain\Language\CommandHandler\BulkDeleteLanguagesHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\Language\Exception\DefaultLanguageException;
@@ -39,7 +38,6 @@ use Shop;
  *
  * @internal
  */
-#[AsCommandHandler]
 final class BulkDeleteLanguagesHandler extends AbstractLanguageHandler implements BulkDeleteLanguagesHandlerInterface
 {
     /**
@@ -68,7 +66,7 @@ final class BulkDeleteLanguagesHandler extends AbstractLanguageHandler implement
 
             try {
                 $this->assertLanguageIsNotDefault($language);
-            } catch (DefaultLanguageException) {
+            } catch (DefaultLanguageException $e) {
                 throw new DefaultLanguageException(
                     sprintf(
                         'Default language "%s" cannot be deleted',

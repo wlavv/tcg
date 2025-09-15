@@ -65,7 +65,7 @@ class PsAssistant extends Module
     {
         $this->name = 'psassistant';
         $this->tab = 'administration';
-        $this->version = '2.0.0';
+        $this->version = '2.0.1';
         $this->author = 'PrestaShop';
         $this->module_key = '2fad63a468a76d9b448ab5507689eaf6';
         $this->need_instance = 0;

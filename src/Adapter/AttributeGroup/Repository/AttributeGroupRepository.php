@@ -29,71 +29,31 @@ namespace PrestaShop\PrestaShop\Adapter\AttributeGroup\Repository;
 
 use AttributeGroup;
 use Doctrine\DBAL\Connection;
-use PrestaShop\PrestaShop\Core\Domain\AttributeGroup\Exception\AttributeGroupNotFoundException;
-use PrestaShop\PrestaShop\Core\Domain\AttributeGroup\Exception\CannotAddAttributeGroupException;
-use PrestaShop\PrestaShop\Core\Domain\AttributeGroup\Exception\CannotUpdateAttributeGroupException;
 use PrestaShop\PrestaShop\Core\Domain\AttributeGroup\ValueObject\AttributeGroupId;
 use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\InvalidShopConstraintException;
 use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\ShopAssociationNotFound;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopId;
-use PrestaShop\PrestaShop\Core\Exception\CoreException;
 use PrestaShop\PrestaShop\Core\Repository\AbstractMultiShopObjectModelRepository;
 
 class AttributeGroupRepository extends AbstractMultiShopObjectModelRepository
 {
+    /**
+     * @var Connection
+     */
+    private $connection;
+
+    /**
+     * @var string
+     */
+    private $dbPrefix;
+
     public function __construct(
-        private Connection $connection,
-        private string $dbPrefix,
+        Connection $connection,
+        string $dbPrefix
     ) {
-    }
-
-    /**
-     * @param AttributeGroup $attributeGroup
-     *
-     * @return AttributeGroupId
-     *
-     * @throws CoreException
-     */
-    public function add(AttributeGroup $attributeGroup): AttributeGroupId
-    {
-        $attributeGroupId = $this->addObjectModelToShops(
-            $attributeGroup,
-            array_map(fn (int $shopId) => new ShopId((int) $shopId), $attributeGroup->id_shop_list),
-            CannotAddAttributeGroupException::class
-        );
-
-        return new AttributeGroupId($attributeGroupId);
-    }
-
-    public function partialUpdate(AttributeGroup $attribute, array $propertiesToUpdate, int $errorCode = 0): void
-    {
-        $this->partiallyUpdateObjectModel($attribute, $propertiesToUpdate, CannotUpdateAttributeGroupException::class, $errorCode);
-        $this->updateObjectModelShopAssociations(
-            (int) $attribute->id,
-            AttributeGroup::class,
-            $attribute->id_shop_list
-        );
-    }
-
-    /**
-     * @param AttributeGroupId $attributeGroupId
-     *
-     * @return AttributeGroup
-     *
-     * @throws ShopAssociationNotFound
-     * @throws CoreException
-     */
-    public function get(AttributeGroupId $attributeGroupId): AttributeGroup
-    {
-        /** @var AttributeGroup $attributeGroup */
-        $attributeGroup = $this->getObjectModel(
-            $attributeGroupId->getValue(),
-            AttributeGroup::class,
-            AttributeGroupNotFoundException::class
-        );
-
-        return $attributeGroup;
+        $this->connection = $connection;
+        $this->dbPrefix = $dbPrefix;
     }
 
     /**
@@ -143,7 +103,7 @@ class AttributeGroupRepository extends AbstractMultiShopObjectModelRepository
             ;
         }
 
-        $results = $qb->executeQuery()->fetchAllAssociative();
+        $results = $qb->execute()->fetchAllAssociative();
 
         if (!$results) {
             return [];
@@ -205,7 +165,7 @@ class AttributeGroupRepository extends AbstractMultiShopObjectModelRepository
             ->andWhere($qb->expr()->in('ag.id_attribute_group', ':attributeGroupIds'))
             ->setParameter('shopIds', $shopIdValues, Connection::PARAM_INT_ARRAY)
             ->setParameter('attributeGroupIds', $attributeGroupIdValues, Connection::PARAM_INT_ARRAY)
-            ->executeQuery()
+            ->execute()
             ->fetchAllAssociative()
         ;
 

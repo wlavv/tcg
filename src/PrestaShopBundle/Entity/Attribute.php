@@ -36,51 +36,56 @@ use Doctrine\ORM\Mapping as ORM;
  * @ORM\Table(
  *     indexes={@ORM\Index(name="attribute_group", columns={"id_attribute_group"})}
  * )
- *
  * @ORM\Entity(repositoryClass="PrestaShopBundle\Entity\Repository\AttributeRepository")
  */
 class Attribute
 {
     /**
+     * @var int
+     *
      * @ORM\Id
-     *
      * @ORM\Column(name="id_attribute", type="integer")
-     *
      * @ORM\GeneratedValue(strategy="AUTO")
      */
-    private int $id;
+    private $id;
 
     /**
      * @ORM\ManyToOne(targetEntity="PrestaShopBundle\Entity\AttributeGroup", inversedBy="attributes")
-     *
      * @ORM\JoinColumn(name="id_attribute_group", referencedColumnName="id_attribute_group", nullable=false)
      */
-    private AttributeGroup $attributeGroup;
+    private $attributeGroup;
 
     /**
+     * @var string
+     *
      * @ORM\Column(name="color", type="string", length=32)
      */
-    private string $color;
+    private $color;
 
     /**
+     * @var int
+     *
      * @ORM\Column(name="position", type="integer")
      */
-    private int $position;
+    private $position;
 
     /**
-     * @ORM\ManyToMany(targetEntity="PrestaShopBundle\Entity\Shop", cascade={"persist"})
+     * @var Collection
      *
+     * @ORM\ManyToMany(targetEntity="PrestaShopBundle\Entity\Shop", cascade={"persist"})
      * @ORM\JoinTable(
      *      joinColumns={@ORM\JoinColumn(name="id_attribute", referencedColumnName="id_attribute")},
      *      inverseJoinColumns={@ORM\JoinColumn(name="id_shop", referencedColumnName="id_shop", onDelete="CASCADE")}
      * )
      */
-    private Collection $shops;
+    private $shops;
 
     /**
+     * @var Collection
+     *
      * @ORM\OneToMany(targetEntity="PrestaShopBundle\Entity\AttributeLang", mappedBy="attribute")
      */
-    private Collection $attributeLangs;
+    private $attributeLangs;
 
     /**
      * Constructor.
@@ -91,55 +96,108 @@ class Attribute
         $this->attributeLangs = new ArrayCollection();
     }
 
-    public function getId(): int
+    /**
+     * Get id.
+     *
+     * @return int
+     */
+    public function getId()
     {
         return $this->id;
     }
 
-    public function setColor(string $color): static
+    /**
+     * Set color.
+     *
+     * @param string $color
+     *
+     * @return Attribute
+     */
+    public function setColor($color)
     {
         $this->color = $color;
 
         return $this;
     }
 
-    public function getColor(): string
+    /**
+     * Get color.
+     *
+     * @return string
+     */
+    public function getColor()
     {
         return $this->color;
     }
 
-    public function setPosition(int $position): static
+    /**
+     * Set position.
+     *
+     * @param int $position
+     *
+     * @return Attribute
+     */
+    public function setPosition($position)
     {
         $this->position = $position;
 
         return $this;
     }
 
-    public function getPosition(): int
+    /**
+     * Get position.
+     *
+     * @return int
+     */
+    public function getPosition()
     {
         return $this->position;
     }
 
-    public function setAttributeGroup(AttributeGroup $attributeGroup): static
+    /**
+     * Set attributeGroup.
+     *
+     * @param AttributeGroup $attributeGroup
+     *
+     * @return Attribute
+     */
+    public function setAttributeGroup(AttributeGroup $attributeGroup)
     {
         $this->attributeGroup = $attributeGroup;
 
         return $this;
     }
 
-    public function getAttributeGroup(): AttributeGroup
+    /**
+     * Get attributeGroup.
+     *
+     * @return AttributeGroup
+     */
+    public function getAttributeGroup()
     {
         return $this->attributeGroup;
     }
 
-    public function addShop(Shop $shop): static
+    /**
+     * Add shop.
+     *
+     * @param Shop $shop
+     *
+     * @return Attribute
+     */
+    public function addShop(Shop $shop)
     {
         $this->shops[] = $shop;
 
         return $this;
     }
 
-    public function removeShop(Shop $shop): void
+    /**
+     * Remove shop.
+     *
+     * @param Shop $shop
+     */
+    public function removeShop(Shop $shop)
     {
         $this->shops->removeElement($shop);
     }
@@ -149,12 +207,12 @@ class Attribute
      *
      * @return Collection<Shop>
      */
-    public function getShops(): Collection
+    public function getShops()
     {
         return $this->shops;
     }
 
-    public function addAttributeLang(AttributeLang $attributeLang): static
+    public function addAttributeLang(AttributeLang $attributeLang)
     {
         $this->attributeLangs[] = $attributeLang;
 
@@ -163,7 +221,7 @@ class Attribute
         return $this;
     }
 
-    public function removeAttributeLang(AttributeLang $attributeLang): void
+    public function removeAttributeLang(AttributeLang $attributeLang)
     {
         $this->attributeLangs->removeElement($attributeLang);
     }
@@ -171,7 +229,7 @@ class Attribute
     /**
      * @return Collection<AttributeLang>
      */
-    public function getAttributeLangs(): Collection
+    public function getAttributeLangs()
     {
         return $this->attributeLangs;
     }

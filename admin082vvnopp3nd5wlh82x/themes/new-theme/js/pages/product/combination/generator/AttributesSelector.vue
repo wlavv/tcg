@@ -107,14 +107,14 @@
                 >
                 <div class="attribute-item-content">
                   <span
+                    class="attribute-item-color"
+                    v-if="attribute.color"
+                    :style="`background-color: ${attribute.color}`"
+                  />
+                  <span
                     class="attribute-item-texture"
                     v-if="attribute.texture"
                     :style="`background: transparent url(${attribute.texture}) no-repeat; background-size: 100% auto;`"
-                  />
-                  <span
-                    class="attribute-item-color"
-                    v-else-if="attribute.color"
-                    :style="`background-color: ${attribute.color}`"
                   />
                   <span class="attribute-item-name">{{ attribute.name }}</span>
                 </div>
@@ -320,16 +320,17 @@
 #product-combinations-generate {
   .modal {
     .tags-input {
-      margin-bottom: var(--#{$cdk}size-16);
+      margin-bottom: 1rem;
 
       .tag {
-        margin-bottom: var(--#{$cdk}size-4);
+        margin-bottom: 0.25rem;
       }
+    }
 
-      .tags-wrapper {
-        max-height: var(--#{$cdk}size-208);
-        overflow-y: auto;
-      }
+    .tags-wrapper {
+      width: 100%;
+      max-height: 150px;
+      overflow-y: auto;
     }
 
     #attributes-list-selector {
@@ -337,25 +338,26 @@
 
       .attribute-group {
         position: relative;
-        margin-bottom: var(--#{$cdk}size-12);
+        margin-bottom: 0.75rem;
         overflow: hidden;
-        border: 1px solid var(--#{$cdk}primary-400);
+        border: 1px solid $gray-300;
+        border-radius: 4px;
 
         &-header {
           display: flex;
-          background-color: var(--#{$cdk}primary-200);
+          background-color: $gray-250;
         }
 
         &-content {
-          border-top: 1px solid var(--#{$cdk}primary-300);
+          border-top: 1px solid $gray-300;
         }
 
         &-checkbox {
           width: fit-content;
           font-weight: 400;
           position: absolute;
-          right: var(--#{$cdk}size-48);
-          top: 9px;
+          right: 3.5rem;
+          top: 0.5rem;
         }
 
         label {
@@ -364,23 +366,23 @@
 
         &-name {
           width: 100%;
-          padding: var(--#{$cdk}size-8) var(--#{$cdk}size-40) var(--#{$cdk}size-8) var(--#{$cdk}size-16);
+          padding: 0.4375rem 3rem 0.4375rem 0.4375rem;
           font-weight: 600;
-          color: var(--#{$cdk}primary-800);
+          color: #363a41;
 
           &:hover {
             text-decoration: none;
           }
 
           &::after {
-            font-family: var(--#{$cdk}font-family-material-icons);
-            font-size: var(--#{$cdk}size-24);
+            font-family: "Material Icons",Arial,Verdana,Tahoma,sans-serif;
+            font-size: 1.5rem;
             content: 'expand_more';
-            line-height: var(--#{$cdk}size-24);
-            height: var(--#{$cdk}size-24);
+            line-height: 1.5rem;
+            height: 1.5rem;
             position: absolute;
-            top: var(--#{$cdk}size-8);
-            right: var(--#{$cdk}size-8);
+            top: 0.5rem;
+            right: 1rem;
           }
 
           &[aria-expanded="true"] {
@@ -391,59 +393,44 @@
         }
 
         .attribute-item {
-          margin: var(--#{$cdk}size-4);
+          margin: 0.25rem;
           cursor: pointer;
-          border-radius: var(--#{$cdk}size-4);
+          border-radius: 3px;
 
           &-content {
             display: flex;
             align-items: center;
-            padding: var(--#{$cdk}size-8);
-          }
-
-          &.unselected {
-            &:hover {
-              background-color: var(--#{$cdk}primary-200);
-            }
+            padding: 0.5rem;
           }
 
           &.selected {
-            background-color: var(--#{$cdk}primary-300);
+            background-color: $gray-disabled;
           }
 
           input {
             display: none;
           }
 
-          &-color {
-            display: block;
-            width: var(--#{$cdk}size-16);
-            height: var(--#{$cdk}size-16);
-            margin-right: var(--#{$cdk}size-8);
-            border-radius: var(--#{$cdk}size-4);
-            border: 1px solid var(--#{$cdk}primary-400);
-          }
-
+          &-color,
           &-texture {
             display: block;
-            width: var(--#{$cdk}size-16);
-            height: var(--#{$cdk}size-16);
-            margin-right: var(--#{$cdk}size-8);
-            border-radius: var(--#{$cdk}size-4);
-            border: 1px solid var(--#{$cdk}primary-400);
+            width: 15px;
+            height: 15px;
+            margin-right: 0.5rem;
+            border-radius: 3px;
           }
         }
       }
 
       .attributes {
         height: auto;
-        padding: var(--#{$cdk}size-8);
+        padding: 0.4375rem;
       }
     }
 
     .product-combinations-modal-content {
       position: relative;
-      padding-bottom: var(--#{$cdk}size-8);
+      padding-bottom: 0.5rem;
     }
   }
 }

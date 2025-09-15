@@ -19,6 +19,32 @@ use GraphQL\Type\Definition\ScalarType;
 use GraphQL\Utils\Utils;
 use Symfony\Component\HttpFoundation\File\UploadedFile;
 
+if (\PHP_VERSION_ID >= 70200) {
+    trait UploadTypeParseLiteralTrait
+    {
+        /**
+         * {@inheritdoc}
+         *
+         * @return mixed
+         */
+        public function parseLiteral(/* Node */ $valueNode, array $variables = null)
+        {
+            throw new Error('`Upload` cannot be hardcoded in query, be sure to conform to GraphQL multipart request specification.', $valueNode);
+        }
+    }
+} else {
+    trait UploadTypeParseLiteralTrait
+    {
+        /**
+         * {@inheritdoc}
+         */
+        public function parseLiteral(Node $valueNode, array $variables = null)
+        {
+            throw new Error('`Upload` cannot be hardcoded in query, be sure to conform to GraphQL multipart request specification.', $valueNode);
+        }
+    }
+}
+
 /**
  * Represents an upload type.
  *
@@ -26,6 +52,8 @@ use Symfony\Component\HttpFoundation\File\UploadedFile;
  */
 final class UploadType extends ScalarType implements TypeInterface
 {
+    use UploadTypeParseLiteralTrait;
+
     public function __construct()
     {
         $this->name = 'Upload';
@@ -41,8 +69,10 @@ final class UploadType extends ScalarType implements TypeInterface
 
     /**
      * {@inheritdoc}
+     *
+     * @return mixed
      */
-    public function serialize(mixed $value): void
+    public function serialize($value)
     {
         throw new Error('`Upload` cannot be serialized.');
     }
@@ -50,20 +80,14 @@ final class UploadType extends ScalarType implements TypeInterface
     /**
      * {@inheritdoc}
      */
-    public function parseValue(mixed $value): UploadedFile
+    public function parseValue($value): UploadedFile
     {
         if (!$value instanceof UploadedFile) {
-            throw new Error(\sprintf('Could not get uploaded file, be sure to conform to GraphQL multipart request specification. Instead got: %s', Utils::printSafe($value)));
+            throw new Error(sprintf('Could not get uploaded file, be sure to conform to GraphQL multipart request specification. Instead got: %s', Utils::printSafe($value)));
         }
 
         return $value;
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function parseLiteral(Node $valueNode, ?array $variables = null): void
-    {
-        throw new Error('`Upload` cannot be hardcoded in query, be sure to conform to GraphQL multipart request specification.', $valueNode);
-    }
 }
+
+class_alias(UploadType::class, \ApiPlatform\Core\GraphQl\Type\Definition\UploadType::class);

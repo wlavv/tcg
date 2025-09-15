@@ -335,18 +335,16 @@
   });
 </script>
 
-<style lang="scss" type="text/scss">
-@import "~@scss/config/_settings.scss";
-
-@for $i from 2 through 5 {
-  .depth-level-#{$i} {
-    padding-left: #{$i}rem;
+<style lang="scss">
+  @for $i from 2 through 5 {
+    .depth-level-#{$i} {
+      padding-left: #{$i}rem;
+    }
   }
-}
 
-@media (max-width: 320px) {
-  .permission-row {
-    font-size: var(--#{$cdk}size-14);
+  @media (max-width: 320px) {
+    .permission-row {
+      font-size: 0.8rem;
+    }
   }
-}
 </style>

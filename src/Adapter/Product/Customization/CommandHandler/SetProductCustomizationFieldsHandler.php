@@ -31,19 +31,15 @@ namespace PrestaShop\PrestaShop\Adapter\Product\Customization\CommandHandler;
 use CustomizationField;
 use PrestaShop\PrestaShop\Adapter\Product\Customization\Repository\CustomizationFieldRepository;
 use PrestaShop\PrestaShop\Adapter\Product\Customization\Update\ProductCustomizationFieldUpdater;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\Product\Customization\Command\SetProductCustomizationFieldsCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Customization\CommandHandler\SetProductCustomizationFieldsHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\Product\Customization\CustomizationField as CustomizationFieldDTO;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductId;
-use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\InvalidShopConstraintException;
-use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopCollection;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopId;
 
 /**
  * Handles @see SetProductCustomizationFieldsCommand using legacy object model
  */
-#[AsCommandHandler]
 class SetProductCustomizationFieldsHandler implements SetProductCustomizationFieldsHandlerInterface
 {
     /**
@@ -75,22 +71,14 @@ class SetProductCustomizationFieldsHandler implements SetProductCustomizationFie
      */
     public function handle(SetProductCustomizationFieldsCommand $command): array
     {
-        $shopConstraint = $command->getShopConstraint();
-        if ($shopConstraint->getShopId()) {
-            $shopId = $shopConstraint->getShopId();
-        } elseif ($shopConstraint instanceof ShopCollection && $shopConstraint->hasShopIds()) {
-            $shopId = $shopConstraint->getShopIds()[0];
-        } else {
-            throw new InvalidShopConstraintException('Cannot handle this kind of ShopConstraint');
-        }
-
+        $shopId = $command->getShopConstraint()->getShopId();
         $productId = $command->getProductId();
 
         $customizationFields = [];
         foreach ($command->getCustomizationFields() as $providedCustomizationField) {
             $customizationFields[] = $this->buildEntityFromDTO($productId, $providedCustomizationField, $shopId);
         }
-        $this->productCustomizationFieldUpdater->setProductCustomizationFields($productId, $customizationFields, $shopConstraint);
+        $this->productCustomizationFieldUpdater->setProductCustomizationFields($productId, $customizationFields, $command->getShopConstraint());
 
         return $this->customizationFieldRepository->getCustomizationFieldIds($productId);
     }

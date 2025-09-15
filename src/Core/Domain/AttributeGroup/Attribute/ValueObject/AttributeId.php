@@ -36,14 +36,14 @@ final class AttributeId
     /**
      * @var int
      */
-    private int $attributeId;
+    private $attributeId;
 
     /**
      * @param int $attributeId
      *
      * @throws AttributeConstraintException
      */
-    public function __construct(int $attributeId)
+    public function __construct($attributeId)
     {
         $this->assertIsIntegerGreaterThanZero($attributeId);
         $this->attributeId = $attributeId;
@@ -52,7 +52,7 @@ final class AttributeId
     /**
      * @return int
      */
-    public function getValue(): int
+    public function getValue()
     {
         return $this->attributeId;
     }

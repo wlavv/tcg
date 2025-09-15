@@ -34,11 +34,13 @@ interface TypesContainerInterface extends ContainerInterface
     /**
      * Gets a type.
      *
+     * @param string $id The type identifier
+     *
      * @throws TypeNotFoundException When a type has not been found
      *
      * @return GraphQLType The type found in the container
      */
-    public function get(string $id): GraphQLType;
+    public function get($id): GraphQLType;
 
     /**
      * Gets all the types.
@@ -49,6 +51,10 @@ interface TypesContainerInterface extends ContainerInterface
 
     /**
      * Returns true if the given type is present in the container.
+     *
+     * @param string $id The type identifier
+     *
+     * @return bool true if the type is present, false otherwise
      */
-    public function has(string $id): bool;
+    public function has($id): bool;
 }

@@ -23,12 +23,13 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Addons\Provider;
 
+use Exception;
+use GuzzleHttp\Exception\ClientException;
 use PrestaShop\Module\Mbo\Addons\ApiClient;
 use PrestaShop\Module\Mbo\Addons\Exception\DownloadModuleException;
 use PrestaShop\Module\Mbo\Addons\User\AddonsUser;
 use PrestaShop\Module\Mbo\Exception\AddonsDownloadModuleException;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
-use Symfony\Component\HttpClient\Exception\ClientException;
 
 /**
  * This class will provide data from Addons API
@@ -100,7 +101,7 @@ class AddonsDataProvider implements DataProviderInterface
     public function __construct(
         ApiClient $apiClient,
         AddonsUser $user,
-        ?string $moduleChannel = null,
+        ?string $moduleChannel = null
     ) {
         $this->marketplaceClient = $apiClient;
         $this->moduleChannel = $moduleChannel ?? self::ADDONS_API_MODULE_CHANNEL_STABLE;
@@ -122,7 +123,7 @@ class AddonsDataProvider implements DataProviderInterface
         // Module downloading
         try {
             $moduleData = $this->request('module_download', $params);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
             $message = $this->isUserAuthenticated() ?
                 'Error sent by Addons. You may be not allowed to download this module.'
@@ -169,19 +170,19 @@ class AddonsDataProvider implements DataProviderInterface
     /**
      * {@inheritdoc}
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function request(string $action, array $params = [])
     {
         if (!$this->isServiceUp()) {
-            throw new \Exception('Previous call failed and disabled client.');
+            throw new Exception('Previous call failed and disabled client.');
         }
 
         if (
-            !array_key_exists($action, self::ADDONS_API_MODULE_ACTIONS)
-            || !method_exists($this->marketplaceClient, self::ADDONS_API_MODULE_ACTIONS[$action])
+            !array_key_exists($action, self::ADDONS_API_MODULE_ACTIONS) ||
+            !method_exists($this->marketplaceClient, self::ADDONS_API_MODULE_ACTIONS[$action])
         ) {
-            throw new \Exception("Action '{$action}' not found in actions list.");
+            throw new Exception("Action '{$action}' not found in actions list.");
         }
 
         $this->marketplaceClient->reset();
@@ -206,7 +207,7 @@ class AddonsDataProvider implements DataProviderInterface
 
         try {
             return $this->marketplaceClient->{self::ADDONS_API_MODULE_ACTIONS[$action]}($params);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
             self::$is_addons_up = false;
             throw $e;
@@ -237,6 +238,7 @@ class AddonsDataProvider implements DataProviderInterface
         }
 
         return $authParams;
+
     }
 
     public function getAccountsShopUuid(): ?string

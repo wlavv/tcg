@@ -39,11 +39,11 @@ $(() => {
   const initialState = $form.serialize();
   const initialFormData = $form.serializeArray();
 
-  $betaFormInputs.on('change', () => {
+  $betaFormInputs.change(() => {
     $submitButton.prop('disabled', initialState === $form.serialize());
   });
 
-  $stableFormInputs.on('change', () => {
+  $stableFormInputs.change(() => {
     $stableFormSubmitButton.prop('disabled', $stableFormInitialState === $stableForm.serialize());
   });
 
@@ -65,19 +65,21 @@ $(() => {
       }
     }
 
+    const modal = new ConfirmModal(
+      {
+        id: 'modal-confirm-submit-feature-flag',
+        confirmTitle: $submitButton.data('modal-title'),
+        confirmMessage: $submitButton.data('modal-message'),
+        confirmButtonLabel: $submitButton.data('modal-apply'),
+        closeButtonLabel: $submitButton.data('modal-cancel'),
+      },
+      () => {
+        $form.submit();
+      },
+    );
+
     if (oneFlagIsEnabled) {
-      new ConfirmModal(
-        {
-          id: 'modal-confirm-submit-feature-flag',
-          confirmTitle: $submitButton.data('modal-title'),
-          confirmMessage: $submitButton.data('modal-message'),
-          confirmButtonLabel: $submitButton.data('modal-apply'),
-          closeButtonLabel: $submitButton.data('modal-cancel'),
-        },
-        () => {
-          $form.submit();
-        },
-      );
+      modal.show();
     } else {
       $form.submit();
     }

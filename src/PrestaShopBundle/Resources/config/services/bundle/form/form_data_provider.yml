@@ -106,6 +106,7 @@ services:
     arguments:
       - '@prestashop.adapter.general.configuration'
       - '@=service("prestashop.adapter.legacy.configuration").getBoolean("PS_SSL_ENABLED")'
+      - '@=service("prestashop.adapter.legacy.configuration").getBoolean("PS_SSL_ENABLED_EVERYWHERE")'
 
   prestashop.adapter.administration.upload_quota.form_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Administration\UploadQuotaDataProvider'
@@ -131,7 +132,7 @@ services:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Import\ImportFormDataProvider'
     arguments:
       - '@prestashop.core.import.file_finder'
-      - '@request_stack'
+      - '@session'
 
   prestashop.admin.import_data_configuration.form_data_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Import\ImportDataConfigurationFormDataProvider'
@@ -199,15 +200,10 @@ services:
     arguments:
       - '@prestashop.core.sql_manager.configuration.sql_request_configuration'
 
-  PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Webservice\WebserviceFormDataProvider:
-    public: false
-    autowire: true
-
   prestashop.admin.webservice.form_data_provider:
-    alias: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Webservice\WebserviceFormDataProvider'
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 9.0
+    class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Webservice\WebserviceFormDataProvider'
+    arguments:
+      - '@prestashop.adapter.webservice.configuration'
 
   prestashop.admin.backup.form_data_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Backup\BackupDataProvider'
@@ -274,23 +270,17 @@ services:
 
   prestashop.admin.configure.advanced_parameters.stable_feature_flags_form_data_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\FeatureFlag\FeatureFlagsFormDataProvider'
-    autowire: true
     arguments:
       - '@doctrine.orm.entity_manager'
       - 'stable'
-      - '@prestashop.core.cache.clearer.cache_clearer_chain'
-      - '@PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagManager'
-      - '@PrestaShop\PrestaShop\Adapter\Feature\MultistoreFeature'
+      - '@prestashop.bundle.routing.converter.cache_provider'
 
   prestashop.admin.configure.advanced_parameters.beta_feature_flags_form_data_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\FeatureFlag\FeatureFlagsFormDataProvider'
-    autowire: true
     arguments:
       - '@doctrine.orm.entity_manager'
       - 'beta'
-      - '@prestashop.core.cache.clearer.cache_clearer_chain'
-      - '@PrestaShop\PrestaShop\Core\FeatureFlag\FeatureFlagManager'
-      - '@PrestaShop\PrestaShop\Adapter\Feature\MultistoreFeature'
+      - '@prestashop.bundle.routing.converter.cache_provider'
 
   prestashop.adapter.security.general.form_provider:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Security\FormDataProvider'
@@ -301,23 +291,3 @@ services:
     class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\Security\FormDataProvider'
     arguments:
       - '@prestashop.adapter.security.password_policy.configuration'
-
-  prestashop.admin.improve.design.image_settings.form_data_provider:
-    class: 'PrestaShopBundle\Form\Admin\Improve\Design\ImageSettings\ImageSettingsFormDataProvider'
-    arguments:
-      - '@prestashop.core.query_bus'
-      - '@prestashop.core.command_bus'
-
-  prestashop.adapter.admin_api.form_provider:
-    class: 'PrestaShopBundle\Form\Admin\Configure\AdvancedParameters\AdminAPI\FormDataProvider'
-    arguments:
-      - '@PrestaShop\PrestaShop\Adapter\AdminAPI\AdminAPIConfiguration'
-
-  PrestaShopBundle\Form\Admin\Login\LoginFormDataProvider:
-    autowire: true
-
-  PrestaShopBundle\Form\Admin\Login\RequestPasswordResetFormDataProvider:
-    autowire: true
-
-  PrestaShopBundle\Form\Admin\Login\ResetPasswordFormDataProvider:
-    autowire: true

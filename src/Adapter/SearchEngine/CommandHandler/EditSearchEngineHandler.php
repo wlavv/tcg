@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\SearchEngine\CommandHandler;
 
 use PrestaShop\PrestaShop\Adapter\SearchEngine\AbstractSearchEngineHandler;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\Command\EditSearchEngineCommand;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\CommandHandler\EditSearchEngineHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\Exception\SearchEngineException;
@@ -38,7 +37,6 @@ use PrestaShopException;
 /**
  * Handles command what edits search engine.
  */
-#[AsCommandHandler]
 final class EditSearchEngineHandler extends AbstractSearchEngineHandler implements EditSearchEngineHandlerInterface
 {
     /**
@@ -66,7 +64,7 @@ final class EditSearchEngineHandler extends AbstractSearchEngineHandler implemen
             if (!$searchEngine->update()) {
                 throw new SearchEngineException(sprintf('Cannot update search engine with id "%d"', $searchEngine->id));
             }
-        } catch (PrestaShopException) {
+        } catch (PrestaShopException $e) {
             throw new SearchEngineException(sprintf('Cannot update search engine with id "%d"', $searchEngine->id));
         }
     }

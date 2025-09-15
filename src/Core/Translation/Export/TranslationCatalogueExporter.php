@@ -150,7 +150,6 @@ class TranslationCatalogueExporter
                     'path' => $workingFolder,
                     'default_locale' => $locale,
                     'root_dir' => _PS_ROOT_DIR_ . DIRECTORY_SEPARATOR,
-                    'split_files' => false,
                 ]
             );
         }
@@ -183,7 +182,7 @@ class TranslationCatalogueExporter
 
             if (
                 null === $selection['selected']
-                && in_array($selection['type'], [ProviderDefinitionInterface::TYPE_MODULES, ProviderDefinitionInterface::TYPE_THEMES], true)
+                && (in_array($selection['type'], [ProviderDefinitionInterface::TYPE_MODULES, ProviderDefinitionInterface::TYPE_THEMES], true))
             ) {
                 throw new Exception(sprintf('Selected value cannot be null for type %s.', $selection['type']));
             }

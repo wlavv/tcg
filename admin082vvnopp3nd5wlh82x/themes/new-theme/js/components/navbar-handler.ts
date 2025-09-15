@@ -94,7 +94,7 @@ export default class NavbarHandler {
   }
 
   private watchTabLinks(): void {
-    $('.tab-link').on('click', (event) => {
+    $('.tab-link').click((event) => {
       event.preventDefault();
       const target = $(event.target).attr('href');
 

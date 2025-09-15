@@ -22,8 +22,12 @@ use Psr\Container\NotFoundExceptionInterface;
  */
 final class TypeNotFoundException extends \InvalidArgumentException implements NotFoundExceptionInterface
 {
-    public function __construct(string $message, private readonly string $typeId)
+    private $typeId;
+
+    public function __construct(string $message, string $typeId)
     {
+        $this->typeId = $typeId;
+
         parent::__construct($message);
     }
 
@@ -35,3 +39,5 @@ final class TypeNotFoundException extends \InvalidArgumentException implements N
         return $this->typeId;
     }
 }
+
+class_alias(TypeNotFoundException::class, \ApiPlatform\Core\GraphQl\Type\TypeNotFoundException::class);

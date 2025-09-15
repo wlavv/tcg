@@ -21,19 +21,22 @@ use ApiPlatform\State\ProcessorInterface;
  * Write stage of GraphQL resolvers.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated
  */
 final class WriteStage implements WriteStageInterface
 {
-    public function __construct(private readonly ProcessorInterface $processor, private readonly SerializerContextBuilderInterface $serializerContextBuilder)
+    private $processor;
+    private $serializerContextBuilder;
+
+    public function __construct(ProcessorInterface $processor, SerializerContextBuilderInterface $serializerContextBuilder)
     {
+        $this->processor = $processor;
+        $this->serializerContextBuilder = $serializerContextBuilder;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function __invoke(?object $data, string $resourceClass, Operation $operation, array $context): ?object
+    public function __invoke($data, string $resourceClass, Operation $operation, array $context)
     {
         if (null === $data || !($operation->canWrite() ?? true)) {
             return $data;

@@ -80,13 +80,11 @@ class TinyMCEEditor {
   initTinyMCE(config) {
     const cfg = {
       selector: '.rte',
-      plugins:
-        /* eslint-disable-next-line max-len */
-        'align colorpicker link image filemanager table media placeholder lists advlist code table autoresize hr',
+      plugins: 'align colorpicker link image filemanager table media placeholder lists advlist code table autoresize',
       browser_spellcheck: true,
       toolbar1:
         /* eslint-disable-next-line max-len */
-        'code,colorpicker,bold,italic,underline,strikethrough,blockquote,link,align,bullist,numlist,table,image,media,formatselect,hr',
+        'code,colorpicker,bold,italic,underline,strikethrough,blockquote,link,align,bullist,numlist,table,image,media,formatselect',
       toolbar2: '',
       language: window.iso_user,
       external_filemanager_path: `${config.baseAdminUrl}filemanager/`,
@@ -98,10 +96,10 @@ class TinyMCEEditor {
       skin: 'prestashop',
       mobile: {
         theme: 'mobile',
-        plugins: ['lists', 'align', 'link', 'table', 'placeholder', 'advlist', 'code', 'hr'],
+        plugins: ['lists', 'align', 'link', 'table', 'placeholder', 'advlist', 'code'],
         toolbar:
           /* eslint-disable-next-line max-len */
-          'undo code colorpicker bold italic underline strikethrough blockquote link align bullist numlist table formatselect styleselect hr',
+          'undo code colorpicker bold italic underline strikethrough blockquote link align bullist numlist table formatselect styleselect',
       },
       menubar: false,
       statusbar: false,

@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Distribution\Config;
 
+use Db;
 use Doctrine\DBAL\Query\QueryException;
 use PrestaShop\Module\Mbo\Distribution\Config\Appliers\Factory as AppliersFactory;
 use PrestaShop\Module\Mbo\Distribution\Config\Exception\InvalidConfigException;
@@ -67,9 +68,9 @@ final class Applier
      */
     private function canBeApplied(Config $config, string $psVersion, string $mboVersion): bool
     {
-        return $this->versionCompareWithSemVer($psVersion, $config->getPsVersion(), '==')
-            && $this->versionCompareWithSemVer($mboVersion, $config->getMboVersion(), '==')
-            && true !== $config->isApplied();
+        return $this->versionCompareWithSemVer($psVersion, $config->getPsVersion(), '==') &&
+            $this->versionCompareWithSemVer($mboVersion, $config->getMboVersion(), '==') &&
+            true !== $config->isApplied();
     }
 
     /**
@@ -89,10 +90,9 @@ final class Applier
             $sql = [];
             $sql[] = 'UPDATE `' . _DB_PREFIX_ . 'mbo_api_config` SET `applied` = 1 WHERE `id_mbo_api_config`=' . $config->getConfigId();
 
-            $db = \Db::getInstance();
             foreach ($sql as $query) {
-                if ($db->execute($query) === false) {
-                    throw new QueryException($db->getMsgError());
+                if (Db::getInstance()->execute($query) === false) {
+                    throw new QueryException($this->db->getMsgError());
                 }
             }
         }

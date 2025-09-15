@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Module;
 
+use Exception;
 use PrestaShop\Module\Mbo\Addons\Exception\DownloadModuleException;
 use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Module\Exception\UnexpectedModuleSourceContentException;
@@ -34,8 +35,8 @@ class ActionsManager
      */
     private $filesManager;
 
-    public function __construct(FilesManager $filesManager)
-    {
+
+    public function __construct(FilesManager $filesManager) {
         $this->filesManager = $filesManager;
     }
 

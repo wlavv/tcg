@@ -23,8 +23,6 @@ services:
   prestashop.core.localization.locale.repository:
     alias: PrestaShop\PrestaShop\Core\Localization\Locale\Repository
 
-  PrestaShop\PrestaShop\Core\Localization\Locale\RepositoryInterface: '@PrestaShop\PrestaShop\Core\Localization\Locale\Repository'
-
   prestashop.core.localization.locale.context_locale:
     factory: [ '@prestashop.core.localization.locale.repository', 'getLocale' ]
     class: PrestaShop\PrestaShop\Core\Localization\Locale
@@ -37,15 +35,10 @@ services:
     arguments:
       - '@prestashop.core.localization.currency.datasource'
 
-  PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository:
+  prestashop.core.localization.cldr.locale_repository:
+    class: PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository
     arguments:
       - '@prestashop.core.localization.cldr.locale_data_source'
-
-  prestashop.core.localization.cldr.locale_repository:
-    alias: PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleRepository
-    deprecated:
-      package: PrestaShop/PrestaShop
-      version: 9.0
 
   prestashop.core.localization.cldr.locale_data_source:
     class: PrestaShop\PrestaShop\Core\Localization\CLDR\LocaleDataSource

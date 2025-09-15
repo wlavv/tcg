@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -51,10 +50,10 @@ function upgrade_module_2_2_0($module)
         ');
 
     if ($createFundingSourceTable) {
-        $shopsList = Shop::getShops(false, null, true);
+        $shopsList = \Shop::getShops(false, null, true);
 
         foreach ($shopsList as $shopId) {
-            $isCardEnabled = (bool) Configuration::get(
+            $isCardEnabled = (bool) \Configuration::get(
                 'PS_CHECKOUT_CARD_PAYMENT_ENABLED',
                 null,
                 null,

@@ -53,7 +53,7 @@ class FiltersBuilderResolver implements ArgumentValueResolverInterface
     /**
      * {@inheritdoc}
      */
-    public function supports(Request $request, ArgumentMetadata $argument): bool
+    public function supports(Request $request, ArgumentMetadata $argument)
     {
         return is_subclass_of($argument->getType(), Filters::class);
     }
@@ -61,7 +61,7 @@ class FiltersBuilderResolver implements ArgumentValueResolverInterface
     /**
      * {@inheritdoc}
      */
-    public function resolve(Request $request, ArgumentMetadata $argument): iterable
+    public function resolve(Request $request, ArgumentMetadata $argument)
     {
         // The shop constraint should be added in the request attributes by another listener (@see ShopConstraintListener)
         $shopConstraint = null;

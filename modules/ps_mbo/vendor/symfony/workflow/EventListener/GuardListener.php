@@ -24,15 +24,15 @@ use Symfony\Component\Workflow\TransitionBlocker;
  */
 class GuardListener
 {
-    private array $configuration;
-    private ExpressionLanguage $expressionLanguage;
-    private TokenStorageInterface $tokenStorage;
-    private AuthorizationCheckerInterface $authorizationChecker;
-    private AuthenticationTrustResolverInterface $trustResolver;
-    private ?RoleHierarchyInterface $roleHierarchy;
-    private ?ValidatorInterface $validator;
+    private $configuration;
+    private $expressionLanguage;
+    private $tokenStorage;
+    private $authorizationChecker;
+    private $trustResolver;
+    private $roleHierarchy;
+    private $validator;
 
-    public function __construct(array $configuration, ExpressionLanguage $expressionLanguage, TokenStorageInterface $tokenStorage, AuthorizationCheckerInterface $authorizationChecker, AuthenticationTrustResolverInterface $trustResolver, ?RoleHierarchyInterface $roleHierarchy = null, ?ValidatorInterface $validator = null)
+    public function __construct(array $configuration, ExpressionLanguage $expressionLanguage, TokenStorageInterface $tokenStorage, AuthorizationCheckerInterface $authorizationChecker, AuthenticationTrustResolverInterface $trustResolver, RoleHierarchyInterface $roleHierarchy = null, ValidatorInterface $validator = null)
     {
         $this->configuration = $configuration;
         $this->expressionLanguage = $expressionLanguage;
@@ -43,9 +43,6 @@ class GuardListener
         $this->validator = $validator;
     }
 
-    /**
-     * @return void
-     */
     public function onTransition(GuardEvent $event, string $eventName)
     {
         if (!isset($this->configuration[$eventName])) {
@@ -65,7 +62,7 @@ class GuardListener
         }
     }
 
-    private function validateGuardExpression(GuardEvent $event, string $expression): void
+    private function validateGuardExpression(GuardEvent $event, string $expression)
     {
         if (!$this->expressionLanguage->evaluate($expression, $this->getVariables($event))) {
             $blocker = TransitionBlocker::createBlockedByExpressionGuardListener($expression);

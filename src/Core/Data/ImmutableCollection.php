@@ -35,7 +35,6 @@ use Traversable;
 
 /**
  * @template T
- *
  * @template-implements  IteratorAggregate<T>
  */
 abstract class ImmutableCollection implements IteratorAggregate, Countable

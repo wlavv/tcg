@@ -26,7 +26,6 @@
 
 namespace PrestaShop\PrestaShop\Core\Localization\RTL;
 
-use Exception;
 use PrestaShop\PrestaShop\Adapter\Entity\Language;
 use PrestaShop\PrestaShop\Core\Localization\RTL\Exception\GenerationException;
 
@@ -160,8 +159,8 @@ class Processor
     }
 
     /**
-     * @throws GenerationException
-     * @throws Exception
+     * @throws Exception\GenerationException
+     * @throws \Exception
      */
     public function process()
     {
@@ -194,9 +193,11 @@ class Processor
             $this->processPaths = array_merge($this->processPaths, $this->defaultModulesToProcess);
         }
 
-        foreach ($this->processPaths as $path) {
-            if (!empty($path) && is_dir($path)) {
-                $generator->generateInDirectory($path);
+        if (!empty($this->processPaths)) {
+            foreach ($this->processPaths as $path) {
+                if (!empty($path) && is_dir($path)) {
+                    $generator->generateInDirectory($path);
+                }
             }
         }
     }

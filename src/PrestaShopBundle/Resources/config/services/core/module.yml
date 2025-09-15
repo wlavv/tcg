@@ -11,36 +11,37 @@ services:
       - '@prestashop.adapter.module.payment_module_provider'
 
   PrestaShop\PrestaShop\Core\Module\ModuleRepository:
+    public: false
     lazy: true
-    autowire: true
     arguments:
       - '@prestashop.adapter.data_provider.module'
       - '@prestashop.adapter.admin.data_provider.module'
       - '@doctrine.cache.provider'
       - '@PrestaShop\PrestaShop\Adapter\HookManager'
       - "@=service('prestashop.adapter.legacy.configuration').get('_PS_MODULE_DIR_')"
+      - '@=service("prestashop.adapter.legacy.context").getContext().language.id'
 
   prestashop.core.admin.module.repository.eventsubscriber:
     class: PrestaShop\PrestaShop\Core\Module\EventSubscriber
     arguments:
-      - '@PrestaShop\PrestaShop\Core\Module\ModuleRepository'
+      - '@prestashop.core.admin.module.repository'
       - '@prestashop.adapter.cache.clearer.symfony_cache_clearer'
     tags:
       - { name: kernel.event_subscriber }
 
   PrestaShop\PrestaShop\Core\Module\ModuleManager:
+    public: false
     autowire: true
     arguments:
       $moduleDataProvider: '@prestashop.adapter.data_provider.module'
       $adminModuleDataProvider: '@prestashop.core.admin.data_provider.module_interface'
       $hookManager: '@prestashop.adapter.hook.manager'
-      $modulesDir: '%prestashop.module_dir%'
-      $xliffFileLoader: '@translation.loader.xliff'
 
   PrestaShop\PrestaShop\Core\Module\SourceHandler\ZipSourceHandler:
     autowire: true
+    public: false
     arguments:
-      $modulePath: '%prestashop.module_dir%'
+      $modulePath: '%modules_dir%'
     tags: [ core.module.source_handler ]
 
   PrestaShop\PrestaShop\Core\Module\SourceHandler\RemoteZipSourceHandler:
@@ -54,26 +55,25 @@ services:
     arguments:
       - !tagged core.module.source_handler
 
+  prestashop.core.admin.module.repository:
+    alias: PrestaShop\PrestaShop\Core\Module\ModuleRepository
+    public: true
+    deprecated: ~
+
   prestashop.module.factory.sourcehandler:
     alias: PrestaShop\PrestaShop\Core\Module\SourceHandler\SourceHandlerFactory
     public: true
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 8.1
+    deprecated: ~
 
   prestashop.module.sourcehandler.zip:
     alias: PrestaShop\PrestaShop\Core\Module\SourceHandler\ZipSourceHandler
     public: true
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 8.1
+    deprecated: ~
 
   prestashop.module.manager:
     alias: PrestaShop\PrestaShop\Core\Module\ModuleManager
     public: true
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 8.1
+    deprecated: ~
 
   PrestaShop\PrestaShop\Core\Module\ModuleOverrideChecker:
     arguments:

@@ -22,8 +22,6 @@ use Symfony\Component\DependencyInjection\Reference;
  *
  * @internal
  *
- * @deprecated prefer GraphQlResolverPass
- *
  * @author Raoul Clais <raoul.clais@gmail.com>
  */
 final class GraphQlMutationResolverPass implements CompilerPassInterface
@@ -31,7 +29,7 @@ final class GraphQlMutationResolverPass implements CompilerPassInterface
     /**
      * {@inheritdoc}
      */
-    public function process(ContainerBuilder $container): void
+    public function process(ContainerBuilder $container)
     {
         if (!$container->getParameter('api_platform.graphql.enabled')) {
             return;
@@ -47,3 +45,5 @@ final class GraphQlMutationResolverPass implements CompilerPassInterface
         $container->getDefinition('api_platform.graphql.mutation_resolver_locator')->addArgument($mutations);
     }
 }
+
+class_alias(GraphQlMutationResolverPass::class, \ApiPlatform\Core\Bridge\Symfony\Bundle\DependencyInjection\Compiler\GraphQlMutationResolverPass::class);

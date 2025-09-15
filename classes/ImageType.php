@@ -87,21 +87,17 @@ class ImageTypeCore extends ObjectModel
      *
      * @param string|null $type Image type
      * @param bool $orderBySize
-     * @param string|null $theme Theme name
      *
      * @return array Image type definitions
      *
      * @throws PrestaShopDatabaseException
      */
-    public static function getImagesTypes($type = null, $orderBySize = false, $theme = null)
+    public static function getImagesTypes($type = null, $orderBySize = false)
     {
-        if (!isset(self::$images_types_cache[$type][$theme])) {
+        if (!isset(self::$images_types_cache[$type])) {
             $where = 'WHERE 1';
             if (!empty($type)) {
                 $where .= ' AND `' . bqSQL($type) . '` = 1 ';
-            }
-            if (null !== $theme) {
-                $where .= ' AND `theme_name` = \'' . pSQL($theme) . '\' OR `theme_name` IS NULL';
             }
 
             if ($orderBySize) {
@@ -110,10 +106,10 @@ class ImageTypeCore extends ObjectModel
                 $query = 'SELECT * FROM `' . _DB_PREFIX_ . 'image_type` ' . $where . ' ORDER BY `name` ASC';
             }
 
-            self::$images_types_cache[$type][$theme] = Db::getInstance()->executeS($query);
+            self::$images_types_cache[$type] = Db::getInstance()->executeS($query);
         }
 
-        return self::$images_types_cache[$type][$theme];
+        return self::$images_types_cache[$type];
     }
 
     /**
@@ -198,7 +194,7 @@ class ImageTypeCore extends ObjectModel
         $themeName = Context::getContext()->shop->theme_name;
         $nameWithoutThemeName = str_replace(['_' . $themeName, $themeName . '_'], '', $name);
 
-        // check if the theme name is already in $name if yes only return $name
+        //check if the theme name is already in $name if yes only return $name
         if ($themeName !== null && strstr($name, $themeName) && self::getByNameNType($name)) {
             return $name;
         }

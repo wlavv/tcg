@@ -17,6 +17,8 @@ use Symfony\Component\Workflow\Marking;
 class StateMachineGraphvizDumper extends GraphvizDumper
 {
     /**
+     * {@inheritdoc}
+     *
      * Dumps the workflow as a graphviz graph.
      *
      * Available options:
@@ -25,21 +27,18 @@ class StateMachineGraphvizDumper extends GraphvizDumper
      *  * node: The default options for nodes (places)
      *  * edge: The default options for edges
      */
-    public function dump(Definition $definition, ?Marking $marking = null, array $options = []): string
+    public function dump(Definition $definition, Marking $marking = null, array $options = [])
     {
-        $withMetadata = $options['with-metadata'] ?? false;
-
-        $places = $this->findPlaces($definition, $withMetadata, $marking);
+        $places = $this->findPlaces($definition, $marking);
         $edges = $this->findEdges($definition);
 
         $options = array_replace_recursive(self::$defaultOptions, $options);
 
-        $label = $this->formatLabel($definition, $withMetadata, $options);
-
-        return $this->startDot($options, $label)
-            .$this->addPlaces($places, $withMetadata)
+        return $this->startDot($options)
+            .$this->addPlaces($places)
             .$this->addEdges($edges)
-            .$this->endDot();
+            .$this->endDot()
+        ;
     }
 
     /**

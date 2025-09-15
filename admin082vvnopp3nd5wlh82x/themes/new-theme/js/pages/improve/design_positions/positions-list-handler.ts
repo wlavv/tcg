@@ -127,7 +127,7 @@ class PositionsListHandler {
       }
     });
 
-    self.$panelSelection.find('button').on('click', () => {
+    self.$panelSelection.find('button').click(() => {
       $('button[name="unhookform"]').trigger('click');
     });
 
@@ -278,11 +278,10 @@ class PositionsListHandler {
     transplantModuleHref.searchParams.set('show_modules', $moduleId);
     this.$transplantModuleButton.attr('href', transplantModuleHref.toString());
 
-    const isVisible: boolean = $hookName === '' && $moduleId === 'all';
-
     for (let $id = 0; $id < self.$hooksList.length; $id += 1) {
-      self.$hooksList[$id].container.toggleClass('hook-visible', isVisible);
-      self.$hooksList[$id].container.toggle(isVisible);
+      self.$hooksList[$id].container.toggle(
+        $hookName === '' && $moduleId === 'all',
+      );
       self.$hooksList[$id].element.html(self.$hooksList[$id].title);
       self.$hooksList[$id].container
         .find('.module-item')
@@ -332,15 +331,12 @@ class PositionsListHandler {
 
       // Nothing selected
       if ($moduleId === 'all' && $hookName !== '') {
-        $hooksToShowFromHookName.toggleClass('hook-visible', true);
         $hooksToShowFromHookName.show();
       } else if ($hookName === '' && $moduleId !== 'all') {
         // Have no hook bug have a module
-        $hooksToShowFromModule.toggleClass('hook-visible', true);
         $hooksToShowFromModule.show();
       } else {
         // Both selected
-        $hooksToShowFromHookName.filter($hooksToShowFromModule).toggleClass('hook-visible', true);
         $hooksToShowFromHookName.filter($hooksToShowFromModule).show();
       }
     }
@@ -348,7 +344,6 @@ class PositionsListHandler {
     if (!self.$hookPosition.prop('checked')) {
       for (let $id = 0; $id < self.$hooksList.length; $id += 1) {
         if (self.$hooksList[$id].container.is('.hook-position')) {
-          self.$hooksList[$id].container.toggleClass('hook-visible', false);
           self.$hooksList[$id].container.hide();
         }
       }

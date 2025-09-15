@@ -21,10 +21,10 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
+use Exception;
 use PrestaShop\Module\Mbo\Addons\Provider\LinksProvider;
 use PrestaShop\Module\Mbo\Exception\ExpectedServiceNotFoundException;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
-use Twig\Environment;
 
 trait UseDisplayEmptyModuleCategoryExtraMessage
 {
@@ -37,13 +37,15 @@ trait UseDisplayEmptyModuleCategoryExtraMessage
         $categoryName = $params['category_name'];
 
         try {
-            /** @var Environment|null $twig */
-            $twig = $this->get(Environment::class);
-            /** @var LinksProvider|null $linksProvider */
-            $linksProvider = $this->get(LinksProvider::class);
+            /** @var \Twig\Environment $twig */
+            $twig = $this->get('twig');
+            /** @var LinksProvider $linksProvider */
+            $linksProvider = $this->get('mbo.addons.links_provider');
 
             if (null === $linksProvider || null === $twig) {
-                throw new ExpectedServiceNotFoundException('Some services not found in UseDisplayEmptyModuleCategoryExtraMessage');
+                throw new ExpectedServiceNotFoundException(
+                    'Some services not found in UseDisplayEmptyModuleCategoryExtraMessage'
+                );
             }
 
             return $twig->render(
@@ -52,7 +54,7 @@ trait UseDisplayEmptyModuleCategoryExtraMessage
                     'categoryLink' => $linksProvider->getCategoryLink($categoryName),
                 ]
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
 
             return '';

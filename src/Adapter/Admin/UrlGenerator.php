@@ -73,14 +73,14 @@ class UrlGenerator implements UrlGeneratorInterface
      *
      * @return string
      */
-    public function generate($name, $parameters = [], $referenceType = self::ABSOLUTE_PATH): string
+    public function generate($name, $parameters = [], $referenceType = self::ABSOLUTE_PATH)
     {
         // By default, consider given parameters in legacy format (no mapping if route not found).
         $legacyController = $name;
         $legacyParameters = $parameters;
 
         // resolve route & legacy mapping
-        [$legacyController, $legacyParameters] = $this->getLegacyOptions($name, $parameters);
+        list($legacyController, $legacyParameters) = $this->getLegacyOptions($name, $parameters);
 
         return $this->legacyContext->getAdminLink($legacyController, true, $legacyParameters);
     }
@@ -127,7 +127,7 @@ class UrlGenerator implements UrlGeneratorInterface
     /**
      * {@inheritdoc}
      */
-    public function getContext(): RequestContext
+    public function getContext()
     {
         throw new LogicException('Cannot use this UrlGeneratorInterface implementation with a Symfony context. Please call AdminUrlGeneratorFactory::forLegacy() to reach the right instance.');
     }

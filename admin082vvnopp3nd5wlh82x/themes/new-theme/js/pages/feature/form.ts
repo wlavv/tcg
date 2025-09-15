@@ -23,11 +23,10 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
+import TranslatableInput from '../../components/translatable-input';
+import ChoiceTree from '../../components/form/choice-tree';
+
 $(() => {
-  window.prestashop.component.initComponents(
-    [
-      'TranslatableInput',
-    ],
-  );
-  new window.prestashop.component.ChoiceTree('#feature_shop_association').enableAutoCheckChildren();
+  new TranslatableInput();
+  new ChoiceTree('#feature_shop_association').enableAutoCheckChildren();
 });

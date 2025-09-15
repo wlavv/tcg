@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,14 +20,17 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Order\CommandHandler;
 
+use Cart;
+use Currency;
+use Exception;
 use Order;
 use PrestaShop\Module\PrestashopCheckout\Cart\Exception\CartException;
 use PrestaShop\Module\PrestashopCheckout\Context\ContextStateManager;
+use PrestaShop\Module\PrestashopCheckout\Event\EventDispatcherInterface;
 use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 use PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceTranslationProvider;
 use PrestaShop\Module\PrestashopCheckout\Order\Command\CreateOrderCommand;
 use PrestaShop\Module\PrestashopCheckout\Order\Event\OrderCreatedEvent;
-use PrestaShop\Module\PrestashopCheckout\Order\EventSubscriber\OrderEventSubscriber;
 use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderException;
 use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderNotFoundException;
 use PrestaShop\Module\PrestashopCheckout\Order\Service\CheckOrderAmount;
@@ -37,24 +39,65 @@ use PrestaShop\Module\PrestashopCheckout\Order\State\OrderStateConfigurationKeys
 use PrestaShop\Module\PrestashopCheckout\Order\State\OrderStateInstaller;
 use PrestaShop\Module\PrestashopCheckout\Order\State\Service\OrderStateMapper;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
-use PrestaShop\PrestaShop\Adapter\Validate;
+use PrestaShopCollection;
+use PrestaShopDatabaseException;
+use PrestaShopException;
+use Ps_checkout;
+use PsCheckoutCart;
+use Validate;
 
 class CreateOrderCommandHandler extends AbstractOrderCommandHandler
 {
-    public function __construct(
-        private ContextStateManager $contextStateManager,
-        private PsCheckoutCartRepository $psCheckoutCartRepository,
-        private OrderStateMapper $psOrderStateMapper,
-        private \Ps_checkout $module,
-        private CheckOrderAmount $checkOrderAmount,
-        private FundingSourceTranslationProvider $fundingSourceTranslationProvider,
-        private OrderEventSubscriber $orderEventSubscriber,
-    ) {
-    }
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
 
-    public function __invoke(CreateOrderCommand $command)
-    {
-        $this->handle($command);
+    /**
+     * @var ContextStateManager
+     */
+    private $contextStateManager;
+
+    /**
+     * @var PsCheckoutCartRepository
+     */
+    private $psCheckoutCartRepository;
+
+    /**
+     * @var OrderStateMapper
+     */
+    private $psOrderStateMapper;
+
+    /**
+     * @var Ps_checkout
+     */
+    private $module;
+
+    /**
+     * @var CheckOrderAmount
+     */
+    private $checkOrderAmount;
+    /**
+     * @var FundingSourceTranslationProvider
+     */
+    private $fundingSourceTranslationProvider;
+
+    public function __construct(
+        ContextStateManager $contextStateManager,
+        EventDispatcherInterface $eventDispatcher,
+        PsCheckoutCartRepository $psCheckoutCartRepository,
+        OrderStateMapper $psOrderStateMapper,
+        Ps_checkout $module,
+        CheckOrderAmount $checkOrderAmount,
+        FundingSourceTranslationProvider $fundingSourceTranslationProvider
+    ) {
+        $this->contextStateManager = $contextStateManager;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->psCheckoutCartRepository = $psCheckoutCartRepository;
+        $this->psOrderStateMapper = $psOrderStateMapper;
+        $this->module = $module;
+        $this->checkOrderAmount = $checkOrderAmount;
+        $this->fundingSourceTranslationProvider = $fundingSourceTranslationProvider;
     }
 
     /**
@@ -65,26 +108,26 @@ class CreateOrderCommandHandler extends AbstractOrderCommandHandler
      * @throws CartException
      * @throws OrderException
      * @throws OrderNotFoundException
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
      * @throws PsCheckoutException
      */
     public function handle(CreateOrderCommand $command)
     {
-        /** @var \PsCheckoutCart $psCheckoutCart */
+        /** @var PsCheckoutCart $psCheckoutCart */
         $psCheckoutCart = $this->psCheckoutCartRepository->findOneByPayPalOrderId($command->getOrderPayPalId()->getValue());
 
         if (Validate::isLoadedObject($this->contextStateManager->getContext()->cart) && (int) $this->contextStateManager->getContext()->cart->id === $psCheckoutCart->getIdCart()) {
             $cart = $this->contextStateManager->getContext()->cart;
         } else {
-            $cart = new \Cart($psCheckoutCart->getIdCart());
+            $cart = new Cart($psCheckoutCart->getIdCart());
         }
 
         if (!Validate::isLoadedObject($cart)) {
             throw new PsCheckoutException('Cart not found', PsCheckoutException::PRESTASHOP_CART_NOT_FOUND);
         }
 
-        $orders = new \PrestaShopCollection(\Order::class);
+        $orders = new PrestaShopCollection(Order::class);
         $orders->where('id_cart', '=', (int) $cart->id);
 
         if ($orders->count()) {
@@ -105,7 +148,7 @@ class CreateOrderCommandHandler extends AbstractOrderCommandHandler
         if ($capture) {
             $transactionId = $capture['id'];
             $paidAmount = $capture['status'] === 'COMPLETED' ? $capture['amount']['value'] : '';
-            $currencyId = \Currency::getIdByIsoCode($capture['amount']['currency_code'], (int) $cart->id_shop);
+            $currencyId = Currency::getIdByIsoCode($capture['amount']['currency_code'], (int) $cart->id_shop);
         }
 
         try {
@@ -154,11 +197,11 @@ class CreateOrderCommandHandler extends AbstractOrderCommandHandler
                 false,
                 $cart->secure_key
             );
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new OrderException(sprintf('Failed to create order from Cart #%s.', var_export($cart->id, true)), OrderException::FAILED_ADD_ORDER, $exception);
         }
 
-        $orders = new \PrestaShopCollection(\Order::class);
+        $orders = new PrestaShopCollection(Order::class);
         $orders->where('id_cart', '=', (int) $cart->id);
 
         if (!$orders->count()) {
@@ -166,7 +209,7 @@ class CreateOrderCommandHandler extends AbstractOrderCommandHandler
         }
 
         foreach ($orders as $order) {
-            $this->orderEventSubscriber->updateOrderMatrice(new OrderCreatedEvent((int) $order->id, (int) $cart->id));
+            $this->eventDispatcher->dispatch(new OrderCreatedEvent((int) $order->id, (int) $cart->id));
         }
     }
 }

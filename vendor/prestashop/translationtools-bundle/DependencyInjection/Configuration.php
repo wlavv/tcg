@@ -15,6 +15,9 @@ use Symfony\Component\Config\Definition\ConfigurationInterface;
 
 class Configuration implements ConfigurationInterface
 {
+    /**
+     * {@inheritdoc}
+     */
     public function getConfigTreeBuilder()
     {
         if (method_exists(TreeBuilder::class, 'getRootNode')) {

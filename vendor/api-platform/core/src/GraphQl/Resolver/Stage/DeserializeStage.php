@@ -23,19 +23,22 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
  * Deserialize stage of GraphQL resolvers.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated
  */
 final class DeserializeStage implements DeserializeStageInterface
 {
-    public function __construct(private readonly DenormalizerInterface $denormalizer, private readonly SerializerContextBuilderInterface $serializerContextBuilder)
+    private $denormalizer;
+    private $serializerContextBuilder;
+
+    public function __construct(DenormalizerInterface $denormalizer, SerializerContextBuilderInterface $serializerContextBuilder)
     {
+        $this->denormalizer = $denormalizer;
+        $this->serializerContextBuilder = $serializerContextBuilder;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function __invoke(?object $objectToPopulate, string $resourceClass, Operation $operation, array $context): ?object
+    public function __invoke($objectToPopulate, string $resourceClass, Operation $operation, array $context)
     {
         if (!($operation->canDeserialize() ?? true)) {
             return $objectToPopulate;

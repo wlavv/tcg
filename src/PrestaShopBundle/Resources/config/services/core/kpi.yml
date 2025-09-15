@@ -3,15 +3,8 @@ services:
     public: true
 
   # KPI Row presenter
-  PrestaShop\PrestaShop\Core\Kpi\Row\KpiRowPresenter:
-    public: false
-
   prestashop.core.kpi_row.presenter:
-    alias: PrestaShop\PrestaShop\Core\Kpi\Row\KpiRowPresenter
-    public: true
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 9.0
+    class: PrestaShop\PrestaShop\Core\Kpi\Row\KpiRowPresenter
 
   # KPI Row factories
   prestashop.core.kpi_row.factory.translations_page:
@@ -53,19 +46,9 @@ services:
   prestashop.core.kpi_row.factory.orders:
     class: PrestaShop\PrestaShop\Core\Kpi\Row\HookableKpiRowFactory
     arguments:
-      - - '@PrestaShop\PrestaShop\Adapter\Kpi\ConversionRateKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\AbandonedCartKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\AverageOrderValueKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\NetProfitPerVisitKpi'
+      - - '@prestashop.adapter.kpi.conversion_rate'
+        - '@prestashop.adapter.kpi.abandoned_cart'
+        - '@prestashop.adapter.kpi.average_order_value'
+        - '@prestashop.adapter.kpi.net_profit_per_visit'
       - '@prestashop.core.hook.dispatcher'
       - 'orders'
-
-  prestashop.core.kpi_row.factory.carts:
-    class: PrestaShop\PrestaShop\Core\Kpi\Row\HookableKpiRowFactory
-    arguments:
-      - - '@PrestaShop\PrestaShop\Adapter\Kpi\ConversionRateKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\AbandonedCartKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\AverageOrderValueKpi'
-        - '@PrestaShop\PrestaShop\Adapter\Kpi\NetProfitPerVisitKpi'
-      - '@prestashop.core.hook.dispatcher'
-      - 'carts'

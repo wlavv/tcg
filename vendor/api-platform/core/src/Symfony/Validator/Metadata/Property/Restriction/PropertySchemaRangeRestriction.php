@@ -25,8 +25,6 @@ final class PropertySchemaRangeRestriction implements PropertySchemaRestrictionM
 {
     /**
      * {@inheritdoc}
-     *
-     * @param Range $constraint
      */
     public function create(Constraint $constraint, ApiProperty $propertyMetadata): array
     {
@@ -48,11 +46,6 @@ final class PropertySchemaRangeRestriction implements PropertySchemaRestrictionM
      */
     public function supports(Constraint $constraint, ApiProperty $propertyMetadata): bool
     {
-        $types = array_map(fn (Type $type) => $type->getBuiltinType(), $propertyMetadata->getBuiltinTypes() ?? []);
-        if ($propertyMetadata->getExtraProperties()['nested_schema'] ?? false) {
-            $types = [Type::BUILTIN_TYPE_INT];
-        }
-
-        return $constraint instanceof Range && \count($types) && array_intersect($types, [Type::BUILTIN_TYPE_INT, Type::BUILTIN_TYPE_FLOAT]);
+        return $constraint instanceof Range && null !== ($type = $propertyMetadata->getBuiltinTypes()[0] ?? null) && \in_array($type->getBuiltinType(), [Type::BUILTIN_TYPE_INT, Type::BUILTIN_TYPE_FLOAT], true);
     }
 }

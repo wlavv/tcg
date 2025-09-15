@@ -56,6 +56,7 @@ class TagCore extends ObjectModel
     public function __construct($id = null, $name = null, $idLang = null)
     {
         $this->def = Tag::getDefinition($this);
+        $this->setDefinitionRetrocompatibility();
 
         if ($id) {
             parent::__construct($id);
@@ -259,7 +260,7 @@ class TagCore extends ObjectModel
      *
      * @return array|false|mysqli_result|PDOStatement|resource|null
      */
-    public function getProducts($associated = true, ?Context $context = null)
+    public function getProducts($associated = true, Context $context = null)
     {
         if (!$context) {
             $context = Context::getContext();
@@ -353,7 +354,7 @@ class TagCore extends ObjectModel
      *
      * @throws PrestaShopDatabaseException
      */
-    private static function deleteProductTags($idProduct, ?int $langId = null)
+    private static function deleteProductTags($idProduct, int $langId = null)
     {
         $removeWhere = 'id_product = ' . (int) $idProduct;
         $selectTagsToRemove = '

@@ -23,11 +23,6 @@ if (!$rootDir) {
     $rootDir = __DIR__ . '/../../';
 }
 
-$rootAutoload = $rootDir . '/vendor/autoload.php';
-if (file_exists($rootAutoload)) {
-    require_once $rootAutoload;
-}
+require_once $rootDir . '/vendor/autoload.php';
 
-(new Symfony\Component\Dotenv\Dotenv())
-    ->usePutenv()
-    ->loadEnv(__DIR__ . '/.env');
+(new \Symfony\Component\Dotenv\Dotenv(true))->loadEnv(__DIR__ . '/.env');

@@ -22,15 +22,25 @@ declare(strict_types=1);
 namespace Symfony\Component\DependencyInjection\Loader\Configurator;
 
 use PrestaShop\Module\Mbo\Addons\Subscriber\ModuleManagementEventSubscriber;
+use ps_mbo;
 
 return static function (ContainerConfigurator $container) {
     $services = $container->services();
 
-    // Only load event subscriber when module is enabled to avoid logging events if disabled
-    if (\ps_mbo::checkModuleStatus()) {
-        $services->set(ModuleManagementEventSubscriber::class)
-            ->autowire()
-            ->public()
-            ->tag('kernel.event_subscriber');
+    //Only load event subscriber when module is enabled to avoid logging events if disabled
+    if (ps_mbo::checkModuleStatus()) {
+        $services->set('mbo.addons.event_subscriber', ModuleManagementEventSubscriber::class)
+        ->args([
+            ref('logger'),
+            ref('mbo.modules.repository'),
+            ref('mbo.tab.collection.provider'),
+            ref('mbo.cdc.context_builder'),
+            ref('mbo.cdc.client.distribution_api'),
+            ref('mbo.security.admin_authentication.provider'),
+            ref('mbo.distribution.api_version_change_config_apply_handler'),
+            ref('mbo.symfony_cache_clearer'),
+        ])
+        ->public()
+        ->tag('kernel.event_subscriber');
     }
 };

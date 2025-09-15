@@ -25,8 +25,8 @@
 {extends file="helpers/form/form.tpl"}
 
 {block name=script}
-	$(function() {
-		$('#latitude, #longitude').on('keyup', function() {
+	$(document).ready(function() {
+		$('#latitude, #longitude').keyup(function() {
 			$(this).val($(this).val().replace(/,/g, '.'));
 		});
 	});

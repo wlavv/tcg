@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -30,13 +29,23 @@ use Symfony\Component\Finder\Finder;
 class LoggerFileFinder
 {
     /**
+     * @var LoggerDirectory
+     */
+    private $loggerDirectory;
+
+    /**
+     * @var LoggerFilename
+     */
+    private $loggerFilename;
+
+    /**
      * @param LoggerDirectory $loggerDirectory
      * @param LoggerFilename $loggerFilename
      */
-    public function __construct(
-        private LoggerDirectory $loggerDirectory,
-        private LoggerFilename $loggerFilename,
-    ) {
+    public function __construct($loggerDirectory, LoggerFilename $loggerFilename)
+    {
+        $this->loggerDirectory = $loggerDirectory;
+        $this->loggerFilename = $loggerFilename;
     }
 
     /**

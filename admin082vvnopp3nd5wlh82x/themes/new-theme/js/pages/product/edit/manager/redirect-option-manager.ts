@@ -85,7 +85,7 @@ export default class RedirectOptionManager {
   private watchRedirectType(): void {
     this.lastSelectedType = this.$redirectTypeInput.val();
 
-    this.$redirectTypeInput.on('change', () => {
+    this.$redirectTypeInput.change(() => {
       const redirectType = this.$redirectTypeInput.val();
 
       switch (redirectType) {

@@ -16,10 +16,10 @@ namespace ApiPlatform\Exception;
 /**
  * Resource class not supported exception.
  *
- * @deprecated
- *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
 class ResourceClassNotSupportedException extends \Exception implements ExceptionInterface
 {
 }
+
+class_alias(ResourceClassNotSupportedException::class, \ApiPlatform\Core\Exception\ResourceClassNotSupportedException::class);

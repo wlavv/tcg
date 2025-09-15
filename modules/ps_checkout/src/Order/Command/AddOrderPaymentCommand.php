@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Order\Command;
 
+use DateTimeImmutable;
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderException;
 use PrestaShop\Module\PrestashopCheckout\Order\ValueObject\OrderId;
 
@@ -32,7 +33,7 @@ class AddOrderPaymentCommand
     private $orderId;
 
     /**
-     * @var \DateTimeImmutable
+     * @var DateTimeImmutable
      */
     private $paymentDate;
 
@@ -65,7 +66,7 @@ class AddOrderPaymentCommand
      * @param string|null $transactionId
      *
      * @throws OrderException
-     * @throws \Exception
+     * @throws Exception
      */
     public function __construct(
         $orderId,
@@ -73,10 +74,10 @@ class AddOrderPaymentCommand
         $paymentMethod,
         $paymentAmount,
         $paymentCurrencyId,
-        $transactionId = null,
+        $transactionId = null
     ) {
         $this->orderId = new OrderId($orderId);
-        $this->paymentDate = new \DateTimeImmutable($paymentDate);
+        $this->paymentDate = new DateTimeImmutable($paymentDate);
         $this->paymentMethod = $paymentMethod;
         $this->paymentAmount = $paymentAmount;
         $this->paymentCurrencyId = $paymentCurrencyId;
@@ -92,7 +93,7 @@ class AddOrderPaymentCommand
     }
 
     /**
-     * @return \DateTimeImmutable
+     * @return DateTimeImmutable
      */
     public function getPaymentDate()
     {

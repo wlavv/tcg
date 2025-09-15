@@ -29,6 +29,7 @@ class ConfigurationTestCore
         '/classes/log/index.php',
         '/classes/cache/index.php',
         '/config/index.php',
+        '/controllers/admin/AdminLoginController.php',
         '/download/index.php',
         '/js/tools.js',
         '/js/jquery/plugins/fancybox/jquery.fancybox.js',

@@ -21,13 +21,12 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Distribution;
 
+use Context;
 use Doctrine\Common\Cache\CacheProvider;
-use PrestaShop\Module\Mbo\Addons\User\AddonsUserProvider;
+use GuzzleHttp\Client as HttpClient;
 use PrestaShop\Module\Mbo\Addons\User\UserInterface;
 use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
-use Psr\Http\Client\ClientInterface;
-use Psr\Http\Message\RequestFactoryInterface;
 
 class ConnectedClient extends BaseClient
 {
@@ -36,15 +35,15 @@ class ConnectedClient extends BaseClient
      */
     private $user;
 
-    public function __construct(
-        string $apiUrl,
-        ClientInterface $httpClient,
-        RequestFactoryInterface $requestFactory,
-        CacheProvider $cacheProvider,
-        AddonsUserProvider $addonsUserProvider,
-    ) {
-        parent::__construct($apiUrl, $httpClient, $requestFactory, $cacheProvider);
-        $this->user = $addonsUserProvider->getUser();
+    /**
+     * @param HttpClient $httpClient
+     * @param CacheProvider $cacheProvider
+     * @param UserInterface $user
+     */
+    public function __construct(HttpClient $httpClient, CacheProvider $cacheProvider, UserInterface $user)
+    {
+        parent::__construct($httpClient, $cacheProvider);
+        $this->user = $user;
     }
 
     /**
@@ -52,8 +51,8 @@ class ConnectedClient extends BaseClient
      */
     public function getModulesList(): array
     {
-        $languageIsoCode = \Context::getContext()->language->getIsoCode();
-        $countryIsoCode = mb_strtolower(\Context::getContext()->country->iso_code);
+        $languageIsoCode = Context::getContext()->language->getIsoCode();
+        $countryIsoCode = mb_strtolower(Context::getContext()->country->iso_code);
 
         $userCacheKey = '';
         if ($this->user->isAuthenticated()) {
@@ -85,7 +84,6 @@ class ConnectedClient extends BaseClient
             $modulesList = $this->processRequestAndDecode('modules');
         } catch (\Throwable $e) {
             ErrorHelper::reportError($e);
-
             return [];
         }
         if (empty($modulesList) || !is_array($modulesList)) {

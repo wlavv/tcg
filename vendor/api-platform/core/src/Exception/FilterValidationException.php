@@ -13,19 +13,19 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Exception;
 
-use ApiPlatform\ParameterValidator\Exception\ValidationExceptionInterface;
-
 /**
  * Filter validation exception.
  *
  * @author Julien DENIAU <julien.deniau@gmail.com>
- *
- * @deprecated use \ApiPlatform\ParameterValidator\Exception\ValidationException instead
  */
-final class FilterValidationException extends \Exception implements ValidationExceptionInterface, ExceptionInterface, \Stringable
+final class FilterValidationException extends \Exception implements ExceptionInterface
 {
-    public function __construct(private readonly array $constraintViolationList, string $message = '', int $code = 0, ?\Exception $previous = null)
+    private $constraintViolationList;
+
+    public function __construct(array $constraintViolationList, string $message = '', int $code = 0, \Exception $previous = null)
     {
+        $this->constraintViolationList = $constraintViolationList;
+
         parent::__construct($message ?: $this->__toString(), $code, $previous);
     }
 
@@ -34,3 +34,5 @@ final class FilterValidationException extends \Exception implements ValidationEx
         return implode("\n", $this->constraintViolationList);
     }
 }
+
+class_alias(FilterValidationException::class, \ApiPlatform\Core\Exception\FilterValidationException::class);

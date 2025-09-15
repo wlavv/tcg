@@ -22,26 +22,25 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 final class UuidDenormalizer implements DenormalizerInterface
 {
     /**
-     * {@inheritdoc}
+     * @param mixed  $data
+     * @param string $type
+     * @param null   $format
+     *
+     * @return mixed
      */
-    public function denormalize(mixed $data, string $type, ?string $format = null, array $context = []): UuidInterface
+    public function denormalize($data, $type, $format = null, array $context = [])
     {
         try {
             return Uuid::fromString($data);
         } catch (InvalidUuidStringException $e) {
-            throw NotNormalizableValueException::createForUnexpectedDataType($e->getMessage(), $data, ['uuid'], $context['deserialization_path'] ?? null, true, $e->getCode(), $e);
+            throw new NotNormalizableValueException($e->getMessage(), $e->getCode(), $e);
         }
     }
 
-    public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
+    public function supportsDenormalization($data, $type, $format = null, array $context = []): bool
     {
         return \is_string($data) && is_a($type, UuidInterface::class, true);
     }
-
-    public function getSupportedTypes(?string $format): array
-    {
-        return [
-            UuidInterface::class => true,
-        ];
-    }
 }
+
+class_alias(UuidDenormalizer::class, \ApiPlatform\Core\Bridge\RamseyUuid\Serializer\UuidDenormalizer::class);

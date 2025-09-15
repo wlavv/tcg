@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\Messenger;
 
-use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\Messenger\Stamp\StampInterface;
 
 /**
@@ -23,15 +22,10 @@ use Symfony\Component\Messenger\Stamp\StampInterface;
  */
 final class ContextStamp implements StampInterface
 {
-    private readonly array $context;
+    private $context;
 
     public function __construct(array $context = [])
     {
-        /* Symfony does not guarantee that the Request object is serializable */
-        if (($request = ($context['request'] ?? null)) && $request instanceof Request) {
-            unset($context['request']);
-        }
-
         $this->context = $context;
     }
 
@@ -43,3 +37,5 @@ final class ContextStamp implements StampInterface
         return $this->context;
     }
 }
+
+class_alias(ContextStamp::class, \ApiPlatform\Core\Bridge\Symfony\Messenger\ContextStamp::class);

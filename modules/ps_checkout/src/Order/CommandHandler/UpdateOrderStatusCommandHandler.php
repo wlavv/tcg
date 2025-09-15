@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,16 +20,25 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Order\CommandHandler;
 
+use Exception;
 use OrderHistory;
+use OrderState;
+use PrestaShop\Module\PrestashopCheckout\Event\EventDispatcherInterface;
 use PrestaShop\Module\PrestashopCheckout\Order\Command\UpdateOrderStatusCommand;
+use PrestaShop\Module\PrestashopCheckout\Order\Event\OrderStatusUpdatedEvent;
 use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderException;
 use PrestaShop\Module\PrestashopCheckout\Order\State\ValueObject\OrderStateId;
 
 class UpdateOrderStatusCommandHandler extends AbstractOrderCommandHandler
 {
-    public function __invoke(UpdateOrderStatusCommand $command)
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    public function __construct(EventDispatcherInterface $eventDispatcher)
     {
-        $this->handle($command);
+        $this->eventDispatcher = $eventDispatcher;
     }
 
     /**
@@ -52,7 +60,7 @@ class UpdateOrderStatusCommandHandler extends AbstractOrderCommandHandler
         }
 
         // Create new OrderHistory
-        $history = new \OrderHistory();
+        $history = new OrderHistory();
         $history->id_order = $order->id;
 
         $useExistingPayments = !$order->hasInvoice();
@@ -64,27 +72,29 @@ class UpdateOrderStatusCommandHandler extends AbstractOrderCommandHandler
             $history->changeIdOrderState($orderStateId, $order, $useExistingPayments);
             // Save all changes
             $historyAdded = $history->addWithemail(true);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new OrderException(sprintf('Failed to update status or send email when changing OrderState #%d of Order #%d.', $command->getNewOrderStatusId()->getValue(), $command->getOrderId()->getValue()), OrderException::FAILED_UPDATE_ORDER_STATUS, $exception);
         }
 
         if (!$historyAdded) {
             throw new OrderException(sprintf('Failed to update status or send email when changing OrderState #%d of Order #%d.', $command->getNewOrderStatusId()->getValue(), $command->getOrderId()->getValue()), OrderException::FAILED_UPDATE_ORDER_STATUS);
         }
+
+        $this->eventDispatcher->dispatch(new OrderStatusUpdatedEvent($orderStateId));
     }
 
     /**
      * @param OrderStateId $orderStatusId
      *
-     * @return \OrderState
+     * @return OrderState
      *
      * @throws OrderException
      */
     private function getOrderStateObject(OrderStateId $orderStatusId)
     {
         try {
-            $orderState = new \OrderState($orderStatusId->getValue());
-        } catch (\Exception $exception) {
+            $orderState = new OrderState($orderStatusId->getValue());
+        } catch (Exception $exception) {
             throw new OrderException(sprintf('Unable to retrieve OrderState #%d', $orderStatusId->getValue()), OrderException::ORDER_STATUS_NOT_FOUND, $exception);
         }
 

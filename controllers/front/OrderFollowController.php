@@ -41,95 +41,52 @@ class OrderFollowControllerCore extends FrontController
      *
      * @see FrontController::postProcess()
      */
-    public function postProcess(): void
+    public function postProcess()
     {
         if (Tools::isSubmit('submitReturnMerchandise')) {
+            $customizationQtyInput = Tools::getValue('customization_qty_input');
             $order_qte_input = Tools::getValue('order_qte_input');
+            $customizationIds = Tools::getValue('customization_ids');
 
             if (!$id_order = (int) Tools::getValue('id_order')) {
-                Tools::redirect($this->context->link->getPageLink('history'));
+                Tools::redirect('index.php?controller=history');
             }
-            if (!($ids_order_detail = Tools::getValue('ids_order_detail'))) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorDetail1' => 1,
-                    ]
-                ));
+            if (!($ids_order_detail = Tools::getValue('ids_order_detail')) && !$customizationQtyInput && !$customizationIds) {
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorDetail1');
             }
-            if (!$order_qte_input) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorDetail2' => 1,
-                    ]
-                ));
+            if (!$customizationIds && !$order_qte_input) {
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorDetail2');
             }
 
             $order = new Order((int) $id_order);
             if (!$order->isReturnable()) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorNotReturnable' => 1,
-                    ]
-                ));
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorNotReturnable');
             }
             if ($order->id_customer != $this->context->customer->id) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorNotReturnable' => 1,
-                    ]
-                ));
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorNotReturnable');
             }
             $orderReturn = new OrderReturn();
             $orderReturn->id_customer = (int) $this->context->customer->id;
             $orderReturn->id_order = $id_order;
             $orderReturn->question = htmlspecialchars(Tools::getValue('returnText'));
             if (empty($orderReturn->question)) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorMsg' => 1,
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorMsg&' .
+                    http_build_query([
                         'ids_order_detail' => $ids_order_detail,
                         'order_qte_input' => $order_qte_input,
-                    ]
-                ));
+                        'id_order' => Tools::getValue('id_order'),
+                    ]));
             }
 
-            if (!$orderReturn->checkEnoughProduct($ids_order_detail, $order_qte_input)) {
-                Tools::redirect($this->context->link->getPageLink(
-                    'order-detail',
-                    null,
-                    null,
-                    [
-                        'id_order' => $id_order,
-                        'errorQuantity' => 1,
-                    ]
-                ));
+            if (!$orderReturn->checkEnoughProduct($ids_order_detail, $order_qte_input, $customizationIds, $customizationQtyInput)) {
+                Tools::redirect('index.php?controller=order-detail&id_order=' . $id_order . '&errorQuantity');
             }
 
             $orderReturn->state = 1;
             $orderReturn->add();
-            $orderReturn->addReturnDetail($ids_order_detail, $order_qte_input);
+            $orderReturn->addReturnDetail($ids_order_detail, $order_qte_input, $customizationIds, $customizationQtyInput);
             Hook::exec('actionOrderReturn', ['orderReturn' => $orderReturn]);
-            Tools::redirect($this->context->link->getPageLink('order-follow'));
+            Tools::redirect('index.php?controller=order-follow');
         }
     }
 
@@ -138,7 +95,7 @@ class OrderFollowControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         if ((bool) Configuration::get('PS_ORDER_RETURN') === false) {
             $this->redirect_after = '404';
@@ -155,7 +112,7 @@ class OrderFollowControllerCore extends FrontController
         $this->setTemplate('customer/order-follow');
     }
 
-    public function getTemplateVarOrdersReturns(): array
+    public function getTemplateVarOrdersReturns()
     {
         $orders_returns = [];
         $orders_return = OrderReturn::getOrdersReturn($this->context->customer->id);
@@ -172,7 +129,7 @@ class OrderFollowControllerCore extends FrontController
         return $orders_returns;
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 

@@ -21,6 +21,11 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Module\SourceRetriever;
 
+use Exception;
+use GuzzleHttp\Client;
+use GuzzleHttp\ClientInterface;
+use GuzzleHttp\Exception\ClientException;
+use GuzzleHttp\Exception\GuzzleException;
 use GuzzleHttp\Psr7\Utils;
 use PrestaShop\Module\Mbo\Addons\Provider\AddonsDataProvider;
 use PrestaShop\Module\Mbo\Exception\AddonsDownloadModuleException;
@@ -29,10 +34,9 @@ use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 use PrestaShop\Module\Mbo\Helpers\ModuleErrorHelper;
 use PrestaShop\Module\Mbo\Module\Exception\SourceNotCheckedException;
 use PrestaShop\PrestaShop\Core\Module\Exception\ModuleErrorException;
-use Symfony\Contracts\HttpClient\Exception\ClientExceptionInterface;
 use Symfony\Contracts\HttpClient\Exception\TransportExceptionInterface;
-use Symfony\Contracts\HttpClient\HttpClientInterface;
 use Symfony\Contracts\Translation\TranslatorInterface;
+use ZipArchive;
 
 class AddonsUrlSourceRetriever implements SourceRetrieverInterface
 {
@@ -61,6 +65,11 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
     public $cacheDir;
 
     /**
+     * @var string
+     */
+    private $modulePath;
+
+    /**
      * @var AddonsDataProvider
      */
     private $addonsDataProvider;
@@ -76,7 +85,7 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
     private $handledSourceCredentials;
 
     /**
-     * @var HttpClientInterface
+     * @var ClientInterface
      */
     private $httpClient;
 
@@ -88,37 +97,52 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
     public function __construct(
         AddonsDataProvider $addonsDataProvider,
         TranslatorInterface $translator,
-        HttpClientInterface $httpClient,
+        string $modulePath
     ) {
         $this->addonsDataProvider = $addonsDataProvider;
         $this->translator = $translator;
-        $this->httpClient = $httpClient;
+        $this->modulePath = rtrim($modulePath, '/') . '/';
+
+        $this->httpClient = new Client([
+            'timeout' => '7200',
+            'CURLOPT_FORBID_REUSE' => true,
+            'CURLOPT_FRESH_CONNECT' => true,
+        ]);
     }
 
+    /**
+     * @throws GuzzleException
+     */
     public function assertCanBeDownloaded($source): bool
     {
         if (!self::assertIsAddonsUrl($source)) {
             return false;
         }
 
-        $authenticatedQueryParameters = [];
         try {
             $authenticatedQueryParameters = $this->computeAuthentication($source);
             $source = $authenticatedQueryParameters['source'];
             $options = $authenticatedQueryParameters['options'] ?? [];
 
-            if (empty($options['headers'])) {
+            if (!is_array($options['headers'])) {
                 $options['headers'] = [];
             }
             $options['headers'] = array_merge($options['headers'], AddonsApiHelper::addCustomHeaderIfNeeded());
 
             $response = $this->httpClient->request('HEAD', $source, $options);
-        } catch (TransportExceptionInterface $e) {
-            if ($e instanceof ClientExceptionInterface) {
+        } catch (TransportExceptionInterface|\Exception $e) {
+            if ($e instanceof ClientException) {
                 try {
-                    $this->httpClient->request('GET', $source, $options);
-                } catch (ClientExceptionInterface $clientException) {
-                    throw ModuleErrorHelper::reportAndConvertError(new AddonsDownloadModuleException($clientException, $authenticatedQueryParameters), $authenticatedQueryParameters);
+                    $this->httpClient->request(
+                        'GET',
+                        $source,
+                        $options
+                    );
+                } catch (ClientException $clientException) {
+                    throw ModuleErrorHelper::reportAndConvertError(
+                        new AddonsDownloadModuleException($clientException, $authenticatedQueryParameters ?? []),
+                        $authenticatedQueryParameters ?? []
+                    );
                 }
             }
 
@@ -162,6 +186,10 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
         return $this->moduleName;
     }
 
+    /**
+     * @throws GuzzleException
+     * @throws Exception
+     */
     public function get($source, ?string $expectedModuleName = null, ?array $options = []): string
     {
         $this->assertSourceHasBeenChecked($source);
@@ -169,7 +197,7 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
         // First save the file to filesystem
         $temporaryFilename = tempnam($this->cacheDir, 'mod');
         if (false === $temporaryFilename) {
-            throw new \Exception('Failed to create temporary file to store downloaded source');
+            throw new Exception('Failed to create temporary file to store downloaded source');
         }
 
         $temporaryZipFilename = $temporaryFilename . '.zip';
@@ -191,15 +219,21 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
     public function validate(string $zipFileName, string $expectedModuleName): bool
     {
         if (!$this->isZipFile($zipFileName)) {
-            throw new ModuleErrorException($this->translator->trans('This file does not seem to be a valid module zip', [], 'Admin.Modules.Notification'));
+            throw new ModuleErrorException(
+                $this->translator->trans(
+                    'This file does not seem to be a valid module zip',
+                    [],
+                    'Admin.Modules.Notification'
+                )
+            );
         }
 
-        $zip = new \ZipArchive();
+        $zip = new ZipArchive();
         if ($zip->open($zipFileName) === true) {
             for ($i = 0; $i < $zip->numFiles; ++$i) {
                 if (preg_match(self::MODULE_REGEX, $zip->getNameIndex($i), $matches)) {
@@ -213,7 +247,13 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
             $zip->close();
         }
 
-        throw new ModuleErrorException($this->translator->trans('Downloaded zip file does not contain the expected module', [], 'Admin.Modules.Notification'));
+        throw new ModuleErrorException(
+            $this->translator->trans(
+                'Downloaded zip file does not contain the expected module',
+                [],
+                'Admin.Modules.Notification'
+            )
+        );
     }
 
     public static function assertIsAddonsUrl($source): bool
@@ -232,7 +272,7 @@ class AddonsUrlSourceRetriever implements SourceRetrieverInterface
     private function computeAuthentication(string $source): array
     {
         $url_parts = parse_url($source);
-        if (is_array($url_parts) && isset($url_parts['query'])) {
+        if (is_array($url_parts) && isset($url_parts['query']) && is_string($url_parts['query'])) {
             parse_str($url_parts['query'], $params);
         } else {
             $params = [];

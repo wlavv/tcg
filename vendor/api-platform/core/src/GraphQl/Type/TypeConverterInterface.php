@@ -27,8 +27,10 @@ interface TypeConverterInterface
     /**
      * Converts a built-in type to its GraphQL equivalent.
      * A string can be returned for a custom registered type.
+     *
+     * @return string|GraphQLType|null
      */
-    public function convertType(Type $type, bool $input, Operation $rootOperation, string $resourceClass, string $rootResource, ?string $property, int $depth): GraphQLType|string|null;
+    public function convertType(Type $type, bool $input, Operation $rootOperation, string $resourceClass, string $rootResource, ?string $property, int $depth);
 
     /**
      * Resolves a type written with the GraphQL type system to its object representation.

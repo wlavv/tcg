@@ -195,11 +195,6 @@ class AdminGroupsControllerCore extends AdminController
         }
 
         parent::initProcess();
-
-        // This is a composite page, we don't want the "options" display mode
-        if ($this->display == 'options') {
-            $this->display = '';
-        }
     }
 
     public function postProcess(): void
@@ -246,7 +241,6 @@ class AdminGroupsControllerCore extends AdminController
         $this->tpl_view_vars = [
             'group' => $group,
             'language' => $this->context->language,
-            // @phpstan-ignore-next-line
             'customerList' => $this->renderCustomersList($group),
             'categorieReductions' => $this->formatCategoryDiscountList($group->id),
         ];
@@ -254,7 +248,7 @@ class AdminGroupsControllerCore extends AdminController
         return parent::renderView();
     }
 
-    protected function renderCustomersList(Group $group)
+    protected function renderCustomersList($group)
     {
         $genders = [0 => '?'];
         $genders_icon = ['default' => 'unknown.gif'];
@@ -274,7 +268,7 @@ class AdminGroupsControllerCore extends AdminController
         $this->explicitSelect = true;
         $this->list_skip_actions = [];
 
-        $this->fields_list = [
+        $this->fields_list = ([
             'id_customer' => [
                 'title' => $this->trans('ID', [], 'Admin.Global'),
                 'align' => 'center',
@@ -322,7 +316,7 @@ class AdminGroupsControllerCore extends AdminController
                 'filter_key' => 'c!active',
                 'callback' => 'printOptinIcon',
             ],
-        ];
+        ]);
         $this->_select = 'c.*, a.id_group';
         $this->_join = 'LEFT JOIN `' . _DB_PREFIX_ . 'customer` c ON (a.`id_customer` = c.`id_customer`)';
         $this->_where = 'AND a.`id_group` = ' . (int) $group->id . ' AND c.`deleted` != 1';
@@ -455,7 +449,7 @@ class AdminGroupsControllerCore extends AdminController
         return parent::renderForm();
     }
 
-    protected function formatCategoryDiscountList(int $id_group)
+    protected function formatCategoryDiscountList($id_group)
     {
         $group_reductions = GroupReduction::getGroupReductions((int) $id_group, $this->context->language->id);
         $category_reductions = [];
@@ -531,7 +525,7 @@ class AdminGroupsControllerCore extends AdminController
 
         $unauth_modules_tmp = [];
         foreach ($unauth_modules as $key => $val) {
-            if ($tmp_obj = Module::getInstanceById($val['id_module'])) {
+            if (($tmp_obj = Module::getInstanceById($val['id_module']))) {
                 $unauth_modules_tmp[] = $tmp_obj;
             }
         }
@@ -566,7 +560,7 @@ class AdminGroupsControllerCore extends AdminController
     public function ajaxProcessAddCategoryReduction()
     {
         $category_reduction = Tools::getValue('category_reduction');
-        $id_category = Tools::getValue('id_category'); // no cast validation is done with Validate::isUnsignedId($id_category)
+        $id_category = Tools::getValue('id_category'); //no cast validation is done with Validate::isUnsignedId($id_category)
 
         $result = [];
         if (!Validate::isUnsignedId($id_category)) {
@@ -577,7 +571,7 @@ class AdminGroupsControllerCore extends AdminController
             $result['hasError'] = true;
         } else {
             $result['id_category'] = (int) $id_category;
-            $result['catPath'] = Tools::getPath(self::$currentIndex . '?controller=AdminCategories', (int) $id_category);
+            $result['catPath'] = Tools::getPath(self::$currentIndex . '?tab=AdminCategories', (int) $id_category);
             $result['discount'] = $category_reduction;
             $result['hasError'] = false;
         }
@@ -663,9 +657,9 @@ class AdminGroupsControllerCore extends AdminController
         $guest = new Group((int) Configuration::get('PS_GUEST_GROUP'));
         $default = new Group((int) Configuration::get('PS_CUSTOMER_GROUP'));
 
-        $unidentified_group_information = $this->trans('%group_name% - All persons without a customer account or customers that are not logged in.', ['%group_name%' => '<b>' . $unidentified->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
-        $guest_group_information = $this->trans('%group_name% - All persons who placed an order through Guest Checkout.', ['%group_name%' => '<b>' . $guest->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
-        $default_group_information = $this->trans('%group_name% - All persons who created an account on this site.', ['%group_name%' => '<b>' . $default->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
+        $unidentified_group_information = $this->trans('%group_name% - All persons without a customer account or customers that are not logged in.', ['_raw' => true, '%group_name%' => '<b>' . $unidentified->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
+        $guest_group_information = $this->trans('%group_name% - All persons who placed an order through Guest Checkout.', ['_raw' => true, '%group_name%' => '<b>' . $guest->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
+        $default_group_information = $this->trans('%group_name% - All persons who created an account on this site.', ['_raw' => true, '%group_name%' => '<b>' . $default->name[$this->context->language->id] . '</b>'], 'Admin.Shopparameters.Help');
 
         $this->displayInformation($this->trans('PrestaShop has three default customer groups:', [], 'Admin.Shopparameters.Help'));
         $this->displayInformation($unidentified_group_information);

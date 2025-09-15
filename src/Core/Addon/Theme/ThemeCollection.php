@@ -31,7 +31,6 @@ use ArrayIterator;
 use Countable;
 use IteratorAggregate;
 use PrestaShop\PrestaShop\Core\Addon\Theme\Theme as AddonTheme;
-use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -100,7 +99,7 @@ class ThemeCollection implements ArrayAccess, Countable, IteratorAggregate
     /**
      * {@inheritdoc}
      */
-    #[ReturnTypeWillChange]
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         return $this->get($offset);

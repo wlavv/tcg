@@ -88,7 +88,7 @@ class OrderDetailUpdater
         DecimalNumber $priceTaxExcluded,
         DecimalNumber $priceTaxIncluded
     ): void {
-        [$roundType, $computingPrecision, $taxAddress] = $this->prepareOrderContext($order);
+        list($roundType, $computingPrecision, $taxAddress) = $this->prepareOrderContext($order);
 
         try {
             $ecotax = new DecimalNumber((string) $orderDetail->ecotax);
@@ -137,7 +137,7 @@ class OrderDetailUpdater
         DecimalNumber $priceTaxIncluded,
         int $customizationId = 0
     ): void {
-        [$roundType, $computingPrecision, $taxAddress] = $this->prepareOrderContext($order);
+        list($roundType, $computingPrecision, $taxAddress) = $this->prepareOrderContext($order);
 
         try {
             $this->applyUpdatesForProduct(
@@ -161,7 +161,7 @@ class OrderDetailUpdater
      */
     public function updateOrderDetailsTaxes(Order $order): void
     {
-        [$roundType, $computingPrecision, $taxAddress] = $this->prepareOrderContext($order);
+        list($roundType, $computingPrecision, $taxAddress) = $this->prepareOrderContext($order);
 
         try {
             $orderDetailsData = $order->getProducts();

@@ -100,7 +100,7 @@ class WebHookValidation
             throw new PsCheckoutException('Resource can\'t be empty', PsCheckoutException::PSCHECKOUT_WEBHOOK_RESOURCE_EMPTY);
         }
 
-        if (!isset($resource['amount']['value'])) {
+        if (empty($resource['amount']['value'])) {
             throw new PsCheckoutException('Amount value can\'t be empty', PsCheckoutException::PSCHECKOUT_WEBHOOK_AMOUNT_EMPTY);
         }
 

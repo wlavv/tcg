@@ -73,18 +73,18 @@
 
   .date {
     a[data-action='clear']::before {
-      font-family: var(--#{$cdk}font-family-material-icons);
+      font-family: 'Material Icons';
       content: "\E14C";
-      font-size: var(--#{$cdk}size-20);
+      font-size: 20px;
       position: absolute;
-      bottom: var(--#{$cdk}size-16);
+      bottom: 15px;
       left: 50%;
-      margin-left: calc(-1 * var(--#{$cdk}size-10));
-      color: var(--#{$cdk}primary-800);
-      cursor: pointer;
+      margin-left: -10px;
+      color: $gray-dark;
+      cursor:pointer;
     }
     .bootstrap-datetimepicker-widget tr td span:hover {
-      background-color: var(--#{$cdk}white);
+      background-color: white;
     }
   }
 

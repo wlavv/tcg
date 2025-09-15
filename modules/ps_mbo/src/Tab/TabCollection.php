@@ -21,6 +21,8 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Tab;
 
+use ArrayIterator;
+
 class TabCollection implements TabCollectionInterface
 {
     /**
@@ -87,9 +89,9 @@ class TabCollection implements TabCollectionInterface
     /**
      * {@inheritdoc}
      */
-    public function getIterator(): \ArrayIterator
+    public function getIterator(): ArrayIterator
     {
-        return new \ArrayIterator($this->tabs);
+        return new ArrayIterator($this->tabs);
     }
 
     /**

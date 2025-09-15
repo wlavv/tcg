@@ -22,6 +22,8 @@ namespace PrestaShop\Module\Mbo\Distribution\Config\Appliers;
 
 use PrestaShop\Module\Mbo\Distribution\Config\Config;
 use PrestaShop\Module\Mbo\Distribution\Config\Exception\InvalidConfigException;
+use Tab;
+use Validate;
 
 class ModuleSelectionMenuConfigApplier implements ConfigApplierInterface
 {
@@ -52,12 +54,12 @@ class ModuleSelectionMenuConfigApplier implements ConfigApplierInterface
 
     private function getModuleSelectionMenu()
     {
-        $tab = \Tab::getInstanceFromClassName('AdminPsMboSelection');
+        $tab = Tab::getInstanceFromClassName('AdminPsMboSelection');
 
-        return \Validate::isLoadedObject($tab) ? $tab : null;
+        return Validate::isLoadedObject($tab) ? $tab : null;
     }
 
-    private function applyUp(\Tab $moduleSelectionMenu): bool
+    private function applyUp(Tab $moduleSelectionMenu): bool
     {
         $moduleSelectionMenu->enabled = true;
         $moduleSelectionMenu->active = true;
@@ -65,7 +67,7 @@ class ModuleSelectionMenuConfigApplier implements ConfigApplierInterface
         return $moduleSelectionMenu->save();
     }
 
-    private function applyDown(\Tab $moduleSelectionMenu): bool
+    private function applyDown(Tab $moduleSelectionMenu): bool
     {
         $moduleSelectionMenu->enabled = false;
         $moduleSelectionMenu->active = false;

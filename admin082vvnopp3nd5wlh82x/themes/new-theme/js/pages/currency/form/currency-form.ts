@@ -139,13 +139,11 @@ export default class CurrencyForm {
   }
 
   initListeners(): void {
-    this.$currencySelector.on('change', this.onCurrencySelectorChange.bind(this));
-    this.$isUnofficialCheckbox.on(
-      'change',
+    this.$currencySelector.change(this.onCurrencySelectorChange.bind(this));
+    this.$isUnofficialCheckbox.change(
       this.onIsUnofficialCheckboxChange.bind(this),
     );
-    this.$resetDefaultSettingsButton.on(
-      'click',
+    this.$resetDefaultSettingsButton.click(
       this.onResetDefaultSettingsClick.bind(this),
     );
   }

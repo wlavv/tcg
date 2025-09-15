@@ -40,6 +40,9 @@ class CrowdinPhpExtractor extends AbstractFileExtractor implements ExtractorInte
         $this->originalStringManager = $originalStringManager;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function extract($resource, MessageCatalogue $catalog)
     {
         $files = $this->extractFiles($resource);
@@ -66,6 +69,9 @@ class CrowdinPhpExtractor extends AbstractFileExtractor implements ExtractorInte
         }
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function setPrefix($prefix)
     {
         $this->prefix = $prefix;
@@ -74,9 +80,9 @@ class CrowdinPhpExtractor extends AbstractFileExtractor implements ExtractorInte
     /**
      * @param string $file
      *
-     * @return bool
-     *
      * @throws \InvalidArgumentException
+     *
+     * @return bool
      */
     protected function canBeExtracted($file)
     {
@@ -94,7 +100,6 @@ class CrowdinPhpExtractor extends AbstractFileExtractor implements ExtractorInte
 
         return $finder->files()
             ->name('*.php')
-            ->sortByName(useNaturalSort: true)
             ->in($directory)
             ->exclude($this->getExcludedDirectories());
     }

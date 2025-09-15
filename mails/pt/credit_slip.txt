@@ -11,4 +11,5 @@ Foi gerada uma nota de crédito em seu nome relativo à encomenda com a referên
 Reveja esta nota de crédito e transfira a sua fatura na nossa loja, vá para a secção [Notas de crédito]({history_url}) da sua conta de cliente.
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

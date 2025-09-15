@@ -23,16 +23,18 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  *-->
 <template>
-  <div class="card p-3">
-    <PSTree
-      ref="domainsTree"
-      :model="$store.getters.domainsTree"
-      class-name="translationTree"
-      :translations="translations"
-      :current-item="currentItem"
-      v-if="treeReady"
-    />
-    <PSSpinner v-else />
+  <div class="col-sm-3">
+    <div class="card p-3">
+      <PSTree
+        ref="domainsTree"
+        :model="$store.getters.domainsTree"
+        class-name="translationTree"
+        :translations="translations"
+        :current-item="currentItem"
+        v-if="treeReady"
+      />
+      <PSSpinner v-else />
+    </div>
   </div>
 </template>
 
@@ -158,36 +160,36 @@
 
   .translationTree {
     .tree-name {
-      margin-bottom: var(--#{$cdk}size-16);
+      margin-bottom: .9375rem;
 
       &.active {
         font-weight: bold;
       }
 
       &.extra {
-        color: var(--#{$cdk}red-500);
+        color: $danger;
       }
     }
 
     .tree-extra-label {
-      color: var(--#{$cdk}red-500);
+      color: $danger;
       text-transform: uppercase;
-      font-size: var(--#{$cdk}size-10);
+      font-size: .65rem;
       margin-left: auto;
     }
     .tree-extra-label-mini {
-      background-color: var(--#{$cdk}red-500);
-      color: var(--#{$cdk}white);
-      padding: 0 var(--#{$cdk}size-8);
-      border-radius: var(--#{$cdk}size-12);
+      background-color: $danger;
+      color: #ffffff;
+      padding: 0 0.5rem;
+      border-radius: 0.75rem;
       display: inline-block;
-      font-size: var(--#{$cdk}size-12);
-      height: var(--#{$cdk}size-24);
+      font-size: .75rem;
+      height: 1.5rem;
       margin-left: auto;
     }
     .tree-label {
       &:hover {
-        text-decoration: underline;
+        color: $primary;
       }
     }
   }

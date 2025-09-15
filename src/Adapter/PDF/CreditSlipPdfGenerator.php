@@ -71,7 +71,7 @@ final class CreditSlipPdfGenerator implements PDFGeneratorInterface
      *
      * @throws PdfException
      */
-    public function generatePDF(array $creditSlipIds): string
+    public function generatePDF(array $creditSlipIds)
     {
         $ids = [];
         foreach ($creditSlipIds as $creditSlipId) {
@@ -83,8 +83,7 @@ final class CreditSlipPdfGenerator implements PDFGeneratorInterface
             $slipsCollection = ObjectModel::hydrateCollection('OrderSlip', $slipsList);
 
             $pdf = new PDF($slipsCollection, PDF::TEMPLATE_ORDER_SLIP, Context::getContext()->smarty);
-
-            return $pdf->render(true);
+            $pdf->render();
         } catch (PrestaShopException $e) {
             throw new PdfException('Something went wrong when trying to generate pdf', 0, $e);
         }
@@ -109,7 +108,7 @@ final class CreditSlipPdfGenerator implements PDFGeneratorInterface
                 ->setParameter('creditSlipIds', $creditSlipIds, Connection::PARAM_INT_ARRAY)
             ;
 
-            $slipsList = $qb->executeQuery()->fetchAll();
+            $slipsList = $qb->execute()->fetchAll();
         }
 
         if (!empty($slipsList)) {

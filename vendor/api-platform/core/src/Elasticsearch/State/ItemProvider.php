@@ -13,19 +13,12 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Elasticsearch\State;
 
-use ApiPlatform\Elasticsearch\Metadata\Document\DocumentMetadata;
 use ApiPlatform\Elasticsearch\Metadata\Document\Factory\DocumentMetadataFactoryInterface;
 use ApiPlatform\Elasticsearch\Serializer\DocumentNormalizer;
-use ApiPlatform\Metadata\Exception\RuntimeException;
-use ApiPlatform\Metadata\InflectorInterface;
+use ApiPlatform\Elasticsearch\Util\ElasticsearchVersion;
 use ApiPlatform\Metadata\Operation;
-use ApiPlatform\Metadata\Util\Inflector;
-use ApiPlatform\State\ApiResource\Error;
 use ApiPlatform\State\ProviderInterface;
-use Elastic\Elasticsearch\Client;
-use Elastic\Elasticsearch\Exception\ClientResponseException;
-use Elastic\Elasticsearch\Response\Elasticsearch;
-use Elasticsearch\Client as LegacyClient;
+use Elasticsearch\Client;
 use Elasticsearch\Common\Exceptions\Missing404Exception;
 use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
@@ -33,53 +26,45 @@ use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
 /**
  * Item provider for Elasticsearch.
  *
+ * @experimental
+ *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  * @author Vincent Chalamon <vincentchalamon@gmail.com>
  */
 final class ItemProvider implements ProviderInterface
 {
-    public function __construct(private readonly LegacyClient|Client $client, private readonly ?DocumentMetadataFactoryInterface $documentMetadataFactory = null, private readonly ?DenormalizerInterface $denormalizer = null, private readonly ?InflectorInterface $inflector = new Inflector()) // @phpstan-ignore-line
+    private $client;
+    private $documentMetadataFactory;
+    private $denormalizer;
+
+    public function __construct(Client $client, DocumentMetadataFactoryInterface $documentMetadataFactory, DenormalizerInterface $denormalizer)
     {
+        $this->client = $client;
+        $this->documentMetadataFactory = $documentMetadataFactory;
+        $this->denormalizer = $denormalizer;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function provide(Operation $operation, array $uriVariables = [], array $context = []): ?object
+    public function provide(Operation $operation, array $uriVariables = [], array $context = [])
     {
         $resourceClass = $operation->getClass();
-
-        $options = $operation->getStateOptions() instanceof Options ? $operation->getStateOptions() : new Options(index: $this->getIndex($operation));
-
-        // TODO: remove in 4.x
-        if ($this->documentMetadataFactory && $operation->getElasticsearch() && !$operation->getStateOptions()) {
-            $options = $this->convertDocumentMetadata($this->documentMetadataFactory->create($resourceClass));
-        }
-
-        if (!$options instanceof Options) {
-            throw new RuntimeException(\sprintf('The "%s" provider was called without "%s".', self::class, Options::class));
-        }
-
-        $params = [
-            'index' => $options->getIndex() ?? $this->getIndex($operation),
-            'id' => (string) reset($uriVariables),
-        ];
+        $documentMetadata = $this->documentMetadataFactory->create($resourceClass);
 
         try {
-            $document = $this->client->get($params); // @phpstan-ignore-line
-        } catch (Missing404Exception) { // @phpstan-ignore-line
-            return null;
-        } catch (ClientResponseException $e) {
-            $response = $e->getResponse();
-            if (404 === $response->getStatusCode()) {
-                return null;
+            $params = [
+                'index' => $documentMetadata->getIndex(),
+                'id' => (string) reset($uriVariables),
+            ];
+
+            if (ElasticsearchVersion::supportsMappingType()) {
+                $params['type'] = $documentMetadata->getType();
             }
 
-            throw new Error(status: $response->getStatusCode(), detail: (string) $response->getBody(), title: $response->getReasonPhrase(), originalTrace: $e->getTrace());
-        }
-
-        if ($document instanceof Elasticsearch) {
-            $document = $document->asArray();
+            $document = $this->client->get($params);
+        } catch (Missing404Exception $e) {
+            return null;
         }
 
         $item = $this->denormalizer->denormalize($document, $resourceClass, DocumentNormalizer::FORMAT, [AbstractNormalizer::ALLOW_EXTRA_ATTRIBUTES => true]);
@@ -88,15 +73,5 @@ final class ItemProvider implements ProviderInterface
         }
 
         return $item;
-    }
-
-    private function convertDocumentMetadata(DocumentMetadata $documentMetadata): Options
-    {
-        return new Options($documentMetadata->getIndex(), $documentMetadata->getType());
-    }
-
-    private function getIndex(Operation $operation): string
-    {
-        return $this->inflector->tableize($operation->getShortName());
     }
 }

@@ -33,28 +33,50 @@ use PrestaShopBundle\Entity\Repository\AdminFilterRepository;
 use Symfony\Component\Form\FormInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\HttpFoundation\Session\Session;
 use Symfony\Component\Routing\Router;
 
 class ResponseBuilder
 {
+    /** @var AdminFilterRepository */
+    private $adminFilterRepository;
+
+    /** @var int|null */
+    private $employeeId;
+
+    /** @var GridFilterFormFactoryInterface */
+    private $filterFormFactory;
+
+    /** @var Router */
+    private $router;
+
+    /** @var int */
+    private $shopId;
+
+    /** @var Session */
+    private $session;
+
     /**
      * @param GridFilterFormFactoryInterface $filterFormFactory
      * @param Router $router
      * @param AdminFilterRepository $adminFilterRepository
      * @param int|null $employeeId
      * @param int $shopId
-     * @param RequestStack $requestStack
      */
     public function __construct(
-        private readonly GridFilterFormFactoryInterface $filterFormFactory,
-        private readonly Router $router,
-        private readonly AdminFilterRepository $adminFilterRepository,
-        private readonly ?int $employeeId,
-        private readonly int $shopId,
-        private readonly RequestStack $requestStack
+        GridFilterFormFactoryInterface $filterFormFactory,
+        Router $router,
+        AdminFilterRepository $adminFilterRepository,
+        ?int $employeeId,
+        int $shopId,
+        Session $session
     ) {
+        $this->filterFormFactory = $filterFormFactory;
+        $this->router = $router;
+        $this->adminFilterRepository = $adminFilterRepository;
+        $this->employeeId = $employeeId;
+        $this->shopId = $shopId;
+        $this->session = $session;
     }
 
     /**
@@ -95,9 +117,7 @@ class ResponseBuilder
             } else {
                 foreach ($filtersForm->getErrors(true) as $error) {
                     $fieldLabel = $error->getOrigin()->getConfig()->getOption('label') ?: $error->getOrigin()->getName();
-                    /** @var Session $session */
-                    $session = $this->requestStack->getSession();
-                    $session->getFlashBag()->add('error', sprintf('%s: %s', $fieldLabel, $error->getMessage()));
+                    $this->session->getFlashBag()->add('error', sprintf('%s: %s', $fieldLabel, $error->getMessage()));
                 }
             }
         }
@@ -111,7 +131,9 @@ class ResponseBuilder
             }
         }
 
-        return new RedirectResponse($this->router->generate($redirectRoute, $redirectParams));
+        $redirectUrl = $this->router->generate($redirectRoute, $redirectParams);
+
+        return new RedirectResponse($redirectUrl, 302);
     }
 
     /**

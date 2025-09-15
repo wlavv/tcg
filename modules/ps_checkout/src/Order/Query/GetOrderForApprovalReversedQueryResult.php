@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -22,6 +21,7 @@
 namespace PrestaShop\Module\PrestashopCheckout\Order\Query;
 
 use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderException;
+use PrestaShop\Module\PrestashopCheckout\Order\State\Exception\OrderStateException;
 use PrestaShop\Module\PrestashopCheckout\Order\ValueObject\OrderId;
 
 class GetOrderForApprovalReversedQueryResult
@@ -47,11 +47,12 @@ class GetOrderForApprovalReversedQueryResult
      * @param bool $hasBeenCanceled
      *
      * @throws OrderException
+     * @throws OrderStateException
      */
     public function __construct(
         $orderId,
         $hasBeenPaid,
-        $hasBeenCanceled,
+        $hasBeenCanceled
     ) {
         $this->orderId = new OrderId($orderId);
         $this->hasBeenPaid = $hasBeenPaid;

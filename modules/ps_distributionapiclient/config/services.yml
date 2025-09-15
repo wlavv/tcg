@@ -15,15 +15,16 @@ services:
     arguments:
       - '@distributionapiclient.cache.filesystem.adapter'
 
-  distributionapiclient.middleware.cachedhttpclient:
-    class: PrestaShop\Module\DistributionApiClient\Middleware\CachedHttpClient
+  distributionapiclient.circuit_breaker.cache:
+    class: PrestaShop\Module\DistributionApiClient\Middleware\Cache
     arguments:
-      $cache: '@distributionapiclient.cache.provider'
+      - '@distributionapiclient.cache.provider'
 
-  distributionapiclient.symfony.client:
-    class: PrestaShop\CircuitBreaker\Client\SymfonyHttpClient
-    arguments:
-      $client: '@distributionapiclient.middleware.cachedhttpclient'
+  distributionapiclient.circuit_breaker.handlerstack:
+    class: GuzzleHttp\HandlerStack
+    factory: [ 'GuzzleHttp\HandlerStack', 'create' ]
+    calls:
+      - push: [ '@distributionapiclient.circuit_breaker.cache' ]
 
   distributionapiclient.circuit_breaker.factory:
     class: PrestaShop\CircuitBreaker\AdvancedCircuitBreakerFactory
@@ -36,7 +37,8 @@ services:
       - !php/const PrestaShop\Module\DistributionApiClient\DistributionApi::THRESHOLD_SECONDS
     calls:
       - setStorage: [ '@prestashop.core.circuit_breaker.storage' ]
-      - setClient: [ '@distributionapiclient.symfony.client' ]
+      - setClientOptions:
+          - { handler: '@distributionapiclient.circuit_breaker.handlerstack'}
 
   distributionapiclient.circuit_breaker:
     class: PrestaShop\CircuitBreaker\Contract\CircuitBreakerInterface
@@ -55,5 +57,4 @@ services:
       - '@PrestaShop\Module\DistributionApiClient\ShopDataProvider'
       - "@=service('prestashop.core.foundation.version').getSemVersion()"
       - '%ps_cache_dir%/downloads'
-      - '%kernel.project_dir%'
     public: true

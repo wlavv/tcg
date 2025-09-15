@@ -3,4 +3,4 @@ services:
     public: true
 
   PrestaShop\Module\Mbo\Api\Repository\ModuleRepository:
-    autowire: true
+    class: PrestaShop\Module\Mbo\Api\Repository\ModuleRepository

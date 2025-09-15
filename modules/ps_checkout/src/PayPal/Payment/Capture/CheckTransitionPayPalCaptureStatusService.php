@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,8 +25,8 @@ use PrestaShop\Module\PrestashopCheckout\Order\Exception\OrderException;
 class CheckTransitionPayPalCaptureStatusService
 {
     /**
-     * @param string|mixed $oldStatus
-     * @param string|mixed $newStatus
+     * @param string $oldStatus
+     * @param string $newStatus
      *
      * @return bool
      *

@@ -26,7 +26,10 @@ use Doctrine\ORM\QueryBuilder;
  */
 interface QueryResultItemExtensionInterface extends QueryItemExtensionInterface
 {
-    public function supportsResult(string $resourceClass, ?Operation $operation = null, array $context = []): bool;
+    public function supportsResult(string $resourceClass, Operation $operation = null, array $context = []): bool;
 
-    public function getResult(QueryBuilder $queryBuilder, ?string $resourceClass = null, ?Operation $operation = null, array $context = []): ?object;
+    /**
+     * @return T|null
+     */
+    public function getResult(QueryBuilder $queryBuilder, string $resourceClass = null, Operation $operation = null, array $context = []);
 }

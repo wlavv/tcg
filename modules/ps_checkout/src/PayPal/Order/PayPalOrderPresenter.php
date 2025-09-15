@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,12 +20,40 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order;
 
+use Currency;
+use PrestaShop\Module\PrestashopCheckout\PsCheckoutDataProvider;
+use Tools;
+
 class PayPalOrderPresenter
 {
+    /**
+     * @var PaypalOrderDataProvider
+     */
+    public $paypalOrderDataProvider;
+
+    /**
+     * @var PsCheckoutDataProvider
+     */
+    public $psCheckoutDataProvider;
+
+    /**
+     * @var PayPalOrderTranslationProvider
+     */
+    public $paypalOrderTranslationProvider;
+
+    /**
+     * @param PaypalOrderDataProvider $paypalOrderDataProvider
+     * @param PsCheckoutDataProvider $psCheckoutDataProvider
+     * @param PayPalOrderTranslationProvider $paypalOrderTranslationProvider
+     */
     public function __construct(
-        private PaypalOrderDataProvider $paypalOrderDataProvider,
-        private PayPalOrderTranslationProvider $paypalOrderTranslationProvider,
+        PaypalOrderDataProvider $paypalOrderDataProvider,
+        PsCheckoutDataProvider $psCheckoutDataProvider,
+        PayPalOrderTranslationProvider $paypalOrderTranslationProvider
     ) {
+        $this->paypalOrderDataProvider = $paypalOrderDataProvider;
+        $this->psCheckoutDataProvider = $psCheckoutDataProvider;
+        $this->paypalOrderTranslationProvider = $paypalOrderTranslationProvider;
     }
 
     /**
@@ -68,7 +95,10 @@ class PayPalOrderPresenter
             return '';
         }
 
-        return \Tools::getContextLocale(\Context::getContext())->formatPrice((float) $this->paypalOrderDataProvider->getTotalAmount(), $this->paypalOrderDataProvider->getCurrencyCode());
+        return Tools::displayPrice(
+            (float) $this->paypalOrderDataProvider->getTotalAmount(),
+            Currency::getCurrencyInstance(Currency::getIdByIsoCode($this->paypalOrderDataProvider->getCurrencyCode()))
+        );
     }
 
     /**

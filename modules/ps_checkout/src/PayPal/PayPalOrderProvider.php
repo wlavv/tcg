@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,15 +20,22 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal;
 
-use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Cache\PayPalOrderCache;
 use PrestaShop\Module\PrestashopCheckout\PaypalOrder;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
-use Symfony\Contracts\Cache\ItemInterface;
+use Psr\SimpleCache\CacheInterface;
 
 class PayPalOrderProvider
 {
-    public function __construct(private ChainAdapter $orderPayPalCache)
+    /**
+     * @var CacheInterface
+     */
+    private $orderPayPalCache;
+
+    /**
+     * @param CacheInterface $orderPayPalCache
+     */
+    public function __construct(CacheInterface $orderPayPalCache)
     {
+        $this->orderPayPalCache = $orderPayPalCache;
     }
 
     /**
@@ -43,17 +49,20 @@ class PayPalOrderProvider
             return false;
         }
 
-        return $this->orderPayPalCache->get($id, function (ItemInterface $cacheItem) use ($id) {
-            $orderPayPal = new PaypalOrder($id);
+        if ($this->orderPayPalCache->has($id)) {
+            return $this->orderPayPalCache->get($id);
+        }
 
-            if (!$orderPayPal->isLoaded()) {
-                return false;
-            }
-            $order = $orderPayPal->getOrder();
+        $orderPayPal = new PaypalOrder($id);
 
-            $cacheItem->expiresAfter(PayPalOrderCache::CACHE_TTL[$order['status']]);
+        if (!$orderPayPal->isLoaded()) {
+            return false;
+        }
 
-            return $order;
-        });
+        $data = $orderPayPal->getOrder();
+
+        $this->orderPayPalCache->set($id, $data);
+
+        return $data;
     }
 }

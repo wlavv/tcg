@@ -36,7 +36,7 @@ class ModuleLoader {
 
   static handleImport(): void {
     const moduleImport = $('#module-import');
-    moduleImport.on('click', () => {
+    moduleImport.click(() => {
       // @ts-ignore
       moduleImport.addClass('onclick', 250, validate);
     });

@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Metadata\Resource\Factory;
 
-use ApiPlatform\Metadata\Exception\InvalidArgumentException;
+use ApiPlatform\Exception\InvalidArgumentException;
 use ApiPlatform\Metadata\Extractor\ResourceExtractorInterface;
 use ApiPlatform\Metadata\Resource\ResourceNameCollection;
 
@@ -25,8 +25,13 @@ use ApiPlatform\Metadata\Resource\ResourceNameCollection;
  */
 final class ExtractorResourceNameCollectionFactory implements ResourceNameCollectionFactoryInterface
 {
-    public function __construct(private readonly ResourceExtractorInterface $extractor, private readonly ?ResourceNameCollectionFactoryInterface $decorated = null)
+    private $extractor;
+    private $decorated;
+
+    public function __construct(ResourceExtractorInterface $extractor, ResourceNameCollectionFactoryInterface $decorated = null)
     {
+        $this->extractor = $extractor;
+        $this->decorated = $decorated;
     }
 
     /**

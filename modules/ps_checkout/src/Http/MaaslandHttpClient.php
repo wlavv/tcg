@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -34,8 +33,14 @@ use Psr\Http\Message\ResponseInterface;
 
 class MaaslandHttpClient implements HttpClientInterface
 {
-    public function __construct(private HttpClientInterface $httpClient)
+    /**
+     * @var HttpClientInterface
+     */
+    private $httpClient;
+
+    public function __construct(HttpClientInterface $httpClient)
     {
+        $this->httpClient = $httpClient;
     }
 
     /**

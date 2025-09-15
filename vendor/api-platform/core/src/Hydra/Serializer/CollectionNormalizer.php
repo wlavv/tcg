@@ -13,18 +13,22 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Hydra\Serializer;
 
-use ApiPlatform\Api\IriConverterInterface as LegacyIriConverterInterface;
-use ApiPlatform\Api\ResourceClassResolverInterface as LegacyResourceClassResolverInterface;
+use ApiPlatform\Api\IriConverterInterface;
+use ApiPlatform\Api\ResourceClassResolverInterface;
+use ApiPlatform\Api\UrlGeneratorInterface;
+use ApiPlatform\Core\Api\IriConverterInterface as LegacyIriConverterInterface;
+use ApiPlatform\Core\Api\OperationType;
 use ApiPlatform\JsonLd\ContextBuilderInterface;
-use ApiPlatform\JsonLd\Serializer\HydraPrefixTrait;
 use ApiPlatform\JsonLd\Serializer\JsonLdContextTrait;
-use ApiPlatform\Metadata\IriConverterInterface;
+use ApiPlatform\Metadata\CollectionOperationInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
-use ApiPlatform\Metadata\ResourceClassResolverInterface;
-use ApiPlatform\Metadata\UrlGeneratorInterface;
-use ApiPlatform\Serializer\AbstractCollectionNormalizer;
+use ApiPlatform\Serializer\ContextTrait;
 use ApiPlatform\State\Pagination\PaginatorInterface;
 use ApiPlatform\State\Pagination\PartialPaginatorInterface;
+use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerAwareInterface;
+use Symfony\Component\Serializer\Normalizer\NormalizerAwareTrait;
+use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 
 /**
  * This normalizer handles collections.
@@ -32,77 +36,126 @@ use ApiPlatform\State\Pagination\PartialPaginatorInterface;
  * @author Kevin Dunglas <dunglas@gmail.com>
  * @author Samuel ROZE <samuel.roze@gmail.com>
  */
-final class CollectionNormalizer extends AbstractCollectionNormalizer
+final class CollectionNormalizer implements NormalizerInterface, NormalizerAwareInterface, CacheableSupportsMethodInterface
 {
-    use HydraPrefixTrait;
+    use ContextTrait;
     use JsonLdContextTrait;
+    use NormalizerAwareTrait;
 
     public const FORMAT = 'jsonld';
     public const IRI_ONLY = 'iri_only';
-    private array $defaultContext = [
+
+    private $contextBuilder;
+    private $resourceClassResolver;
+    private $iriConverter;
+    private $resourceMetadataCollectionFactory;
+    private $defaultContext = [
         self::IRI_ONLY => false,
     ];
 
-    public function __construct(private readonly ContextBuilderInterface $contextBuilder, LegacyResourceClassResolverInterface|ResourceClassResolverInterface $resourceClassResolver, private readonly LegacyIriConverterInterface|IriConverterInterface $iriConverter, readonly ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory = null, array $defaultContext = [])
+    public function __construct(ContextBuilderInterface $contextBuilder, ResourceClassResolverInterface $resourceClassResolver, $iriConverter, ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory = null, array $defaultContext = [])
     {
+        $this->contextBuilder = $contextBuilder;
+        $this->resourceClassResolver = $resourceClassResolver;
+
+        if ($iriConverter instanceof LegacyIriConverterInterface) {
+            trigger_deprecation('api-platform/core', '2.7', sprintf('Use an implementation of "%s" instead of "%s".', IriConverterInterface::class, LegacyIriConverterInterface::class));
+        }
+        $this->iriConverter = $iriConverter;
+        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
         $this->defaultContext = array_merge($this->defaultContext, $defaultContext);
-
-        if ($resourceMetadataCollectionFactory) {
-            trigger_deprecation('api-platform/core', '3.0', \sprintf('Injecting "%s" within "%s" is not needed anymore and this dependency will be removed in 4.0.', ResourceMetadataCollectionFactoryInterface::class, self::class));
-        }
-
-        parent::__construct($resourceClassResolver, '');
     }
 
     /**
-     * Gets the pagination data.
+     * {@inheritdoc}
      */
-    protected function getPaginationData(iterable $object, array $context = []): array
+    public function supportsNormalization($data, $format = null, array $context = []): bool
     {
+        return self::FORMAT === $format && is_iterable($data);
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @param iterable $object
+     */
+    public function normalize($object, $format = null, array $context = []): array
+    {
+        if (!isset($context['resource_class']) || isset($context['api_sub_level'])) {
+            return $this->normalizeRawCollection($object, $format, $context);
+        }
+
         $resourceClass = $this->resourceClassResolver->getResourceClass($object, $context['resource_class']);
-        $hydraPrefix = $this->getHydraPrefix($context + $this->defaultContext);
-        // This adds "jsonld_has_context" by reference, we moved the code to this class.
-        // To follow a note I wrote in the ItemNormalizer, we need to change the JSON-LD context generation as it is more complicated then it should.
+        $context = $this->initContext($resourceClass, $context);
+        $context['api_collection_sub_level'] = true;
         $data = $this->addJsonLdContext($this->contextBuilder, $resourceClass, $context);
-        $data['@id'] = $this->iriConverter->getIriFromResource($resourceClass, UrlGeneratorInterface::ABS_PATH, $context['operation'] ?? null, $context);
-        $data['@type'] = $hydraPrefix.'Collection';
 
-        if ($object instanceof PaginatorInterface) {
-            $data[$hydraPrefix.'totalItems'] = $object->getTotalItems();
+        if ($this->iriConverter instanceof LegacyIriConverterInterface) {
+            // TODO: remove in 3.0
+            $data['@id'] = isset($context['operation_type']) && OperationType::SUBRESOURCE === $context['operation_type'] ? $this->iriConverter->getSubresourceIriFromResourceClass($resourceClass, $context) : $this->iriConverter->getIriFromResourceClass($resourceClass);
+        } else {
+            $data['@id'] = $this->iriConverter->getIriFromResource($resourceClass, UrlGeneratorInterface::ABS_PATH, $context['operation'] ?? null, $context);
         }
 
-        if (\is_array($object) || ($object instanceof \Countable && !$object instanceof PartialPaginatorInterface)) {
-            $data[$hydraPrefix.'totalItems'] = \count($object);
-        }
-
-        return $data;
-    }
-
-    /**
-     * Gets items data.
-     */
-    protected function getItemsData(iterable $object, ?string $format = null, array $context = []): array
-    {
-        $hydraPrefix = $this->getHydraPrefix($context + $this->defaultContext);
-        $data = [$hydraPrefix.'member' => []];
+        $data['@type'] = 'hydra:Collection';
+        $data['hydra:member'] = [];
         $iriOnly = $context[self::IRI_ONLY] ?? $this->defaultContext[self::IRI_ONLY];
+
+        // We need to keep this operation for serialization groups for later
+        if (isset($context['operation'])) {
+            $context['root_operation'] = $context['operation'];
+        }
+
+        if (isset($context['operation_name'])) {
+            $context['root_operation_name'] = $context['operation_name'];
+        }
+
+        if ($this->resourceMetadataCollectionFactory && ($operation = $context['operation'] ?? null) instanceof CollectionOperationInterface && ($itemUriTemplate = $operation->getItemUriTemplate())) {
+            $context['operation'] = $this->resourceMetadataCollectionFactory->create($resourceClass)->getOperation($operation->getItemUriTemplate());
+        } else {
+            unset($context['operation']);
+        }
+
+        unset($context['operation_name'], $context['uri_variables']);
 
         foreach ($object as $obj) {
             if ($iriOnly) {
-                $data[$hydraPrefix.'member'][] = $this->iriConverter->getIriFromResource($obj);
+                $data['hydra:member'][] = $this->iriConverter instanceof LegacyIriConverterInterface ? $this->iriConverter->getIriFromItem($obj) : $this->iriConverter->getIriFromResource($obj);
             } else {
-                $data[$hydraPrefix.'member'][] = $this->normalizer->normalize($obj, $format, $context + ['jsonld_has_context' => true]);
+                $data['hydra:member'][] = $this->normalizer->normalize($obj, $format, $context);
             }
+        }
+
+        if ($object instanceof PaginatorInterface) {
+            $data['hydra:totalItems'] = $object->getTotalItems();
+        }
+        if (\is_array($object) || ($object instanceof \Countable && !$object instanceof PartialPaginatorInterface)) {
+            $data['hydra:totalItems'] = \count($object);
         }
 
         return $data;
     }
 
-    protected function initContext(string $resourceClass, array $context): array
+    /**
+     * {@inheritdoc}
+     */
+    public function hasCacheableSupportsMethod(): bool
     {
-        $context = parent::initContext($resourceClass, $context);
-        $context['api_collection_sub_level'] = true;
+        return true;
+    }
 
-        return $context;
+    /**
+     * Normalizes a raw collection (not API resources).
+     */
+    private function normalizeRawCollection(iterable $object, ?string $format, array $context): array
+    {
+        $data = [];
+        foreach ($object as $index => $obj) {
+            $data[$index] = $this->normalizer->normalize($obj, $format, $context);
+        }
+
+        return $data;
     }
 }
+
+class_alias(CollectionNormalizer::class, \ApiPlatform\Core\Hydra\Serializer\CollectionNormalizer::class);

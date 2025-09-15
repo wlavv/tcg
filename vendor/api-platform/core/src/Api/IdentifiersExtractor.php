@@ -13,14 +13,15 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Api;
 
-use ApiPlatform\Metadata\Exception\RuntimeException;
+use ApiPlatform\Core\Identifier\CompositeIdentifierParser;
+use ApiPlatform\Exception\RuntimeException;
 use ApiPlatform\Metadata\GraphQl\Operation as GraphQlOperation;
 use ApiPlatform\Metadata\HttpOperation;
 use ApiPlatform\Metadata\Operation;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
 use ApiPlatform\Metadata\Property\Factory\PropertyNameCollectionFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
-use ApiPlatform\Metadata\Util\ResourceClassInfoTrait;
+use ApiPlatform\Util\ResourceClassInfoTrait;
 use Symfony\Component\PropertyAccess\Exception\NoSuchPropertyException;
 use Symfony\Component\PropertyAccess\PropertyAccess;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -28,19 +29,22 @@ use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
 /**
  * {@inheritdoc}
  *
- * @deprecated use ApiPlatform\Metadata\IdentifiersExtractor instead
- *
  * @author Antoine Bluchet <soyuka@gmail.com>
  */
 final class IdentifiersExtractor implements IdentifiersExtractorInterface
 {
     use ResourceClassInfoTrait;
-    private readonly PropertyAccessorInterface $propertyAccessor;
 
-    public function __construct(ResourceMetadataCollectionFactoryInterface $resourceMetadataFactory, ResourceClassResolverInterface $resourceClassResolver, private readonly PropertyNameCollectionFactoryInterface $propertyNameCollectionFactory, private readonly PropertyMetadataFactoryInterface $propertyMetadataFactory, ?PropertyAccessorInterface $propertyAccessor = null)
+    private $propertyNameCollectionFactory;
+    private $propertyMetadataFactory;
+    private $propertyAccessor;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $resourceMetadataFactory, ResourceClassResolverInterface $resourceClassResolver, PropertyNameCollectionFactoryInterface $propertyNameCollectionFactory, PropertyMetadataFactoryInterface $propertyMetadataFactory, PropertyAccessorInterface $propertyAccessor = null)
     {
         $this->resourceMetadataFactory = $resourceMetadataFactory;
         $this->resourceClassResolver = $resourceClassResolver;
+        $this->propertyNameCollectionFactory = $propertyNameCollectionFactory;
+        $this->propertyMetadataFactory = $propertyMetadataFactory;
         $this->propertyAccessor = $propertyAccessor ?? PropertyAccess::createPropertyAccessor();
     }
 
@@ -49,45 +53,35 @@ final class IdentifiersExtractor implements IdentifiersExtractorInterface
      *
      * TODO: 3.0 identifiers should be stringable?
      */
-    public function getIdentifiersFromItem(object $item, ?Operation $operation = null, array $context = []): array
+    public function getIdentifiersFromItem($item, Operation $operation = null, array $context = []): array
     {
+        $identifiers = [];
+
         if (!$this->isResourceClass($this->getObjectClass($item))) {
             return ['id' => $this->propertyAccessor->getValue($item, 'id')];
         }
 
-        if ($operation && $operation->getClass()) {
-            return $this->getIdentifiersFromOperation($item, $operation, $context);
-        }
-
         $resourceClass = $this->getResourceClass($item, true);
-        $operation ??= $this->resourceMetadataFactory->create($resourceClass)->getOperation(null, false, true);
+        $operation = $operation ?? $this->resourceMetadataFactory->create($resourceClass)->getOperation(null, false, true);
 
-        return $this->getIdentifiersFromOperation($item, $operation, $context);
-    }
-
-    private function getIdentifiersFromOperation(object $item, Operation $operation, array $context = []): array
-    {
         if ($operation instanceof HttpOperation) {
             $links = $operation->getUriVariables();
         } elseif ($operation instanceof GraphQlOperation) {
             $links = $operation->getLinks();
         }
 
-        $identifiers = [];
-        foreach ($links ?? [] as $k => $link) {
-            $linkIdentifiers = $link->getIdentifiers() ?? [$k];
-            if (1 < \count($linkIdentifiers)) {
+        foreach ($links ?? [] as $link) {
+            if (1 < \count($link->getIdentifiers())) {
                 $compositeIdentifiers = [];
-                foreach ($linkIdentifiers as $identifier) {
-                    $compositeIdentifiers[$identifier] = $this->getIdentifierValue($item, $link->getFromClass() ?? $operation->getClass(), $identifier, $link->getParameterName());
+                foreach ($link->getIdentifiers() as $identifier) {
+                    $compositeIdentifiers[$identifier] = $this->getIdentifierValue($item, $link->getFromClass() ?? $resourceClass, $identifier, $link->getParameterName());
                 }
 
-                $identifiers[$link->getParameterName()] = CompositeIdentifierParser::stringify($compositeIdentifiers);
+                $identifiers[($operation->getExtraProperties()['is_legacy_resource_metadata'] ?? false) ? 'id' : $link->getParameterName()] = CompositeIdentifierParser::stringify($compositeIdentifiers);
                 continue;
             }
 
-            $parameterName = $link->getParameterName();
-            $identifiers[$parameterName] = $this->getIdentifierValue($item, $link->getFromClass() ?? $operation->getClass(), $linkIdentifiers[0], $parameterName, $link->getToProperty());
+            $identifiers[$link->getParameterName()] = $this->getIdentifierValue($item, $link->getFromClass(), $link->getIdentifiers()[0], $link->getParameterName());
         }
 
         return $identifiers;
@@ -95,19 +89,13 @@ final class IdentifiersExtractor implements IdentifiersExtractorInterface
 
     /**
      * Gets the value of the given class property.
+     *
+     * @param mixed $item
      */
-    private function getIdentifierValue(object $item, string $class, string $property, string $parameterName, ?string $toProperty = null): float|bool|int|string
+    private function getIdentifierValue($item, string $class, string $property, string $parameterName)
     {
         if ($item instanceof $class) {
-            try {
-                return $this->resolveIdentifierValue($this->propertyAccessor->getValue($item, $property), $parameterName);
-            } catch (NoSuchPropertyException $e) {
-                throw new RuntimeException('Not able to retrieve identifiers.', $e->getCode(), $e);
-            }
-        }
-
-        if ($toProperty) {
-            return $this->resolveIdentifierValue($this->propertyAccessor->getValue($item, "$toProperty.$property"), $parameterName);
+            return $this->resolveIdentifierValue($this->propertyAccessor->getValue($item, $property), $parameterName);
         }
 
         $resourceClass = $this->getResourceClass($item, true);
@@ -124,7 +112,7 @@ final class IdentifiersExtractor implements IdentifiersExtractorInterface
                     $collectionValueType = $type->getCollectionValueTypes()[0] ?? null;
 
                     if (null !== $collectionValueType && $collectionValueType->getClassName() === $class) {
-                        return $this->resolveIdentifierValue($this->propertyAccessor->getValue($item, \sprintf('%s[0].%s', $propertyName, $property)), $parameterName);
+                        return $this->resolveIdentifierValue($this->propertyAccessor->getValue($item, sprintf('%s[0].%s', $propertyName, $property)), $parameterName);
                     }
                 }
 
@@ -144,24 +132,48 @@ final class IdentifiersExtractor implements IdentifiersExtractorInterface
      *
      * @param mixed|\Stringable $identifierValue
      */
-    private function resolveIdentifierValue(mixed $identifierValue, string $parameterName): float|bool|int|string
+    private function resolveIdentifierValue($identifierValue, string $parameterName)
     {
         if (null === $identifierValue) {
-            throw new RuntimeException('No identifier value found, did you forget to persist the entity?');
+            throw new RuntimeException('No identifier value found, did you forgot to persist the entity?');
         }
 
         if (\is_scalar($identifierValue)) {
             return $identifierValue;
         }
 
-        if ($identifierValue instanceof \Stringable) {
+        // TODO: php 8 remove method_exists
+        if (method_exists($identifierValue, '__toString') || $identifierValue instanceof \Stringable) {
             return (string) $identifierValue;
         }
 
-        if ($identifierValue instanceof \BackedEnum) {
-            return (string) $identifierValue->value;
+        // TODO: remove this in 3.0
+        // we could recurse to find correct identifiers until there it is a scalar but this is not really supported and adds a lot of complexity
+        // instead we're deprecating this behavior in favor of something that can be transformed to a string
+        if ($this->isResourceClass($relatedResourceClass = $this->getObjectClass($identifierValue))) {
+            trigger_deprecation('api-platform/core', '2.7', 'Using a resource class as identifier is deprecated, please make this identifier Stringable');
+            $relatedOperation = $this->resourceMetadataFactory->create($relatedResourceClass)->getOperation();
+
+            $relatedLinks = [];
+            if ($relatedOperation instanceof GraphQlOperation) {
+                $relatedLinks = $relatedOperation->getLinks();
+            } elseif ($relatedOperation instanceof HttpOperation) {
+                $relatedLinks = $relatedOperation->getUriVariables();
+            }
+
+            if (1 === \count($relatedLinks)) {
+                $identifierValue = $this->getIdentifierValue($identifierValue, $relatedResourceClass, current($relatedLinks)->getIdentifiers()[0], $parameterName);
+
+                if (\is_scalar($identifierValue)) {
+                    return $identifierValue;
+                }
+
+                if ($identifierValue instanceof \Stringable || method_exists($identifierValue, '__toString')) {
+                    return (string) $identifierValue;
+                }
+            }
         }
 
-        throw new RuntimeException(\sprintf('We were not able to resolve the identifier matching parameter "%s".', $parameterName));
+        throw new RuntimeException(sprintf('We were not able to resolve the identifier matching parameter "%s".', $parameterName));
     }
 }

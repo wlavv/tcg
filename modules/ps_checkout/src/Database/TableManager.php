@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -31,7 +30,7 @@ class TableManager
     /**
      * @param \Db|null $db PrestaShop Db instance
      */
-    public function __construct(?\Db $db = null)
+    public function __construct(\Db $db = null)
     {
         if (null === $db) {
             $db = \Db::getInstance();

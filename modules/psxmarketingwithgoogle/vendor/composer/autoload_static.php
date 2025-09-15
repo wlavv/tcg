@@ -334,6 +334,7 @@ class ComposerStaticInit6844d0c729b7c71a07d5daab1e7a8127
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Exception\\ApiClientException' => __DIR__ . '/../..' . '/classes/Exception/ApiClientException.php',
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Exception\\MktgWithGoogleInstallerException' => __DIR__ . '/../..' . '/classes/Exception/MktgWithGoogleInstallerException.php',
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Factory\\ContextFactory' => __DIR__ . '/../..' . '/classes/Factory/ContextFactory.php',
+        'PrestaShop\\Module\\PsxMarketingWithGoogle\\Factory\\ParametersFactory' => __DIR__ . '/../..' . '/classes/Factory/ParametersFactory.php',
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\ErrorHandler' => __DIR__ . '/../..' . '/classes/Handler/ErrorHandler.php',
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\ModuleFilteredRavenClient' => __DIR__ . '/../..' . '/classes/Handler/ModuleFilteredRavenClient.php',
         'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\RemarketingHookHandler' => __DIR__ . '/../..' . '/classes/Handler/RemarketingHookHandler.php',

@@ -117,7 +117,8 @@
   @import '~@scss/config/_settings.scss';
 
   .modal-header .close {
-    font-size: var(--#{$cdk}size-20);
+    font-size: 1.2rem;
+    color: $gray-medium;
     opacity: 1;
   }
   .modal-content {

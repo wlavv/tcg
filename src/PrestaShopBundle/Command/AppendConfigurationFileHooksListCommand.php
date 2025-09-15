@@ -30,7 +30,6 @@ use DOMDocument;
 use Employee;
 use Exception;
 use PrestaShop\PrestaShop\Adapter\LegacyContext;
-use PrestaShop\PrestaShop\Core\Hook\Extractor\HookExtractor;
 use PrestaShop\PrestaShop\Core\Hook\Generator\HookDescriptionGenerator;
 use PrestaShop\PrestaShop\Core\Hook\HookDescription;
 use PrestaShop\PrestaShop\Core\Hook\Provider\GridDefinitionHookByServiceIdsProvider;
@@ -46,19 +45,72 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 class AppendConfigurationFileHooksListCommand extends Command
 {
+    /**
+     * @var string
+     */
+    private $env;
+
+    /**
+     * @var LegacyContext
+     */
+    private $legacyContext;
+
+    /**
+     * @var GridDefinitionHookByServiceIdsProvider
+     */
+    private $gridDefinitionHookByServiceIdsProvider;
+
+    /**
+     * @var IdentifiableObjectHookByFormTypeProvider
+     */
+    private $identifiableObjectHookByFormTypeProvider;
+
+    /**
+     * @var HookDescriptionGenerator
+     */
+    private $hookDescriptionGenerator;
+
+    /**
+     * @var array
+     */
+    private $serviceIds;
+
+    /**
+     * @var array
+     */
+    private $optionFormHookNames;
+
+    /**
+     * @var array
+     */
+    private $formTypes;
+
+    /**
+     * @var string
+     */
+    private $hookFile;
+
     public function __construct(
-        private string $env,
-        private readonly HookExtractor $hookExtractor,
-        private LegacyContext $legacyContext,
-        private GridDefinitionHookByServiceIdsProvider $gridDefinitionHookByServiceIdsProvider,
-        private IdentifiableObjectHookByFormTypeProvider $identifiableObjectHookByFormTypeProvider,
-        private HookDescriptionGenerator $hookDescriptionGenerator,
-        private array $serviceIds,
-        private array $optionFormHookNames,
-        private array $formTypes,
-        private string $hookFile
+        string $env,
+        LegacyContext $legacyContext,
+        GridDefinitionHookByServiceIdsProvider $gridDefinitionHookByServiceIdsProvider,
+        IdentifiableObjectHookByFormTypeProvider $identifiableObjectHookByFormTypeProvider,
+        HookDescriptionGenerator $hookDescriptionGenerator,
+        array $serviceIds,
+        array $optionFormHookNames,
+        array $formTypes,
+        string $hookFile
     ) {
         parent::__construct();
+        $this->env = $env;
+        $this->legacyContext = $legacyContext;
+        $this->gridDefinitionHookByServiceIdsProvider = $gridDefinitionHookByServiceIdsProvider;
+        $this->identifiableObjectHookByFormTypeProvider = $identifiableObjectHookByFormTypeProvider;
+        $this->hookDescriptionGenerator = $hookDescriptionGenerator;
+        $this->serviceIds = $serviceIds;
+        $this->optionFormHookNames = $optionFormHookNames;
+        $this->formTypes = $formTypes;
+        $this->hookFile = $hookFile;
     }
 
     /**
@@ -72,7 +124,7 @@ class AppendConfigurationFileHooksListCommand extends Command
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->initContext();
 
@@ -84,39 +136,11 @@ class AppendConfigurationFileHooksListCommand extends Command
             return 1;
         }
 
-        // Parse all the hooks from the codebase
-        $hooks = $this->hookExtractor->findHooks();
-        // Reformat them to only get the information needed for the xml file
-        $fixtureHooks = [];
-        foreach ($hooks as $hook) {
-            // This is used to filter out the hooks with placeholders
-            if (preg_match('/<[^>]+>/', $hook['hook']) > 0) {
-                continue;
-            }
-            $fixtureHooks[$hook['hook']] = [
-                'hook' => $hook['hook'],
-                'description' => $hook['description'],
-                'title' => $hook['title'],
-            ];
-        }
-
-        // Get the dynamic hooks information
-        $hooksName = $this->getHookNames();
-        $hookDescriptions = $this->getHookDescriptions($hooksName);
-
-        foreach ($hookDescriptions as $hookDescription) {
-            if (isset($fixtureHooks[$hookDescription->getName()])) {
-                continue;
-            }
-            $fixtureHooks[$hookDescription->getName()] = [
-                'hook' => $hookDescription->getName(),
-                'description' => $hookDescription->getDescription(),
-                'title' => $hookDescription->getTitle(),
-            ];
-        }
+        $hookNames = $this->getHookNames();
+        $hookDescriptions = $this->getHookDescriptions($hookNames);
 
         try {
-            $addedHooks = $this->appendHooksInConfigurationFile($fixtureHooks);
+            $addedHooks = $this->appendHooksInConfigurationFile($hookDescriptions);
         } catch (Exception $e) {
             $io->error($e->getMessage());
         }
@@ -138,10 +162,10 @@ class AppendConfigurationFileHooksListCommand extends Command
      */
     private function initContext()
     {
-        // We need to have an employee or the listing hooks don't work
-        // see LegacyHookSubscriber
+        //We need to have an employee or the listing hooks don't work
+        //see LegacyHookSubscriber
         if (!$this->legacyContext->getContext()->employee) {
-            // Even a non existing employee is fine
+            //Even a non existing employee is fine
             $this->legacyContext->getContext()->employee = new Employee();
         }
     }
@@ -167,13 +191,13 @@ class AppendConfigurationFileHooksListCommand extends Command
     /**
      * Appends given hooks in the configuration file.
      *
-     * @param array $hooks
+     * @param HookDescription[] $hookDescriptions
      *
      * @return array
      *
      * @throws Exception
      */
-    private function appendHooksInConfigurationFile(array $hooks)
+    private function appendHooksInConfigurationFile(array $hookDescriptions)
     {
         if (!file_exists($this->hookFile)) {
             throw new Exception(sprintf('File %s has not been found', $this->hookFile));
@@ -190,19 +214,19 @@ class AppendConfigurationFileHooksListCommand extends Command
         $existingHookNames = $this->filterExistingHookNames($xmlFileContent->entities->hook);
 
         $addedHooks = [];
-        foreach ($hooks as $hook) {
-            if (in_array($hook['hook'], $existingHookNames)) {
+        foreach ($hookDescriptions as $hookDescription) {
+            if (in_array($hookDescription->getName(), $existingHookNames)) {
                 continue;
             }
 
-            $hookXmlElement = $xmlFileContent->entities->addChild('hook');
+            $hook = $xmlFileContent->entities->addChild('hook');
 
-            $hookXmlElement->addAttribute('id', $hook['hook']);
-            $hookXmlElement->addChild('name', $hook['hook']);
-            $hookXmlElement->addChild('title', $hook['title']);
-            $hookXmlElement->addChild('description', $hook['description']);
+            $hook->addAttribute('id', $hookDescription->getName());
+            $hook->addChild('name', $hookDescription->getName());
+            $hook->addChild('title', $hookDescription->getTitle());
+            $hook->addChild('description', $hookDescription->getDescription());
 
-            $addedHooks[] = $hookXmlElement;
+            $addedHooks[] = $hookDescription;
         }
 
         $xmlContent = $xmlFileContent->asXML();

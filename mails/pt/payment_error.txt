@@ -15,4 +15,5 @@ Follow your order and download your invoice on our store, go to the [Histórico 
 Se tem uma conta de convidado, pode seguir a sua encomenda na secção [Rastreio de Visitantes]({guest_tracking_url}) na nossa loja.
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

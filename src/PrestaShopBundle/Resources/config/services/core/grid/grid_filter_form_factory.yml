@@ -2,17 +2,11 @@ services:
   _defaults:
     public: true
 
-  PrestaShop\PrestaShop\Core\Grid\Filter\GridFilterFormFactory:
-    public: false
+  prestashop.core.grid.filter.form_factory:
+    class: 'PrestaShop\PrestaShop\Core\Grid\Filter\GridFilterFormFactory'
     arguments:
       - '@form.factory'
       - '@prestashop.core.hook.dispatcher'
-
-  prestashop.core.grid.filter.form_factory:
-    alias: 'PrestaShop\PrestaShop\Core\Grid\Filter\GridFilterFormFactory'
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 9.0
 
   prestashop.core.grid.filter.category_form_factory:
     class: 'PrestaShop\PrestaShop\Core\Grid\Filter\CategoryFilterFormFactory'

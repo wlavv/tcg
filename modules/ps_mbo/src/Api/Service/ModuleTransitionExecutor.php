@@ -34,9 +34,9 @@ use PrestaShop\Module\Mbo\Module\Exception\UnexpectedModuleSourceContentExceptio
 use PrestaShop\Module\Mbo\Module\Exception\UnknownModuleTransitionCommandException;
 use PrestaShop\Module\Mbo\Module\Module;
 use PrestaShop\Module\Mbo\Module\ValueObject\ModuleTransitionCommand;
-use PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer;
 use PrestaShop\PrestaShop\Core\Cache\Clearer\CacheClearerInterface;
 use Symfony\Component\HttpFoundation\Session\Session;
+use Tools;
 
 class ModuleTransitionExecutor implements ServiceExecutorInterface
 {
@@ -81,11 +81,11 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
 
         $psMbo = $parameters[0];
 
-        $transition = \Tools::getValue('action');
-        $moduleName = \Tools::getValue('module');
-        $moduleId = (int) \Tools::getValue('module_id');
-        $moduleVersion = \Tools::getValue('module_version');
-        $source = \Tools::getValue('source', null);
+        $transition = Tools::getValue('action');
+        $moduleName = Tools::getValue('module');
+        $moduleId = (int) Tools::getValue('module_id');
+        $moduleVersion = Tools::getValue('module_version');
+        $source = Tools::getValue('source', null);
 
         if (empty($transition) || empty($moduleName)) {
             throw new QueryParamsException('You need transition and module parameters');
@@ -115,8 +115,8 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
         if (ModuleTransitionCommand::MODULE_COMMAND_DOWNLOAD === $transition) {
             // Clear the cache after download to force reload module services
             try {
-                /** @var CacheClearerInterface|false $cacheClearer */
-                $cacheClearer = $psMbo->get(SymfonyCacheClearer::class);
+                /** @var CacheClearerInterface $cacheClearer */
+                $cacheClearer = $psMbo->get('mbo.symfony_cache_clearer');
             } catch (\Exception $e) {
                 ErrorHelper::reportError($e);
                 $cacheClearer = false;
@@ -152,7 +152,7 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
                 if (isset($components['pass'])) {
                     $composedUrl .= ':' . $components['pass'];
                 }
-                $composedUrl .= '@';
+                $composedUrl .=  '@';
             }
 
             $composedUrl .= $components['host'];
@@ -166,7 +166,7 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
         $composedUrl .= $baseUrl;
 
         $queryParams = [];
-        if (is_array($components) && isset($components['query'])) {
+        if (is_array($components) && isset($components['query']) && is_string($components['query'])) {
             parse_str($components['query'], $queryParams);
         }
 
@@ -174,10 +174,10 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
             return $composedUrl;
         }
 
-        $adminToken = \Tools::getValue('admin_token');
+        $adminToken = Tools::getValue('admin_token');
         $queryParams['_token'] = $adminToken;
 
-        $composedUrl .= '?' . http_build_query($queryParams, '', '&');
+        $composedUrl .=  '?' . http_build_query($queryParams, '', '&');
         if (isset($components['fragment']) && $components['fragment'] !== '') {
             /* This copy-paste from Symfony's UrlGenerator */
             $composedUrl .= '#' . strtr(rawurlencode($components['fragment']), ['%2F' => '/', '%3F' => '?']);
@@ -189,7 +189,7 @@ class ModuleTransitionExecutor implements ServiceExecutorInterface
     private function authenticateAddonsUser(Session $session): void
     {
         // If we receive an accounts_token, we use it to connect to addons
-        $accountsToken = \Tools::getValue('accounts_token', null);
+        $accountsToken = Tools::getValue('accounts_token', null);
 
         if (null !== $accountsToken) {
             $session->set('accounts_token', $accountsToken);

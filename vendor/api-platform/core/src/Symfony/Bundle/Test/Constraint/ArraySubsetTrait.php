@@ -13,8 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\Bundle\Test\Constraint;
 
-use SebastianBergmann\Comparator\ComparisonFailure;
-use SebastianBergmann\Exporter\Exporter;
+use PHPUnit\SebastianBergmann\Comparator\ComparisonFailure;
 
 /**
  * Constraint that asserts that the array it is evaluated for has a specified subset.
@@ -31,8 +30,13 @@ use SebastianBergmann\Exporter\Exporter;
  */
 trait ArraySubsetTrait
 {
-    public function __construct(private iterable $subset, private readonly bool $strict = false)
+    private $subset;
+    private $strict;
+
+    public function __construct(iterable $subset, bool $strict = false)
     {
+        $this->strict = $strict;
+        $this->subset = $subset;
     }
 
     private function _evaluate($other, string $description = '', bool $returnResult = false): ?bool
@@ -68,7 +72,7 @@ trait ArraySubsetTrait
      */
     public function toString(): string
     {
-        return 'has the subset '.(new Exporter())->export($this->subset);
+        return 'has the subset '.$this->exporter()->export($this->subset);
     }
 
     /**

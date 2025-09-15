@@ -1,9 +1,9 @@
 <?php return array(
     'root' => array(
         'name' => 'prestashop/gamification',
-        'pretty_version' => 'dev-master',
-        'version' => 'dev-master',
-        'reference' => 'cf7297cff839310d2d2aeb553a5aa171090cedba',
+        'pretty_version' => 'v3.0.4',
+        'version' => '3.0.4.0',
+        'reference' => '4350b9d38ca97c5fca5df63f99f00552923481f2',
         'type' => 'prestashop-module',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -11,9 +11,9 @@
     ),
     'versions' => array(
         'prestashop/gamification' => array(
-            'pretty_version' => 'dev-master',
-            'version' => 'dev-master',
-            'reference' => 'cf7297cff839310d2d2aeb553a5aa171090cedba',
+            'pretty_version' => 'v3.0.4',
+            'version' => '3.0.4.0',
+            'reference' => '4350b9d38ca97c5fca5df63f99f00552923481f2',
             'type' => 'prestashop-module',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

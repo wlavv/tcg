@@ -27,7 +27,6 @@
 namespace PrestaShop\PrestaShop\Adapter\Supplier\QueryHandler;
 
 use PrestaShop\PrestaShop\Adapter\Supplier\AbstractSupplierHandler;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsQueryHandler;
 use PrestaShop\PrestaShop\Core\Domain\Supplier\Query\GetSupplierForEditing;
 use PrestaShop\PrestaShop\Core\Domain\Supplier\QueryHandler\GetSupplierForEditingHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\Supplier\QueryResult\EditableSupplier;
@@ -36,7 +35,6 @@ use PrestaShop\PrestaShop\Core\Image\Parser\ImageTagSourceParserInterface;
 /**
  * Handles query which gets supplier for editing
  */
-#[AsQueryHandler]
 final class GetSupplierForEditingHandler extends AbstractSupplierHandler implements GetSupplierForEditingHandlerInterface
 {
     /**
@@ -72,6 +70,7 @@ final class GetSupplierForEditingHandler extends AbstractSupplierHandler impleme
             $address->phone_mobile,
             $supplier->meta_title,
             $supplier->meta_description,
+            $supplier->meta_keywords,
             (bool) $supplier->active,
             $supplier->getAssociatedShops(),
             $address->dni,

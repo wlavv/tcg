@@ -206,8 +206,8 @@ class AdminApPageBuilderThemeEditorController extends ModuleAdminControllerCore
 
         $tpl->assign(array(
             'actionURL' => 'index.php?tab=AdminApPageBuilderThemeEditor&token='.Tools::getAdminTokenLite('AdminApPageBuilderThemeEditor').'&action=savedata',
-            'text_layout' => $this->trans('Layout'),
-            'text_elements' => $this->trans('Elements'),
+            'text_layout' => $this->l('Layout'),
+            'text_elements' => $this->l('Elements'),
             'profiles' => $profiles,
             'profiles_active' => apPageHelper::getConfig('c_profile'),
             'xmlselectors' => $output,

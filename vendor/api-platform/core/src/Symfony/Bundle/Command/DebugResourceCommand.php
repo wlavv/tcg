@@ -24,9 +24,16 @@ use Symfony\Component\VarDumper\Cloner\ClonerInterface;
 
 final class DebugResourceCommand extends Command
 {
-    public function __construct(private readonly ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, private readonly ClonerInterface $cloner, private $dumper)
+    private $resourceMetadataCollectionFactory;
+    private $cloner;
+    private $dumper;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory, ClonerInterface $cloner, $dumper)
     {
         parent::__construct();
+        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
+        $this->cloner = $cloner;
+        $this->dumper = $dumper;
     }
 
     /**
@@ -49,7 +56,7 @@ final class DebugResourceCommand extends Command
         $resourceCollection = $this->resourceMetadataCollectionFactory->create($resourceClass);
 
         if (0 === \count($resourceCollection)) {
-            $output->writeln(\sprintf('<error>No resources found for class %s</error>', $resourceClass));
+            $output->writeln(sprintf('<error>No resources found for class %s</error>', $resourceClass));
 
             return \defined(Command::class.'::INVALID') ? Command::INVALID : 2;
         }
@@ -62,13 +69,13 @@ final class DebugResourceCommand extends Command
         $resources = [];
         foreach ($resourceCollection as $resource) {
             if ($resource->getUriTemplate()) {
-                $resources[] = ($resource->getRoutePrefix() ?? '').$resource->getUriTemplate();
+                $resources[] = $resource->getUriTemplate();
                 continue;
             }
 
             foreach ($resource->getOperations() as $operation) {
                 if ($operation->getUriTemplate()) {
-                    $resources[] = ($resource->getRoutePrefix() ?? '').$operation->getUriTemplate();
+                    $resources[] = $operation->getUriTemplate();
                     break;
                 }
             }
@@ -76,7 +83,7 @@ final class DebugResourceCommand extends Command
 
         if (\count($resourceCollection) > 1) {
             $questionResource = new ChoiceQuestion(
-                \sprintf('There are %d resources declared on the class %s, which one do you want to debug ? ', \count($resourceCollection), $shortName).\PHP_EOL,
+                sprintf('There are %d resources declared on the class %s, which one do you want to debug ? ', \count($resourceCollection), $shortName).\PHP_EOL,
                 $resources
             );
 
@@ -85,7 +92,7 @@ final class DebugResourceCommand extends Command
             $selectedResource = $resourceCollection[$resourceIndex];
         } else {
             $selectedResource = $resourceCollection[0];
-            $output->writeln(\sprintf('Class %s declares 1 resource.', $shortName).\PHP_EOL);
+            $output->writeln(sprintf('Class %s declares 1 resource.', $shortName).\PHP_EOL);
         }
 
         $operations = ['Debug the resource itself'];
@@ -94,7 +101,7 @@ final class DebugResourceCommand extends Command
         }
 
         $questionOperation = new ChoiceQuestion(
-            \sprintf('There are %d operation%s declared on the resource, which one do you want to debug ? ', $selectedResource->getOperations()->count(), $selectedResource->getOperations()->count() > 1 ? 's' : '').\PHP_EOL,
+            sprintf('There are %d operation%s declared on the resource, which one do you want to debug ? ', $selectedResource->getOperations()->count(), $selectedResource->getOperations()->count() > 1 ? 's' : '').\PHP_EOL,
             $operations
         );
 

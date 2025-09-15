@@ -20,5 +20,10 @@ namespace ApiPlatform\GraphQl\Resolver;
  */
 interface MutationResolverInterface
 {
-    public function __invoke(?object $item, array $context): ?object;
+    /**
+     * @param object|null $item
+     *
+     * @return object|null The mutated item
+     */
+    public function __invoke($item, array $context);
 }

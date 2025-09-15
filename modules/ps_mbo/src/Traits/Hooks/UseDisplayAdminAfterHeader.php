@@ -21,14 +21,11 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
-use Doctrine\Common\Cache\CacheProvider;
-use PrestaShop\Module\Mbo\Distribution\Config\Command\VersionChangeApplyConfigCommand;
-use PrestaShop\Module\Mbo\Distribution\Config\CommandHandler\VersionChangeApplyConfigCommandHandler;
+use Exception;
 use PrestaShop\Module\Mbo\Exception\ExpectedServiceNotFoundException;
-use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 use PrestaShop\Module\Mbo\Service\View\ContextBuilder;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Tools;
 use Twig\Environment;
 
 trait UseDisplayAdminAfterHeader
@@ -39,12 +36,10 @@ trait UseDisplayAdminAfterHeader
      *
      * @return string
      */
-    public function hookDisplayAdminAfterHeader($params): string
+    public function hookDisplayAdminAfterHeader(): string
     {
-        $this->ensureModuleIsCorrectlySetUp();
-
         $shouldDisplayMboUserExplanation = $this->shouldDisplayMboUserExplanation();
-        $shouldDisplayModuleManagerMessage = $this->shouldDisplayModuleManagerMessage($params);
+        $shouldDisplayModuleManagerMessage = $this->shouldDisplayModuleManagerMessage();
 
         if (!$shouldDisplayMboUserExplanation && !$shouldDisplayModuleManagerMessage) {
             return '';
@@ -54,13 +49,17 @@ trait UseDisplayAdminAfterHeader
             return $this->renderMboUserExplanation();
         }
 
-        return $this->renderModuleManagerMessage();
+        if ($shouldDisplayModuleManagerMessage) {
+            return $this->renderModuleManagerMessage();
+        }
+
+        return '';
     }
 
     /**
      * @return void
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function bootUseDisplayAdminAfterHeader(): void
     {
@@ -74,7 +73,7 @@ trait UseDisplayAdminAfterHeader
      *
      * @return void
      *
-     * @see UseActionAdminControllerSetMedia
+     * @see \PrestaShop\Module\Mbo\Traits\Hooks\UseActionAdminControllerSetMedia
      */
     protected function loadMediaDisplayAdminAfterHeader(): void
     {
@@ -92,7 +91,7 @@ trait UseDisplayAdminAfterHeader
     {
         try {
             /** @var Environment $twig */
-            $twig = $this->get(Environment::class);
+            $twig = $this->get('twig');
 
             return $twig->render(
                 '@Modules/ps_mbo/views/templates/hook/twig/explanation_mbo_employee.html.twig', [
@@ -104,9 +103,8 @@ trait UseDisplayAdminAfterHeader
                     'message' => $this->trans('MBO employee explanation', [], 'Modules.Mbo.Global'),
                 ]
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
-
             return '';
         }
     }
@@ -114,13 +112,15 @@ trait UseDisplayAdminAfterHeader
     private function renderModuleManagerMessage(): string
     {
         try {
-            /** @var Environment|null $twig */
+            /** @var Environment $twig */
             $twig = $this->get('twig');
-            /** @var ContextBuilder|null $contextBuilder */
-            $contextBuilder = $this->get(ContextBuilder::class);
+            /** @var ContextBuilder $contextBuilder */
+            $contextBuilder = $this->get('mbo.cdc.context_builder');
 
             if (null === $contextBuilder || null === $twig) {
-                throw new ExpectedServiceNotFoundException('Some services not found in UseDisplayAdminAfterHeader');
+                throw new ExpectedServiceNotFoundException(
+                    'Some services not found in UseDisplayAdminAfterHeader'
+                );
             }
 
             return $twig->render(
@@ -134,28 +134,25 @@ trait UseDisplayAdminAfterHeader
                     'message' => $this->trans('MBO employee explanation', [], 'Modules.Mbo.Global'),
                 ]
             );
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
-
             return '';
         }
     }
 
     private function shouldDisplayMboUserExplanation(): bool
     {
-        if (\Tools::getValue('controller') !== 'AdminEmployees') {
+        if (Tools::getValue('controller') !== "AdminEmployees") {
             return false;
         }
 
         try {
-            /** @var RequestStack|null $requestStack */
-            $requestStack = $this->get(RequestStack::class);
+            $requestStack = $this->get('request_stack');
             if (null === $requestStack || null === $request = $requestStack->getCurrentRequest()) {
-                throw new \Exception('Unable to get request');
+                throw new Exception('Unable to get request');
             }
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
-
             return false;
         }
 
@@ -163,113 +160,36 @@ trait UseDisplayAdminAfterHeader
         return 'admin_employees_index' === $request->get('_route');
     }
 
-    private function shouldDisplayModuleManagerMessage($params = []): bool
+    private function shouldDisplayModuleManagerMessage(): bool
     {
-        return in_array(
-            $params['route'],
-            [
-                'admin_module_manage',
-                'admin_module_notification',
-                'admin_module_updates',
-            ]
-        );
-    }
-
-    private function ensureModuleIsCorrectlySetUp(): void
-    {
-        $this->translateTabsIfNeeded();
-
-        $whitelistedControllers = [
-            'AdminPsMboModule',
-            'AdminPsMboModuleParent',
-            'AdminPsMboRecommended',
-            'apiPsMbo',
-            'apiSecurityPsMbo',
-            'AdminModulesManage',
-        ];
-        $controllerName = \Tools::getValue('controller');
-        if (!in_array($controllerName, $whitelistedControllers)) {
-            return;
+        if (
+            !in_array(
+                Tools::getValue('controller'),
+                [
+                    "AdminModulesManage",
+                    "AdminModulesNotifications",
+                    "AdminModulesUpdates",
+                ]
+            )
+        ) {
+            return false;
         }
 
-        $this->ensureApiConfigIsApplied();
-    }
-
-    private function ensureApiConfigIsApplied(): void
-    {
         try {
-            /** @var CacheProvider|null $cacheProvider */
-            $cacheProvider = $this->get(CacheProvider::class);
-        } catch (\Exception $e) {
-            ErrorHelper::reportError($e);
-            $cacheProvider = null;
-        }
-        $cacheKey = 'mbo_last_ps_version_api_config_check';
-
-        if ($cacheProvider && $cacheProvider->contains($cacheKey)) {
-            $lastCheck = $cacheProvider->fetch($cacheKey);
-
-            $timeSinceLastCheck = (strtotime('now') - strtotime($lastCheck)) / (60 * 60);
-            if ($timeSinceLastCheck < 3) { // If last check happened lss than 3hrs, do nothing
-                return;
+            $requestStack = $this->get('request_stack');
+            if (null === $requestStack || null === $request = $requestStack->getCurrentRequest()) {
+                throw new Exception('Unable to get request');
             }
-        }
-
-        if (_PS_VERSION_ === Config::getLastPsVersionApiConfig()) {
-            // Config already applied for this version of PS
-            return;
-        }
-
-        // Apply the config for the new PS version
-        $command = new VersionChangeApplyConfigCommand(_PS_VERSION_, $this->version);
-        try {
-            /** @var VersionChangeApplyConfigCommandHandler $configApplyHandler */
-            $configApplyHandler = $this->get(VersionChangeApplyConfigCommandHandler::class);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
-
-            return;
-        }
-        $configApplyHandler->handle($command);
-
-        // Update the PS_MBO_LAST_PS_VERSION_API_CONFIG
-        \Configuration::updateValue('PS_MBO_LAST_PS_VERSION_API_CONFIG', _PS_VERSION_);
-
-        if ($cacheProvider) {
-            $cacheProvider->save($cacheKey, (new \DateTime())->format('Y-m-d H:i:s'), 0);
-        }
-    }
-
-    private function translateTabsIfNeeded(): void
-    {
-        $lockFile = $this->moduleCacheDir . 'translate_tabs.lock';
-        if (!file_exists($lockFile)) {
-            return;
+            return false;
         }
 
-        $moduleTabs = \Tab::getCollectionFromModule($this->name);
-        $languages = \Language::getLanguages(false);
-
-        /**
-         * @var \Tab $tab
-         */
-        foreach ($moduleTabs as $tab) {
-            if (!empty($tab->wording) && !empty($tab->wording_domain)) {
-                $tabNameByLangId = [];
-                foreach ($languages as $language) {
-                    $tabNameByLangId[$language['id_lang']] = $this->trans(
-                        $tab->wording,
-                        [],
-                        $tab->wording_domain,
-                        $language['locale']
-                    );
-                }
-
-                $tab->name = $tabNameByLangId;
-                $tab->save();
-            }
-        }
-
-        @unlink($lockFile);
+        // because admin_employee_index and admin_employee_edit are in the same controller AdminEmployees
+        return in_array($request->get('_route'), [
+            'admin_module_manage',
+            'admin_module_notification',
+            'admin_module_updates',
+        ]);
     }
 }

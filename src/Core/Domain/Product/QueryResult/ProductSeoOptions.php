@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Core\Domain\Product\QueryResult;
 
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\RedirectTarget;
-use PrestaShop\PrestaShop\Core\Domain\QueryResult\RedirectTargetInformation;
 
 /**
  * Transfers data about Product SEO options
@@ -57,7 +56,7 @@ class ProductSeoOptions
     private $redirectType;
 
     /**
-     * @var RedirectTargetInformation
+     * @var ProductRedirectTarget
      */
     private $redirectTarget;
 
@@ -66,14 +65,14 @@ class ProductSeoOptions
      * @param string[] $localizedMetaDescriptions
      * @param string[] $localizedLinkRewrites
      * @param string $redirectType
-     * @param RedirectTargetInformation|null $redirectTarget
+     * @param ProductRedirectTarget|null $redirectTarget
      */
     public function __construct(
         array $localizedMetaTitles,
         array $localizedMetaDescriptions,
         array $localizedLinkRewrites,
         string $redirectType,
-        ?RedirectTargetInformation $redirectTarget
+        ?ProductRedirectTarget $redirectTarget
     ) {
         $this->localizedMetaTitles = $localizedMetaTitles;
         $this->localizedMetaDescriptions = $localizedMetaDescriptions;
@@ -123,9 +122,9 @@ class ProductSeoOptions
     }
 
     /**
-     * @return RedirectTargetInformation|null
+     * @return ProductRedirectTarget|null
      */
-    public function getRedirectTarget(): ?RedirectTargetInformation
+    public function getRedirectTarget(): ?ProductRedirectTarget
     {
         return $this->redirectTarget;
     }

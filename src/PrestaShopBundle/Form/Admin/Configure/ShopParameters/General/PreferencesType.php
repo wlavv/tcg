@@ -32,7 +32,6 @@ use PrestaShopBundle\Form\Admin\Type\SwitchType;
 use PrestaShopBundle\Form\Admin\Type\TranslatorAwareType;
 use Symfony\Component\Form\Extension\Core\Type\ChoiceType;
 use Symfony\Component\Form\FormBuilderInterface;
-use Symfony\Component\HttpFoundation\RequestStack;
 use Symfony\Component\OptionsResolver\OptionsResolver;
 use Symfony\Contracts\Translation\TranslatorInterface;
 
@@ -45,7 +44,7 @@ class PreferencesType extends TranslatorAwareType
     /**
      * @var bool
      */
-    private $isShopFeatureEnabled;
+    private $isMultistoreUsed;
 
     /**
      * @var bool
@@ -61,36 +60,35 @@ class PreferencesType extends TranslatorAwareType
      * @var ConfigurationInterface
      */
     private $configuration;
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
 
     /**
      * @param TranslatorInterface $translator
      * @param array $locales
      * @param ConfigurationInterface $configuration
-     * @param bool $isShopFeatureEnabled
+     * @param bool $isMultistoreUsed
      * @param bool $isSingleShopContext
      * @param bool $isAllShopContext
      */
     public function __construct(
-        RequestStack $requestStack,
         TranslatorInterface $translator,
         array $locales,
         ConfigurationInterface $configuration,
-        bool $isShopFeatureEnabled,
-        bool $isSingleShopContext,
-        bool $isAllShopContext
+        $isMultistoreUsed,
+        $isSingleShopContext,
+        $isAllShopContext
     ) {
         parent::__construct($translator, $locales);
 
-        $this->isShopFeatureEnabled = $isShopFeatureEnabled;
+        $this->isMultistoreUsed = $isMultistoreUsed;
         $this->isSingleShopContext = $isSingleShopContext;
         $this->isAllShopContext = $isAllShopContext;
         $this->configuration = $configuration;
-        $this->requestStack = $requestStack;
     }
+
+    /**
+     * @var bool
+     */
+    private $isSecure;
 
     /**
      * {@inheritdoc}
@@ -98,18 +96,30 @@ class PreferencesType extends TranslatorAwareType
     public function buildForm(FormBuilderInterface $builder, array $options)
     {
         $configuration = $this->configuration;
+        $isSslEnabled = (bool) $configuration->get('PS_SSL_ENABLED');
 
-        if ($this->requestStack->getCurrentRequest()->isSecure()) {
+        if ($this->isSecure) {
             $builder->add('enable_ssl', SwitchType::class, [
                 'label' => $this->trans('Enable SSL', 'Admin.Shopparameters.Feature'),
                 'help' => $this->trans(
-                    'If you own an SSL certificate for your shop\'s domain name, you can activate SSL encryption (https://) for all the pages of your shop.',
+                    'If you own an SSL certificate for your shop\'s domain name, you can activate SSL encryption (https://) for customer account identification and order processing.',
                     'Admin.Shopparameters.Help'
                 ),
             ]);
         }
 
         $builder
+            ->add('enable_ssl_everywhere', SwitchType::class, [
+                'disabled' => !$isSslEnabled,
+                'label' => $this->trans(
+                    'Enable SSL on all pages',
+                    'Admin.Shopparameters.Feature'
+                ),
+                'help' => $this->trans(
+                    'When enabled, all the pages of your shop will be SSL-secured.',
+                    'Admin.Shopparameters.Help'
+                ),
+            ])
             ->add('enable_token', SwitchType::class, [
                 'disabled' => !$this->isContextDependantOptionEnabled(),
                 'label' => $this->trans(
@@ -123,9 +133,9 @@ class PreferencesType extends TranslatorAwareType
             ])
             ->add('allow_html_iframes', SwitchType::class, [
                 'label' => $this->trans(
-                    'Allow iframes on HTML fields',
-                    'Admin.Shopparameters.Feature'
-                ),
+                        'Allow iframes on HTML fields',
+                        'Admin.Shopparameters.Feature'
+                    ),
                 'help' => $this->trans(
                     'Allow iframes on text fields like product description. We recommend that you leave this option disabled.',
                     'Admin.Shopparameters.Help'
@@ -133,9 +143,9 @@ class PreferencesType extends TranslatorAwareType
             ])
             ->add('use_htmlpurifier', SwitchType::class, [
                 'label' => $this->trans(
-                    'Use HTMLPurifier Library',
-                    'Admin.Shopparameters.Feature'
-                ),
+                        'Use HTMLPurifier Library',
+                        'Admin.Shopparameters.Feature'
+                    ),
                 'help' => $this->trans(
                     'Clean the HTML content on text fields. We recommend that you leave this option enabled.',
                     'Admin.Shopparameters.Help'
@@ -197,13 +207,55 @@ class PreferencesType extends TranslatorAwareType
                 ])
             ->add('multishop_feature_active', SwitchType::class, [
                 // Disable the checkbox if multistore feature is active and at least 2 shops exist (@see PrestaShop/PrestaShop/Adapter/Feature/MultistoreFeature)
-                'disabled' => $this->isShopFeatureEnabled,
+                'disabled' => $this->isMultistoreUsed,
                 'label' => $this->trans('Enable Multistore', 'Admin.Shopparameters.Feature'),
                 'help' => $this->trans(
                     'The multistore feature allows you to manage several front offices from a single back office. If this feature is enabled, a Multistore page is available in the Advanced Parameters menu.',
                     'Admin.Shopparameters.Help'
                 ),
+            ])
+            ->add('shop_activity', ChoiceType::class, [
+                'required' => false,
+                'placeholder' => $this->trans('-- Please choose your main activity --', 'Install'),
+                'choices' => [
+                    'Animals and Pets' => 2,
+                    'Art and Culture' => 3,
+                    'Babies' => 4,
+                    'Beauty and Personal Care' => 5,
+                    'Cars' => 6,
+                    'Computer Hardware and Software' => 7,
+                    'Download' => 8,
+                    'Fashion and accessories' => 9,
+                    'Flowers, Gifts and Crafts' => 10,
+                    'Food and beverage' => 11,
+                    'HiFi, Photo and Video' => 12,
+                    'Home and Garden' => 13,
+                    'Home Appliances' => 14,
+                    'Jewelry' => 15,
+                    'Lingerie and Adult' => 1,
+                    'Mobile and Telecom' => 16,
+                    'Services' => 17,
+                    'Shoes and accessories' => 18,
+                    'Sport and Entertainment' => 19,
+                    'Travel' => 20,
+                ],
+                'label' => $this->trans('Main Shop Activity', 'Admin.Shopparameters.Feature'),
+                'choice_translation_domain' => 'Install',
+                'attr' => [
+                    'data-toggle' => 'select2',
+                    'data-minimumResultsForSearch' => '7',
+                ],
             ]);
+    }
+
+    /**
+     * Enabled only if the form is accessed using HTTPS protocol.
+     *
+     * @param bool $isSecure
+     */
+    public function setIsSecure($isSecure)
+    {
+        $this->isSecure = $isSecure;
     }
 
     /**
@@ -231,7 +283,7 @@ class PreferencesType extends TranslatorAwareType
      */
     protected function isContextDependantOptionEnabled()
     {
-        if (!$this->isShopFeatureEnabled && $this->isSingleShopContext) {
+        if (!$this->isMultistoreUsed && $this->isSingleShopContext) {
             return true;
         }
 

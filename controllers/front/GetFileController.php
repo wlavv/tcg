@@ -160,12 +160,7 @@ class GetFileControllerCore extends FrontController
     /** @var bool */
     protected $display_footer = false;
 
-    /**
-     * Initialize the controller.
-     *
-     * @see FrontController::init()
-     */
-    public function init(): void
+    public function init()
     {
         if (isset($this->context->employee) && $this->context->employee->isLoggedBack() && Tools::getValue('file')) {
             // Admin can directly access to file
@@ -244,8 +239,8 @@ class GetFileControllerCore extends FrontController
                 $this->displayCustomError('This file no longer exists.');
             }
 
-            if (isset($info['product_quantity_refunded'], $info['product_quantity_return'])
-                && ($info['product_quantity_refunded'] > 0 || $info['product_quantity_return'] > 0)) {
+            if (isset($info['product_quantity_refunded'], $info['product_quantity_return']) &&
+                ($info['product_quantity_refunded'] > 0 || $info['product_quantity_return'] > 0)) {
                 $this->displayCustomError('This product has been refunded.');
             }
 
@@ -288,7 +283,7 @@ class GetFileControllerCore extends FrontController
         if ($forceDownload) {
             header('Content-Disposition: attachment; filename="' . $filename . '"');
         }
-        // prevents max execution timeout, when reading large files
+        //prevents max execution timeout, when reading large files
         @set_time_limit(0);
         $fp = fopen($file, 'rb');
 
@@ -336,7 +331,7 @@ class GetFileControllerCore extends FrontController
      *
      * @param string $msg
      */
-    protected function displayCustomError(string $msg)
+    protected function displayCustomError($msg)
     {
         $translations = [
             'Invalid key.' => $this->trans('Invalid key.', [], 'Shop.Notifications.Error'),
@@ -356,6 +351,6 @@ class GetFileControllerCore extends FrontController
         //]]>
         </script>
         <?php
-        exit;
+        exit();
     }
 }

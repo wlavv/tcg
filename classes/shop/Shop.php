@@ -26,7 +26,6 @@
 
 use PrestaShop\PrestaShop\Core\Addon\Theme\Theme;
 use PrestaShop\PrestaShop\Core\Addon\Theme\ThemeManagerBuilder;
-use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 
 /**
  * @since 1.5.0
@@ -51,16 +50,16 @@ class ShopCore extends ObjectModel
     public $active = true;
     public $deleted;
 
-    /** @var ?string Physical uri of main url (read only) */
+    /** @var string Physical uri of main url (read only) */
     public $physical_uri;
 
-    /** @var ?string Virtual uri of main url (read only) */
+    /** @var string Virtual uri of main url (read only) */
     public $virtual_uri;
 
-    /** @var ?string Domain of main url (read only) */
+    /** @var string Domain of main url (read only) */
     public $domain;
 
-    /** @var ?string Domain SSL of main url (read only) */
+    /** @var string Domain SSL of main url (read only) */
     public $domain_ssl;
 
     /** @var ShopGroup|null Shop group object */
@@ -81,18 +80,15 @@ class ShopCore extends ObjectModel
             'active' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
             'deleted' => ['type' => self::TYPE_BOOL, 'validate' => 'isBool'],
             'name' => ['type' => self::TYPE_STRING, 'validate' => 'isGenericName', 'required' => true, 'size' => 64],
-            'color' => ['type' => self::TYPE_STRING, 'validate' => 'isColor', 'size' => 50],
+            'color' => ['type' => self::TYPE_STRING, 'validate' => 'isColor'],
             'id_category' => ['type' => self::TYPE_INT, 'required' => true],
-            'theme_name' => ['type' => self::TYPE_STRING, 'validate' => 'isThemeName', 'size' => 255],
+            'theme_name' => ['type' => self::TYPE_STRING, 'validate' => 'isThemeName'],
             'id_shop_group' => ['type' => self::TYPE_INT, 'required' => true],
         ],
     ];
 
     /** @var array|null List of shops cached */
     protected static $shops;
-
-    /** @var array|null List of shop group IDs cached */
-    protected static $shopGroupIds = null;
 
     protected static $asso_tables = [];
     protected static $id_shop_default_tables = [];
@@ -120,15 +116,15 @@ class ShopCore extends ObjectModel
     /** @var bool|null is multistore activated */
     protected static $feature_active;
 
-    /** @var Theme|null * */
+    /** @var Theme * */
     public $theme;
 
     /**
      * There are 3 kinds of shop context : shop, group shop and general.
      */
-    public const CONTEXT_SHOP = ShopConstraint::SHOP;
-    public const CONTEXT_GROUP = ShopConstraint::SHOP_GROUP;
-    public const CONTEXT_ALL = ShopConstraint::ALL_SHOPS;
+    public const CONTEXT_SHOP = 1;
+    public const CONTEXT_GROUP = 2;
+    public const CONTEXT_ALL = 4;
 
     /**
      * Some data can be shared between shops, like customers or orders.
@@ -907,32 +903,6 @@ class ShopCore extends ObjectModel
     }
 
     /**
-     * Dedicated method to get the shop group ID based on a shop ID, because getGroupFromShop is based on a cache dependent
-     * of the Context->employee which can cause unexpected behaviour.
-     *
-     * @param int $shopId
-     *
-     * @return int|null
-     *
-     * @throws PrestaShopDatabaseException
-     * @throws PrestaShopException
-     */
-    public static function getGroupIdFromShopId(int $shopId): ?int
-    {
-        if (null === self::$shopGroupIds) {
-            self::$shopGroupIds = [];
-            $sql = 'SELECT s.id_shop, s.id_shop_group FROM ' . _DB_PREFIX_ . 'shop s';
-            if ($results = Db::getInstance()->executeS($sql)) {
-                foreach ($results as $shop) {
-                    self::$shopGroupIds[(int) $shop['id_shop']] = (int) $shop['id_shop_group'];
-                }
-            }
-        }
-
-        return self::$shopGroupIds[(int) $shopId] ?? null;
-    }
-
-    /**
      * If the shop group has the option $type activated, get all shops ID of this group, else get current shop ID.
      *
      * @param int $shop_id
@@ -1015,7 +985,7 @@ class ShopCore extends ObjectModel
                 break;
             case self::CONTEXT_SHOP:
                 self::$context_id_shop = (int) $id;
-                self::$context_id_shop_group = Shop::getGroupIdFromShopId($id);
+                self::$context_id_shop_group = Shop::getGroupFromShop($id);
 
                 break;
             default:
@@ -1039,7 +1009,6 @@ class ShopCore extends ObjectModel
     {
         parent::resetStaticCache();
         static::$shops = null;
-        static::$shopGroupIds = null;
         static::$feature_active = null;
         static::$context_shop_group = null;
         Cache::clean('Shop::*');

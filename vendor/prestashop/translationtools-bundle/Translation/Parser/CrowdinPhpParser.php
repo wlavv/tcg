@@ -15,7 +15,8 @@ class CrowdinPhpParser
     /**
      * Extracts trans message from PHP tokens.
      *
-     * @param $file $tokens
+     * @param $file            $tokens
+     * @param MessageCatalogue $catalog
      */
     public function parseFileTokens($file)
     {

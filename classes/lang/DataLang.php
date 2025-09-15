@@ -62,7 +62,7 @@ class DataLangCore
 
         $this->translator = $translator instanceof TranslatorInterface
             ? $translator
-            : SymfonyContainer::getInstance()->get(TranslatorInterface::class);
+            : SymfonyContainer::getInstance()->get('translator');
 
         $isAdminContext = defined('_PS_ADMIN_DIR_');
 

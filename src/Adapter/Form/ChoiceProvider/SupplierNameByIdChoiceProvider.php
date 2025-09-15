@@ -28,7 +28,6 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\Form\ChoiceProvider;
 
-use PrestaShop\PrestaShop\Core\Form\FormChoiceFormatter;
 use PrestaShop\PrestaShop\Core\Form\FormChoiceProviderInterface;
 use Supplier;
 
@@ -42,10 +41,33 @@ final class SupplierNameByIdChoiceProvider implements FormChoiceProviderInterfac
      */
     public function getChoices()
     {
-        return FormChoiceFormatter::formatFormChoices(
-            Supplier::getSuppliers(false, 0, false),
-            'id_supplier',
-            'name'
-        );
+        $choices = [];
+        $suppliers = Supplier::getSuppliers(false, 0, false);
+        $hasDuplicated = $this->hasDuplicateSuppliers($suppliers);
+
+        foreach ($suppliers as $supplier) {
+            // Integrate the ID in the name so that suppliers with identical names don't override themselves (only when duplicate are detected)
+            $supplierName = $supplier['name'];
+            if ($hasDuplicated) {
+                $supplierName = sprintf('%d - %s', $supplier['id_supplier'], $supplierName);
+            }
+            $choices[$supplierName] = (int) $supplier['id_supplier'];
+        }
+
+        return $choices;
+    }
+
+    private function hasDuplicateSuppliers(array $suppliers): bool
+    {
+        $names = [];
+        foreach ($suppliers as $supplier) {
+            if (in_array($supplier['name'], $names)) {
+                return true;
+            }
+
+            $names[] = $supplier['name'];
+        }
+
+        return false;
     }
 }

@@ -21,13 +21,17 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Distribution;
 
+use Context;
+use GuzzleHttp\Exception\GuzzleException;
+use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
+use stdClass;
 use Symfony\Component\Routing\Router;
 
 class Client extends BaseClient
 {
     /**
-     * @var Router|null
+     * @var Router
      */
     private $router;
 
@@ -41,21 +45,76 @@ class Client extends BaseClient
     /**
      * Get a new key from Distribution API.
      *
-     * @return \stdClass
+     * @return stdClass
+     *
+     * @throws GuzzleException
      */
-    public function retrieveNewKey(): \stdClass
+    public function retrieveNewKey(): stdClass
     {
         return $this->processRequestAndDecode('shops/get-pub-key');
     }
 
     /**
+     * Register new Shop on Distribution API.
+     *
+     * @param array $params
+     *
+     * @return stdClass
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @usage \PrestaShop\Module\Mbo\Traits\HaveShopOnExternalService::registerShop
+     */
+    public function registerShop(array $params = []): stdClass
+    {
+        return $this->processRequestAndDecode(
+            'shops',
+            self::HTTP_METHOD_POST,
+            ['form_params' => $this->mergeShopDataWithParams($params)]
+        );
+    }
+
+    /**
+     * Unregister a Shop on Distribution API.
+     *
+     * @return stdClass
+     *
+     * @throws GuzzleException
+     */
+    public function unregisterShop()
+    {
+        return $this->processRequestAndDecode(
+            'shops/' . Config::getShopMboUuid(),
+            self::HTTP_METHOD_DELETE
+        );
+    }
+
+    /**
+     * Update shop on Distribution API.
+     *
+     * @param array $params
+     *
+     * @return stdClass
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @usage \PrestaShop\Module\Mbo\Traits\HaveShopOnExternalService::updateShop
+     */
+    public function updateShop(array $params): stdClass
+    {
+        return $this->processRequestAndDecode(
+            'shops/' . Config::getShopMboUuid(),
+            self::HTTP_METHOD_PUT,
+            ['form_params' => $this->mergeShopDataWithParams($params)]
+        );
+    }
+
+    /**
      * Retrieve the user menu from NEST Api
      *
-     * @return false|\stdClass
+     * @return false|stdClass
      */
     public function getEmployeeMenu()
     {
-        $languageIsoCode = \Context::getContext()->language->getIsoCode();
+        $languageIsoCode = Context::getContext()->language->getIsoCode();
         $cacheKey = __METHOD__ . $languageIsoCode . _PS_VERSION_;
 
         if ($this->cacheProvider->contains($cacheKey)) {
@@ -82,6 +141,19 @@ class Client extends BaseClient
         $this->cacheProvider->save($cacheKey, $conf, 60 * 60 * 24); // A day
 
         return $this->cacheProvider->fetch($cacheKey);
+    }
+
+    /**
+     * Retrieve API config from Distribution API.
+     *
+     * @return array
+     *
+     * @throws \GuzzleHttp\Exception\GuzzleException
+     * @usage \PrestaShop\Module\Mbo\Traits\HaveShopOnExternalService::registerShop
+     */
+    public function getApiConf(): array
+    {
+        return $this->processRequestAndDecode('shops/conf-mbo');
     }
 
     /**

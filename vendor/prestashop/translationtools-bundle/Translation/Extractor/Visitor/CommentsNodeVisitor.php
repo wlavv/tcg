@@ -27,12 +27,17 @@ class CommentsNodeVisitor extends NodeVisitorAbstract
 
     /**
      * TranslationNodeVisitor constructor.
+     *
+     * @param $file
      */
     public function __construct($file)
     {
         $this->file = $file;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function leaveNode(Node $node)
     {
         $this->tryExtractComments($node);

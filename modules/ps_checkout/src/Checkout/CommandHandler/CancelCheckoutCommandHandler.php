@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,20 +20,23 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Checkout\CommandHandler;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Cart\Exception\CartNotFoundException;
 use PrestaShop\Module\PrestashopCheckout\Checkout\Command\CancelCheckoutCommand;
 use PrestaShop\Module\PrestashopCheckout\Checkout\Exception\PsCheckoutSessionException;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
+use PsCheckoutCart;
 
 class CancelCheckoutCommandHandler
 {
-    public function __construct(private PsCheckoutCartRepository $psCheckoutCartRepository)
-    {
-    }
+    /**
+     * @var PsCheckoutCartRepository
+     */
+    private $psCheckoutCartRepository;
 
-    public function __invoke(CancelCheckoutCommand $command)
+    public function __construct(PsCheckoutCartRepository $psCheckoutCartRepository)
     {
-        $this->handle($command);
+        $this->psCheckoutCartRepository = $psCheckoutCartRepository;
     }
 
     /**
@@ -45,7 +47,7 @@ class CancelCheckoutCommandHandler
     public function handle(CancelCheckoutCommand $command)
     {
         try {
-            /** @var \PsCheckoutCart|false $psCheckoutCart */
+            /** @var PsCheckoutCart|false $psCheckoutCart */
             $psCheckoutCart = $this->psCheckoutCartRepository->findOneByPayPalOrderId($command->getOrderPayPalId()->getValue());
 
             if (false === $psCheckoutCart) {
@@ -59,7 +61,7 @@ class CancelCheckoutCommandHandler
             $psCheckoutCart->isExpressCheckout = $command->isExpressCheckout();
             $psCheckoutCart->paypal_status = $command->getOrderPayPalStatus();
             $this->psCheckoutCartRepository->save($psCheckoutCart);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutSessionException(sprintf('Unable to update PrestaShop Checkout session #%s', var_export($command->getCartId()->getValue(), true)), PsCheckoutSessionException::UPDATE_FAILED, $exception);
         }
     }

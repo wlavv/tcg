@@ -4,15 +4,17 @@
 
 namespace Composer\Autoload;
 
-class ComposerStaticInit5fbead78089182978609c09444be406e
+class ComposerStaticInita11d99060407121a828ab85bb8b687cb
 {
     public static $files = array (
+        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         '6e3fae29631ef280660b3cdad06f25a8' => __DIR__ . '/..' . '/symfony/deprecation-contracts/function.php',
+        '0d59ee240a4cd96ddbb4ff164fccea4d' => __DIR__ . '/..' . '/symfony/polyfill-php73/bootstrap.php',
+        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
         '9c67151ae59aff4788964ce8eb2a0f43' => __DIR__ . '/..' . '/clue/stream-filter/src/functions_include.php',
         '8cff32064859f4559445b89279f3199c' => __DIR__ . '/..' . '/php-http/message/src/filters.php',
-        '7b11c4dc42b3b3023073cb14e519683c' => __DIR__ . '/..' . '/ralouphie/getallheaders/src/getallheaders.php',
-        'a4a119a56e50fbb293281d9a48007e0e' => __DIR__ . '/..' . '/symfony/polyfill-php80/bootstrap.php',
         'c964ee0ededf28c96ebd9db5099ef910' => __DIR__ . '/..' . '/guzzlehttp/promises/src/functions_include.php',
+        '37a3dc5111fe8f707ab4c132ef1dbc62' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/functions_include.php',
         'fb4ca2d97fe7ba6af750497425204e70' => __DIR__ . '/..' . '/sentry/sentry/src/functions.php',
         '320cde22f66dd4f5d3fd621d3e88b98f' => __DIR__ . '/..' . '/symfony/polyfill-ctype/bootstrap.php',
         '8825ede83f2f289127722d4e842cf7e8' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/bootstrap.php',
@@ -26,6 +28,7 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'S' => 
         array (
             'Symfony\\Polyfill\\Php80\\' => 23,
+            'Symfony\\Polyfill\\Php73\\' => 23,
             'Symfony\\Polyfill\\Mbstring\\' => 26,
             'Symfony\\Polyfill\\Intl\\Normalizer\\' => 33,
             'Symfony\\Polyfill\\Intl\\Grapheme\\' => 31,
@@ -36,7 +39,6 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
             'Symfony\\Component\\String\\' => 25,
             'Symfony\\Component\\OptionsResolver\\' => 34,
             'Symfony\\Component\\HttpClient\\' => 29,
-            'Symfony\\Component\\Dotenv\\' => 25,
             'Sentry\\' => 7,
         ),
         'P' => 
@@ -48,6 +50,7 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
             'PrestaShop\\PsAccountsInstaller\\' => 31,
             'PrestaShop\\Module\\Mbo\\Tests\\' => 28,
             'PrestaShop\\Module\\Mbo\\' => 22,
+            'PrestaShop\\CircuitBreaker\\' => 26,
         ),
         'J' => 
         array (
@@ -66,6 +69,7 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         array (
             'GuzzleHttp\\Psr7\\' => 16,
             'GuzzleHttp\\Promise\\' => 19,
+            'GuzzleHttp\\' => 11,
         ),
         'F' => 
         array (
@@ -81,6 +85,10 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Symfony\\Polyfill\\Php80\\' => 
         array (
             0 => __DIR__ . '/..' . '/symfony/polyfill-php80',
+        ),
+        'Symfony\\Polyfill\\Php73\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/symfony/polyfill-php73',
         ),
         'Symfony\\Polyfill\\Mbstring\\' => 
         array (
@@ -122,22 +130,18 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         array (
             0 => __DIR__ . '/..' . '/symfony/http-client',
         ),
-        'Symfony\\Component\\Dotenv\\' => 
-        array (
-            0 => __DIR__ . '/..' . '/symfony/dotenv',
-        ),
         'Sentry\\' => 
         array (
             0 => __DIR__ . '/..' . '/sentry/sentry/src',
         ),
         'Psr\\Log\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/log/src',
+            0 => __DIR__ . '/..' . '/psr/log/Psr/Log',
         ),
         'Psr\\Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/psr/http-factory/src',
-            1 => __DIR__ . '/..' . '/psr/http-message/src',
+            0 => __DIR__ . '/..' . '/psr/http-message/src',
+            1 => __DIR__ . '/..' . '/psr/http-factory/src',
         ),
         'Psr\\Http\\Client\\' => 
         array (
@@ -159,6 +163,10 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         array (
             0 => __DIR__ . '/../..' . '/src',
         ),
+        'PrestaShop\\CircuitBreaker\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/prestashop/circuit-breaker/src',
+        ),
         'Jean85\\' => 
         array (
             0 => __DIR__ . '/..' . '/jean85/pretty-package-versions/src',
@@ -169,8 +177,8 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         ),
         'Http\\Message\\' => 
         array (
-            0 => __DIR__ . '/..' . '/php-http/message/src',
-            1 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            0 => __DIR__ . '/..' . '/php-http/message-factory/src',
+            1 => __DIR__ . '/..' . '/php-http/message/src',
         ),
         'Http\\Factory\\Guzzle\\' => 
         array (
@@ -196,6 +204,10 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         array (
             0 => __DIR__ . '/..' . '/guzzlehttp/promises/src',
         ),
+        'GuzzleHttp\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/guzzlehttp/guzzle/src',
+        ),
         'Firebase\\JWT\\' => 
         array (
             0 => __DIR__ . '/..' . '/firebase/php-jwt/src',
@@ -217,6 +229,40 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Firebase\\JWT\\JWT' => __DIR__ . '/..' . '/firebase/php-jwt/src/JWT.php',
         'Firebase\\JWT\\Key' => __DIR__ . '/..' . '/firebase/php-jwt/src/Key.php',
         'Firebase\\JWT\\SignatureInvalidException' => __DIR__ . '/..' . '/firebase/php-jwt/src/SignatureInvalidException.php',
+        'GuzzleHttp\\BodySummarizer' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/BodySummarizer.php',
+        'GuzzleHttp\\BodySummarizerInterface' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/BodySummarizerInterface.php',
+        'GuzzleHttp\\Client' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Client.php',
+        'GuzzleHttp\\ClientInterface' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/ClientInterface.php',
+        'GuzzleHttp\\ClientTrait' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/ClientTrait.php',
+        'GuzzleHttp\\Cookie\\CookieJar' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Cookie/CookieJar.php',
+        'GuzzleHttp\\Cookie\\CookieJarInterface' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Cookie/CookieJarInterface.php',
+        'GuzzleHttp\\Cookie\\FileCookieJar' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Cookie/FileCookieJar.php',
+        'GuzzleHttp\\Cookie\\SessionCookieJar' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Cookie/SessionCookieJar.php',
+        'GuzzleHttp\\Cookie\\SetCookie' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Cookie/SetCookie.php',
+        'GuzzleHttp\\Exception\\BadResponseException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/BadResponseException.php',
+        'GuzzleHttp\\Exception\\ClientException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/ClientException.php',
+        'GuzzleHttp\\Exception\\ConnectException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/ConnectException.php',
+        'GuzzleHttp\\Exception\\GuzzleException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/GuzzleException.php',
+        'GuzzleHttp\\Exception\\InvalidArgumentException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/InvalidArgumentException.php',
+        'GuzzleHttp\\Exception\\RequestException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/RequestException.php',
+        'GuzzleHttp\\Exception\\ServerException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/ServerException.php',
+        'GuzzleHttp\\Exception\\TooManyRedirectsException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/TooManyRedirectsException.php',
+        'GuzzleHttp\\Exception\\TransferException' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Exception/TransferException.php',
+        'GuzzleHttp\\HandlerStack' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/HandlerStack.php',
+        'GuzzleHttp\\Handler\\CurlFactory' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/CurlFactory.php',
+        'GuzzleHttp\\Handler\\CurlFactoryInterface' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/CurlFactoryInterface.php',
+        'GuzzleHttp\\Handler\\CurlHandler' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/CurlHandler.php',
+        'GuzzleHttp\\Handler\\CurlMultiHandler' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/CurlMultiHandler.php',
+        'GuzzleHttp\\Handler\\EasyHandle' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/EasyHandle.php',
+        'GuzzleHttp\\Handler\\HeaderProcessor' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/HeaderProcessor.php',
+        'GuzzleHttp\\Handler\\MockHandler' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/MockHandler.php',
+        'GuzzleHttp\\Handler\\Proxy' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/Proxy.php',
+        'GuzzleHttp\\Handler\\StreamHandler' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Handler/StreamHandler.php',
+        'GuzzleHttp\\MessageFormatter' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/MessageFormatter.php',
+        'GuzzleHttp\\MessageFormatterInterface' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/MessageFormatterInterface.php',
+        'GuzzleHttp\\Middleware' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Middleware.php',
+        'GuzzleHttp\\Pool' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Pool.php',
+        'GuzzleHttp\\PrepareBodyMiddleware' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/PrepareBodyMiddleware.php',
         'GuzzleHttp\\Promise\\AggregateException' => __DIR__ . '/..' . '/guzzlehttp/promises/src/AggregateException.php',
         'GuzzleHttp\\Promise\\CancellationException' => __DIR__ . '/..' . '/guzzlehttp/promises/src/CancellationException.php',
         'GuzzleHttp\\Promise\\Coroutine' => __DIR__ . '/..' . '/guzzlehttp/promises/src/Coroutine.php',
@@ -264,6 +310,11 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'GuzzleHttp\\Psr7\\UriNormalizer' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/UriNormalizer.php',
         'GuzzleHttp\\Psr7\\UriResolver' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/UriResolver.php',
         'GuzzleHttp\\Psr7\\Utils' => __DIR__ . '/..' . '/guzzlehttp/psr7/src/Utils.php',
+        'GuzzleHttp\\RedirectMiddleware' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/RedirectMiddleware.php',
+        'GuzzleHttp\\RequestOptions' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/RequestOptions.php',
+        'GuzzleHttp\\RetryMiddleware' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/RetryMiddleware.php',
+        'GuzzleHttp\\TransferStats' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/TransferStats.php',
+        'GuzzleHttp\\Utils' => __DIR__ . '/..' . '/guzzlehttp/guzzle/src/Utils.php',
         'Http\\Client\\Common\\BatchClient' => __DIR__ . '/..' . '/php-http/client-common/src/BatchClient.php',
         'Http\\Client\\Common\\BatchClientInterface' => __DIR__ . '/..' . '/php-http/client-common/src/BatchClientInterface.php',
         'Http\\Client\\Common\\BatchResult' => __DIR__ . '/..' . '/php-http/client-common/src/BatchResult.php',
@@ -420,11 +471,50 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Jean85\\Exception\\VersionMissingExceptionInterface' => __DIR__ . '/..' . '/jean85/pretty-package-versions/src/Exception/VersionMissingExceptionInterface.php',
         'Jean85\\PrettyVersions' => __DIR__ . '/..' . '/jean85/pretty-package-versions/src/PrettyVersions.php',
         'Jean85\\Version' => __DIR__ . '/..' . '/jean85/pretty-package-versions/src/Version.php',
+        'JsonException' => __DIR__ . '/..' . '/symfony/polyfill-php73/Resources/stubs/JsonException.php',
         'Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Resources/stubs/Normalizer.php',
         'PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/PhpToken.php',
+        'PrestaShop\\CircuitBreaker\\AdvancedCircuitBreaker' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/AdvancedCircuitBreaker.php',
+        'PrestaShop\\CircuitBreaker\\AdvancedCircuitBreakerFactory' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/AdvancedCircuitBreakerFactory.php',
+        'PrestaShop\\CircuitBreaker\\Client\\GuzzleClient' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Client/GuzzleClient.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\CircuitBreakerInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/CircuitBreakerInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\ClientInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/ClientInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\FactoryInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/FactoryInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\FactorySettingsInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/FactorySettingsInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\PlaceInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/PlaceInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\StorageInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/StorageInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\SystemInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/SystemInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\TransactionInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/TransactionInterface.php',
+        'PrestaShop\\CircuitBreaker\\Contract\\TransitionDispatcherInterface' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Contract/TransitionDispatcherInterface.php',
+        'PrestaShop\\CircuitBreaker\\Event\\TransitionEvent' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Event/TransitionEvent.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\CircuitBreakerException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/CircuitBreakerException.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\InvalidPlaceException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/InvalidPlaceException.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\InvalidTransactionException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/InvalidTransactionException.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\TransactionNotFoundException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/TransactionNotFoundException.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\UnavailableServiceException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/UnavailableServiceException.php',
+        'PrestaShop\\CircuitBreaker\\Exception\\UnsupportedMethodException' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Exception/UnsupportedMethodException.php',
+        'PrestaShop\\CircuitBreaker\\FactorySettings' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/FactorySettings.php',
+        'PrestaShop\\CircuitBreaker\\PartialCircuitBreaker' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/PartialCircuitBreaker.php',
+        'PrestaShop\\CircuitBreaker\\Place\\AbstractPlace' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Place/AbstractPlace.php',
+        'PrestaShop\\CircuitBreaker\\Place\\ClosedPlace' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Place/ClosedPlace.php',
+        'PrestaShop\\CircuitBreaker\\Place\\HalfOpenPlace' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Place/HalfOpenPlace.php',
+        'PrestaShop\\CircuitBreaker\\Place\\OpenPlace' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Place/OpenPlace.php',
+        'PrestaShop\\CircuitBreaker\\SimpleCircuitBreaker' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/SimpleCircuitBreaker.php',
+        'PrestaShop\\CircuitBreaker\\SimpleCircuitBreakerFactory' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/SimpleCircuitBreakerFactory.php',
+        'PrestaShop\\CircuitBreaker\\State' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/State.php',
+        'PrestaShop\\CircuitBreaker\\Storage\\DoctrineCache' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Storage/DoctrineCache.php',
+        'PrestaShop\\CircuitBreaker\\Storage\\SimpleArray' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Storage/SimpleArray.php',
+        'PrestaShop\\CircuitBreaker\\Storage\\SymfonyCache' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Storage/SymfonyCache.php',
+        'PrestaShop\\CircuitBreaker\\SymfonyCircuitBreaker' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/SymfonyCircuitBreaker.php',
+        'PrestaShop\\CircuitBreaker\\System\\MainSystem' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/System/MainSystem.php',
+        'PrestaShop\\CircuitBreaker\\Transaction\\SimpleTransaction' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Transaction/SimpleTransaction.php',
+        'PrestaShop\\CircuitBreaker\\Transition' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Transition.php',
+        'PrestaShop\\CircuitBreaker\\Transition\\EventDispatcher' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Transition/EventDispatcher.php',
+        'PrestaShop\\CircuitBreaker\\Transition\\NullDispatcher' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Transition/NullDispatcher.php',
+        'PrestaShop\\CircuitBreaker\\Util\\Assert' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Util/Assert.php',
+        'PrestaShop\\CircuitBreaker\\Util\\ErrorFormatter' => __DIR__ . '/..' . '/prestashop/circuit-breaker/src/Util/ErrorFormatter.php',
         'PrestaShop\\Module\\Mbo\\Accounts\\Provider\\AccountsDataProvider' => __DIR__ . '/../..' . '/src/Accounts/Provider/AccountsDataProvider.php',
         'PrestaShop\\Module\\Mbo\\Addons\\ApiClient' => __DIR__ . '/../..' . '/src/Addons/ApiClient.php',
-        'PrestaShop\\Module\\Mbo\\Addons\\Exception\\ClientRequestException' => __DIR__ . '/../..' . '/src/Addons/Exception/ClientRequestException.php',
         'PrestaShop\\Module\\Mbo\\Addons\\Exception\\DownloadModuleException' => __DIR__ . '/../..' . '/src/Addons/Exception/DownloadModuleException.php',
         'PrestaShop\\Module\\Mbo\\Addons\\Provider\\AddonsDataProvider' => __DIR__ . '/../..' . '/src/Addons/Provider/AddonsDataProvider.php',
         'PrestaShop\\Module\\Mbo\\Addons\\Provider\\DataProviderInterface' => __DIR__ . '/../..' . '/src/Addons/Provider/DataProviderInterface.php',
@@ -475,12 +565,12 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'PrestaShop\\Module\\Mbo\\Distribution\\Config\\Factory' => __DIR__ . '/../..' . '/src/Distribution/Config/Factory.php',
         'PrestaShop\\Module\\Mbo\\Distribution\\ConnectedClient' => __DIR__ . '/../..' . '/src/Distribution/ConnectedClient.php',
         'PrestaShop\\Module\\Mbo\\Exception\\AddonsDownloadModuleException' => __DIR__ . '/../..' . '/src/Exception/AddonsDownloadModuleException.php',
-        'PrestaShop\\Module\\Mbo\\Exception\\ClientRequestException' => __DIR__ . '/../..' . '/src/Exception/ClientRequestException.php',
         'PrestaShop\\Module\\Mbo\\Exception\\DownloadModuleException' => __DIR__ . '/../..' . '/src/Exception/DownloadModuleException.php',
         'PrestaShop\\Module\\Mbo\\Exception\\ExpectedServiceNotFoundException' => __DIR__ . '/../..' . '/src/Exception/ExpectedServiceNotFoundException.php',
         'PrestaShop\\Module\\Mbo\\Handler\\ErrorHandler\\ErrorHandler' => __DIR__ . '/../..' . '/src/Handler/ErrorHandler/ErrorHandler.php',
         'PrestaShop\\Module\\Mbo\\Handler\\ErrorHandler\\ErrorHandlerInterface' => __DIR__ . '/../..' . '/src/Handler/ErrorHandler/ErrorHandlerInterface.php',
         'PrestaShop\\Module\\Mbo\\Helpers\\AddonsApiHelper' => __DIR__ . '/../..' . '/src/Helpers/AddonsApiHelper.php',
+        'PrestaShop\\Module\\Mbo\\Helpers\\AsyncClient' => __DIR__ . '/../..' . '/src/Helpers/AsyncClient.php',
         'PrestaShop\\Module\\Mbo\\Helpers\\Config' => __DIR__ . '/../..' . '/src/Helpers/Config.php',
         'PrestaShop\\Module\\Mbo\\Helpers\\ErrorHelper' => __DIR__ . '/../..' . '/src/Helpers/ErrorHelper.php',
         'PrestaShop\\Module\\Mbo\\Helpers\\ModuleErrorHelper' => __DIR__ . '/../..' . '/src/Helpers/ModuleErrorHelper.php',
@@ -532,6 +622,8 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'PrestaShop\\Module\\Mbo\\Service\\ExternalContentProvider\\ExternalContentProvider' => __DIR__ . '/../..' . '/src/Service/ExternalContentProvider/ExternalContentProvider.php',
         'PrestaShop\\Module\\Mbo\\Service\\ExternalContentProvider\\ExternalContentProviderInterface' => __DIR__ . '/../..' . '/src/Service/ExternalContentProvider/ExternalContentProviderInterface.php',
         'PrestaShop\\Module\\Mbo\\Service\\HookExceptionHolder' => __DIR__ . '/../..' . '/src/Service/HookExceptionHolder.php',
+        'PrestaShop\\Module\\Mbo\\Service\\MboSymfonyCacheClearer' => __DIR__ . '/../..' . '/src/Service/MboSymfonyCacheClearer.php',
+        'PrestaShop\\Module\\Mbo\\Service\\ModuleInstaller' => __DIR__ . '/../..' . '/src/Service/ModuleInstaller.php',
         'PrestaShop\\Module\\Mbo\\Service\\ModulesHelper' => __DIR__ . '/../..' . '/src/Service/ModulesHelper.php',
         'PrestaShop\\Module\\Mbo\\Service\\View\\ContextBuilder' => __DIR__ . '/../..' . '/src/Service/View/ContextBuilder.php',
         'PrestaShop\\Module\\Mbo\\Service\\View\\InstalledModule' => __DIR__ . '/../..' . '/src/Service/View/InstalledModule.php',
@@ -552,19 +644,29 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'PrestaShop\\Module\\Mbo\\Tests\\Module\\Workflow\\TransitionBuilderTest' => __DIR__ . '/../..' . '/tests/Module/Workflow/TransitionBuilderTest.php',
         'PrestaShop\\Module\\Mbo\\Traits\\HaveCdcComponent' => __DIR__ . '/../..' . '/src/Traits/HaveCdcComponent.php',
         'PrestaShop\\Module\\Mbo\\Traits\\HaveConfigurationPage' => __DIR__ . '/../..' . '/src/Traits/HaveConfigurationPage.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\HaveShopOnExternalService' => __DIR__ . '/../..' . '/src/Traits/HaveShopOnExternalService.php',
         'PrestaShop\\Module\\Mbo\\Traits\\HaveTabs' => __DIR__ . '/../..' . '/src/Traits/HaveTabs.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionAdminControllerSetMedia' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionAdminControllerSetMedia.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionBeforeInstallModule' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionBeforeInstallModule.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionBeforeUpgradeModule' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionBeforeUpgradeModule.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionDispatcherBefore' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionDispatcherBefore.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionGeneralPageSave' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionGeneralPageSave.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionGetAdminToolbarButtons' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionGetAdminToolbarButtons.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionGetAlternativeSearchPanels' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionGetAlternativeSearchPanels.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionListModules' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionListModules.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionModuleRegisterHookAfter' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionModuleRegisterHookAfter.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionObjectEmployeeDeleteBefore' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionObjectEmployeeDeleteBefore.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionObjectEmployeeUpdateBefore' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionObjectEmployeeUpdateBefore.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseActionObjectShopUrlUpdateAfter' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseActionObjectShopUrlUpdateAfter.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDashboardZoneOne' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDashboardZoneOne.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDashboardZoneThree' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDashboardZoneThree.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDashboardZoneTwo' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDashboardZoneTwo.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayAdminAfterHeader' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayAdminAfterHeader.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayAdminThemesListAfter' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayAdminThemesListAfter.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayBackOfficeEmployeeMenu' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayBackOfficeEmployeeMenu.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayDashboardTop' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayDashboardTop.php',
         'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayEmptyModuleCategoryExtraMessage' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayEmptyModuleCategoryExtraMessage.php',
+        'PrestaShop\\Module\\Mbo\\Traits\\Hooks\\UseDisplayModuleConfigureExtraButtons' => __DIR__ . '/../..' . '/src/Traits/Hooks/UseDisplayModuleConfigureExtraButtons.php',
         'PrestaShop\\Module\\Mbo\\Traits\\UseHooks' => __DIR__ . '/../..' . '/src/Traits/UseHooks.php',
         'PrestaShop\\PsAccountsInstaller\\Installer\\Exception\\InstallerException' => __DIR__ . '/..' . '/prestashop/prestashop-accounts-installer/src/Installer/Exception/InstallerException.php',
         'PrestaShop\\PsAccountsInstaller\\Installer\\Exception\\ModuleNotInstalledException' => __DIR__ . '/..' . '/prestashop/prestashop-accounts-installer/src/Installer/Exception/ModuleNotInstalledException.php',
@@ -592,14 +694,17 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Psr\\Http\\Message\\UploadedFileInterface' => __DIR__ . '/..' . '/psr/http-message/src/UploadedFileInterface.php',
         'Psr\\Http\\Message\\UriFactoryInterface' => __DIR__ . '/..' . '/psr/http-factory/src/UriFactoryInterface.php',
         'Psr\\Http\\Message\\UriInterface' => __DIR__ . '/..' . '/psr/http-message/src/UriInterface.php',
-        'Psr\\Log\\AbstractLogger' => __DIR__ . '/..' . '/psr/log/src/AbstractLogger.php',
-        'Psr\\Log\\InvalidArgumentException' => __DIR__ . '/..' . '/psr/log/src/InvalidArgumentException.php',
-        'Psr\\Log\\LogLevel' => __DIR__ . '/..' . '/psr/log/src/LogLevel.php',
-        'Psr\\Log\\LoggerAwareInterface' => __DIR__ . '/..' . '/psr/log/src/LoggerAwareInterface.php',
-        'Psr\\Log\\LoggerAwareTrait' => __DIR__ . '/..' . '/psr/log/src/LoggerAwareTrait.php',
-        'Psr\\Log\\LoggerInterface' => __DIR__ . '/..' . '/psr/log/src/LoggerInterface.php',
-        'Psr\\Log\\LoggerTrait' => __DIR__ . '/..' . '/psr/log/src/LoggerTrait.php',
-        'Psr\\Log\\NullLogger' => __DIR__ . '/..' . '/psr/log/src/NullLogger.php',
+        'Psr\\Log\\AbstractLogger' => __DIR__ . '/..' . '/psr/log/Psr/Log/AbstractLogger.php',
+        'Psr\\Log\\InvalidArgumentException' => __DIR__ . '/..' . '/psr/log/Psr/Log/InvalidArgumentException.php',
+        'Psr\\Log\\LogLevel' => __DIR__ . '/..' . '/psr/log/Psr/Log/LogLevel.php',
+        'Psr\\Log\\LoggerAwareInterface' => __DIR__ . '/..' . '/psr/log/Psr/Log/LoggerAwareInterface.php',
+        'Psr\\Log\\LoggerAwareTrait' => __DIR__ . '/..' . '/psr/log/Psr/Log/LoggerAwareTrait.php',
+        'Psr\\Log\\LoggerInterface' => __DIR__ . '/..' . '/psr/log/Psr/Log/LoggerInterface.php',
+        'Psr\\Log\\LoggerTrait' => __DIR__ . '/..' . '/psr/log/Psr/Log/LoggerTrait.php',
+        'Psr\\Log\\NullLogger' => __DIR__ . '/..' . '/psr/log/Psr/Log/NullLogger.php',
+        'Psr\\Log\\Test\\DummyTest' => __DIR__ . '/..' . '/psr/log/Psr/Log/Test/DummyTest.php',
+        'Psr\\Log\\Test\\LoggerInterfaceTest' => __DIR__ . '/..' . '/psr/log/Psr/Log/Test/LoggerInterfaceTest.php',
+        'Psr\\Log\\Test\\TestLogger' => __DIR__ . '/..' . '/psr/log/Psr/Log/Test/TestLogger.php',
         'Sentry\\Breadcrumb' => __DIR__ . '/..' . '/sentry/sentry/src/Breadcrumb.php',
         'Sentry\\Client' => __DIR__ . '/..' . '/sentry/sentry/src/Client.php',
         'Sentry\\ClientBuilder' => __DIR__ . '/..' . '/sentry/sentry/src/ClientBuilder.php',
@@ -688,13 +793,6 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Sentry\\Util\\PHPVersion' => __DIR__ . '/..' . '/sentry/sentry/src/Util/PHPVersion.php',
         'Sentry\\Util\\SentryUid' => __DIR__ . '/..' . '/sentry/sentry/src/Util/SentryUid.php',
         'Stringable' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/Stringable.php',
-        'Symfony\\Component\\Dotenv\\Command\\DebugCommand' => __DIR__ . '/..' . '/symfony/dotenv/Command/DebugCommand.php',
-        'Symfony\\Component\\Dotenv\\Command\\DotenvDumpCommand' => __DIR__ . '/..' . '/symfony/dotenv/Command/DotenvDumpCommand.php',
-        'Symfony\\Component\\Dotenv\\Dotenv' => __DIR__ . '/..' . '/symfony/dotenv/Dotenv.php',
-        'Symfony\\Component\\Dotenv\\Exception\\ExceptionInterface' => __DIR__ . '/..' . '/symfony/dotenv/Exception/ExceptionInterface.php',
-        'Symfony\\Component\\Dotenv\\Exception\\FormatException' => __DIR__ . '/..' . '/symfony/dotenv/Exception/FormatException.php',
-        'Symfony\\Component\\Dotenv\\Exception\\FormatExceptionContext' => __DIR__ . '/..' . '/symfony/dotenv/Exception/FormatExceptionContext.php',
-        'Symfony\\Component\\Dotenv\\Exception\\PathException' => __DIR__ . '/..' . '/symfony/dotenv/Exception/PathException.php',
         'Symfony\\Component\\HttpClient\\AmpHttpClient' => __DIR__ . '/..' . '/symfony/http-client/AmpHttpClient.php',
         'Symfony\\Component\\HttpClient\\AsyncDecoratorTrait' => __DIR__ . '/..' . '/symfony/http-client/AsyncDecoratorTrait.php',
         'Symfony\\Component\\HttpClient\\CachingHttpClient' => __DIR__ . '/..' . '/symfony/http-client/CachingHttpClient.php',
@@ -782,20 +880,8 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Symfony\\Component\\String\\Slugger\\AsciiSlugger' => __DIR__ . '/..' . '/symfony/string/Slugger/AsciiSlugger.php',
         'Symfony\\Component\\String\\Slugger\\SluggerInterface' => __DIR__ . '/..' . '/symfony/string/Slugger/SluggerInterface.php',
         'Symfony\\Component\\String\\UnicodeString' => __DIR__ . '/..' . '/symfony/string/UnicodeString.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsAnnounceListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsAnnounceListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsCompletedListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsCompletedListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsEnterListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsEnterListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsEnteredListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsEnteredListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsGuardListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsGuardListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsLeaveListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsLeaveListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\AsTransitionListener' => __DIR__ . '/..' . '/symfony/workflow/Attribute/AsTransitionListener.php',
-        'Symfony\\Component\\Workflow\\Attribute\\BuildEventNameTrait' => __DIR__ . '/..' . '/symfony/workflow/Attribute/BuildEventNameTrait.php',
-        'Symfony\\Component\\Workflow\\DataCollector\\WorkflowDataCollector' => __DIR__ . '/..' . '/symfony/workflow/DataCollector/WorkflowDataCollector.php',
-        'Symfony\\Component\\Workflow\\Debug\\TraceableWorkflow' => __DIR__ . '/..' . '/symfony/workflow/Debug/TraceableWorkflow.php',
         'Symfony\\Component\\Workflow\\Definition' => __DIR__ . '/..' . '/symfony/workflow/Definition.php',
         'Symfony\\Component\\Workflow\\DefinitionBuilder' => __DIR__ . '/..' . '/symfony/workflow/DefinitionBuilder.php',
-        'Symfony\\Component\\Workflow\\DependencyInjection\\WorkflowDebugPass' => __DIR__ . '/..' . '/symfony/workflow/DependencyInjection/WorkflowDebugPass.php',
-        'Symfony\\Component\\Workflow\\DependencyInjection\\WorkflowGuardListenerPass' => __DIR__ . '/..' . '/symfony/workflow/DependencyInjection/WorkflowGuardListenerPass.php',
         'Symfony\\Component\\Workflow\\Dumper\\DumperInterface' => __DIR__ . '/..' . '/symfony/workflow/Dumper/DumperInterface.php',
         'Symfony\\Component\\Workflow\\Dumper\\GraphvizDumper' => __DIR__ . '/..' . '/symfony/workflow/Dumper/GraphvizDumper.php',
         'Symfony\\Component\\Workflow\\Dumper\\MermaidDumper' => __DIR__ . '/..' . '/symfony/workflow/Dumper/MermaidDumper.php',
@@ -816,6 +902,7 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Symfony\\Component\\Workflow\\Exception\\ExceptionInterface' => __DIR__ . '/..' . '/symfony/workflow/Exception/ExceptionInterface.php',
         'Symfony\\Component\\Workflow\\Exception\\InvalidArgumentException' => __DIR__ . '/..' . '/symfony/workflow/Exception/InvalidArgumentException.php',
         'Symfony\\Component\\Workflow\\Exception\\InvalidDefinitionException' => __DIR__ . '/..' . '/symfony/workflow/Exception/InvalidDefinitionException.php',
+        'Symfony\\Component\\Workflow\\Exception\\InvalidTokenConfigurationException' => __DIR__ . '/..' . '/symfony/workflow/Exception/InvalidTokenConfigurationException.php',
         'Symfony\\Component\\Workflow\\Exception\\LogicException' => __DIR__ . '/..' . '/symfony/workflow/Exception/LogicException.php',
         'Symfony\\Component\\Workflow\\Exception\\NotEnabledTransitionException' => __DIR__ . '/..' . '/symfony/workflow/Exception/NotEnabledTransitionException.php',
         'Symfony\\Component\\Workflow\\Exception\\RuntimeException' => __DIR__ . '/..' . '/symfony/workflow/Exception/RuntimeException.php',
@@ -852,19 +939,21 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
         'Symfony\\Contracts\\HttpClient\\HttpClientInterface' => __DIR__ . '/..' . '/symfony/http-client-contracts/HttpClientInterface.php',
         'Symfony\\Contracts\\HttpClient\\ResponseInterface' => __DIR__ . '/..' . '/symfony/http-client-contracts/ResponseInterface.php',
         'Symfony\\Contracts\\HttpClient\\ResponseStreamInterface' => __DIR__ . '/..' . '/symfony/http-client-contracts/ResponseStreamInterface.php',
+        'Symfony\\Contracts\\HttpClient\\Test\\HttpClientTestCase' => __DIR__ . '/..' . '/symfony/http-client-contracts/Test/HttpClientTestCase.php',
+        'Symfony\\Contracts\\HttpClient\\Test\\TestHttpServer' => __DIR__ . '/..' . '/symfony/http-client-contracts/Test/TestHttpServer.php',
         'Symfony\\Contracts\\Service\\Attribute\\Required' => __DIR__ . '/..' . '/symfony/service-contracts/Attribute/Required.php',
         'Symfony\\Contracts\\Service\\Attribute\\SubscribedService' => __DIR__ . '/..' . '/symfony/service-contracts/Attribute/SubscribedService.php',
         'Symfony\\Contracts\\Service\\ResetInterface' => __DIR__ . '/..' . '/symfony/service-contracts/ResetInterface.php',
-        'Symfony\\Contracts\\Service\\ServiceCollectionInterface' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceCollectionInterface.php',
         'Symfony\\Contracts\\Service\\ServiceLocatorTrait' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceLocatorTrait.php',
-        'Symfony\\Contracts\\Service\\ServiceMethodsSubscriberTrait' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceMethodsSubscriberTrait.php',
         'Symfony\\Contracts\\Service\\ServiceProviderInterface' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceProviderInterface.php',
         'Symfony\\Contracts\\Service\\ServiceSubscriberInterface' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceSubscriberInterface.php',
         'Symfony\\Contracts\\Service\\ServiceSubscriberTrait' => __DIR__ . '/..' . '/symfony/service-contracts/ServiceSubscriberTrait.php',
+        'Symfony\\Contracts\\Service\\Test\\ServiceLocatorTest' => __DIR__ . '/..' . '/symfony/service-contracts/Test/ServiceLocatorTest.php',
         'Symfony\\Polyfill\\Ctype\\Ctype' => __DIR__ . '/..' . '/symfony/polyfill-ctype/Ctype.php',
         'Symfony\\Polyfill\\Intl\\Grapheme\\Grapheme' => __DIR__ . '/..' . '/symfony/polyfill-intl-grapheme/Grapheme.php',
         'Symfony\\Polyfill\\Intl\\Normalizer\\Normalizer' => __DIR__ . '/..' . '/symfony/polyfill-intl-normalizer/Normalizer.php',
         'Symfony\\Polyfill\\Mbstring\\Mbstring' => __DIR__ . '/..' . '/symfony/polyfill-mbstring/Mbstring.php',
+        'Symfony\\Polyfill\\Php73\\Php73' => __DIR__ . '/..' . '/symfony/polyfill-php73/Php73.php',
         'Symfony\\Polyfill\\Php80\\Php80' => __DIR__ . '/..' . '/symfony/polyfill-php80/Php80.php',
         'Symfony\\Polyfill\\Php80\\PhpToken' => __DIR__ . '/..' . '/symfony/polyfill-php80/PhpToken.php',
         'UnhandledMatchError' => __DIR__ . '/..' . '/symfony/polyfill-php80/Resources/stubs/UnhandledMatchError.php',
@@ -877,9 +966,9 @@ class ComposerStaticInit5fbead78089182978609c09444be406e
     public static function getInitializer(ClassLoader $loader)
     {
         return \Closure::bind(function () use ($loader) {
-            $loader->prefixLengthsPsr4 = ComposerStaticInit5fbead78089182978609c09444be406e::$prefixLengthsPsr4;
-            $loader->prefixDirsPsr4 = ComposerStaticInit5fbead78089182978609c09444be406e::$prefixDirsPsr4;
-            $loader->classMap = ComposerStaticInit5fbead78089182978609c09444be406e::$classMap;
+            $loader->prefixLengthsPsr4 = ComposerStaticInita11d99060407121a828ab85bb8b687cb::$prefixLengthsPsr4;
+            $loader->prefixDirsPsr4 = ComposerStaticInita11d99060407121a828ab85bb8b687cb::$prefixDirsPsr4;
+            $loader->classMap = ComposerStaticInita11d99060407121a828ab85bb8b687cb::$classMap;
 
         }, null, ClassLoader::class);
     }

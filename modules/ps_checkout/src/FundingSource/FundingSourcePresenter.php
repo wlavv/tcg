@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -27,11 +26,32 @@ use PrestaShop\Module\PrestashopCheckout\Repository\CountryRepository;
 
 class FundingSourcePresenter
 {
+    /**
+     * @var FundingSourceTranslationProvider
+     */
+    private $translation;
+
+    /**
+     * @var CountryRepository
+     */
+    private $country;
+    /**
+     * @var PaymentMethodLogoProvider
+     */
+    private $paymentMethodLogoProvider;
+
+    /**
+     * @param FundingSourceTranslationProvider $translation
+     * @param CountryRepository $country
+     */
     public function __construct(
-        private FundingSourceTranslationProvider $translation,
-        private CountryRepository $country,
-        private PaymentMethodLogoProvider $paymentMethodLogoProvider,
+        FundingSourceTranslationProvider $translation,
+        CountryRepository $country,
+        PaymentMethodLogoProvider $paymentMethodLogoProvider
     ) {
+        $this->translation = $translation;
+        $this->country = $country;
+        $this->paymentMethodLogoProvider = $paymentMethodLogoProvider;
     }
 
     /**

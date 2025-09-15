@@ -43,13 +43,7 @@ class GuestCore extends ObjectModel
     public $real_player;
     public $windows_media;
     public $accept_language;
-
-    /**
-     * @deprecated since 9.0.0 - This functionality was disabled. Attribute will be completely removed
-     * in the next major. There is no replacement, all clients should have the same experience.
-     *
-     * @var bool Mobile Theme */
-    public $mobile_theme = false;
+    public $mobile_theme;
 
     /**
      * @see ObjectModel::$definition
@@ -92,6 +86,7 @@ class GuestCore extends ObjectModel
         $this->accept_language = $this->getLanguage($acceptLanguage);
         $this->id_operating_system = $this->getOs($userAgent);
         $this->id_web_browser = $this->getBrowser($userAgent);
+        $this->mobile_theme = Context::getContext()->getMobileDevice();
     }
 
     /**
@@ -202,7 +197,7 @@ class GuestCore extends ObjectModel
         $result = Db::getInstance()->getRow('
 		SELECT `id_guest`
 		FROM `' . _DB_PREFIX_ . 'guest`
-		WHERE `id_customer` = ' . (int) $idCustomer);
+		WHERE `id_customer` = ' . (int) ($idCustomer));
 
         return $result['id_guest'] ?? false;
     }
@@ -251,9 +246,9 @@ class GuestCore extends ObjectModel
      */
     public static function setNewGuest($cookie)
     {
-        $guest = new Guest(isset($cookie->id_customer) ? (int) Guest::getFromCustomer((int) $cookie->id_customer) : null);
+        $guest = new Guest(isset($cookie->id_customer) ? (int) Guest::getFromCustomer((int) ($cookie->id_customer)) : null);
         $guest->userAgent();
         $guest->save();
-        $cookie->id_guest = (int) $guest->id;
+        $cookie->id_guest = (int) ($guest->id);
     }
 }

@@ -19,30 +19,38 @@ use ApiPlatform\GraphQl\Resolver\Stage\SerializeStageInterface;
 use ApiPlatform\GraphQl\Subscription\MercureSubscriptionIriGeneratorInterface;
 use ApiPlatform\GraphQl\Subscription\SubscriptionManagerInterface;
 use ApiPlatform\Metadata\GraphQl\Operation;
-use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
-use ApiPlatform\Metadata\Util\ClassInfoTrait;
-use ApiPlatform\Metadata\Util\CloneTrait;
+use ApiPlatform\Util\ClassInfoTrait;
+use ApiPlatform\Util\CloneTrait;
 use GraphQL\Type\Definition\ResolveInfo;
 
 /**
  * Creates a function resolving a GraphQL subscription of an item.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated
  */
 final class ItemSubscriptionResolverFactory implements ResolverFactoryInterface
 {
     use ClassInfoTrait;
     use CloneTrait;
 
-    public function __construct(private readonly ReadStageInterface $readStage, private readonly SecurityStageInterface $securityStage, private readonly SerializeStageInterface $serializeStage, private readonly SubscriptionManagerInterface $subscriptionManager, private readonly ?MercureSubscriptionIriGeneratorInterface $mercureSubscriptionIriGenerator)
+    private $readStage;
+    private $securityStage;
+    private $serializeStage;
+    private $subscriptionManager;
+    private $mercureSubscriptionIriGenerator;
+
+    public function __construct(ReadStageInterface $readStage, SecurityStageInterface $securityStage, SerializeStageInterface $serializeStage, SubscriptionManagerInterface $subscriptionManager, ?MercureSubscriptionIriGeneratorInterface $mercureSubscriptionIriGenerator)
     {
+        $this->readStage = $readStage;
+        $this->securityStage = $securityStage;
+        $this->serializeStage = $serializeStage;
+        $this->subscriptionManager = $subscriptionManager;
+        $this->mercureSubscriptionIriGenerator = $mercureSubscriptionIriGenerator;
     }
 
-    public function __invoke(?string $resourceClass = null, ?string $rootClass = null, ?Operation $operation = null, ?PropertyMetadataFactoryInterface $propertyMetadataFactory = null): callable
+    public function __invoke(?string $resourceClass = null, ?string $rootClass = null, ?Operation $operation = null): callable
     {
-        return function (?array $source, array $args, $context, ResolveInfo $info) use ($resourceClass, $rootClass, $operation): ?array {
+        return function (?array $source, array $args, $context, ResolveInfo $info) use ($resourceClass, $rootClass, $operation) {
             if (null === $resourceClass || null === $operation) {
                 return null;
             }

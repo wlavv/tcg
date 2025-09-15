@@ -39,14 +39,23 @@ class MermaidDumper implements DumperInterface
         self::TRANSITION_TYPE_WORKFLOW,
     ];
 
-    private string $direction;
-    private string $transitionType;
+    /**
+     * @var string
+     */
+    private $direction;
+
+    /**
+     * @var string
+     */
+    private $transitionType;
 
     /**
      * Just tracking the transition id is in some cases inaccurate to
      * get the link's number for styling purposes.
+     *
+     * @var int
      */
-    private int $linkCount = 0;
+    private $linkCount;
 
     public function __construct(string $transitionType, string $direction = self::DIRECTION_LEFT_TO_RIGHT)
     {
@@ -57,7 +66,7 @@ class MermaidDumper implements DumperInterface
         $this->transitionType = $transitionType;
     }
 
-    public function dump(Definition $definition, ?Marking $marking = null, array $options = []): string
+    public function dump(Definition $definition, Marking $marking = null, array $options = []): string
     {
         $this->linkCount = 0;
         $placeNameMap = [];
@@ -73,7 +82,7 @@ class MermaidDumper implements DumperInterface
                 $place,
                 $meta->getPlaceMetadata($place),
                 \in_array($place, $definition->getInitialPlaces()),
-                $marking?->has($place) ?? false
+                null !== $marking && $marking->has($place)
             );
 
             $output[] = $placeNode;
@@ -102,9 +111,21 @@ class MermaidDumper implements DumperInterface
                     $to = $placeNameMap[$to];
 
                     if (self::TRANSITION_TYPE_STATEMACHINE === $this->transitionType) {
-                        $transitionOutput = $this->styleStateMachineTransition($from, $to, $transitionLabel, $transitionMeta);
+                        $transitionOutput = $this->styleStatemachineTransition(
+                            $from,
+                            $to,
+                            $transitionId,
+                            $transitionLabel,
+                            $transitionMeta
+                        );
                     } else {
-                        $transitionOutput = $this->styleWorkflowTransition($from, $to, $transitionId, $transitionLabel, $transitionMeta);
+                        $transitionOutput = $this->styleWorkflowTransition(
+                            $from,
+                            $to,
+                            $transitionId,
+                            $transitionLabel,
+                            $transitionMeta
+                        );
                     }
 
                     foreach ($transitionOutput as $line) {
@@ -175,7 +196,7 @@ class MermaidDumper implements DumperInterface
      * Replace double quotes with the mermaid escape syntax and
      * ensure all other characters are properly escaped.
      */
-    private function escape(string $label): string
+    private function escape(string $label)
     {
         $label = str_replace('"', '#quot;', $label);
 
@@ -196,8 +217,13 @@ class MermaidDumper implements DumperInterface
         }
     }
 
-    private function styleStateMachineTransition(string $from, string $to, string $transitionLabel, array $transitionMeta): array
-    {
+    private function styleStatemachineTransition(
+        string $from,
+        string $to,
+        int $transitionId,
+        string $transitionLabel,
+        array $transitionMeta
+    ): array {
         $transitionOutput = [sprintf('%s-->|%s|%s', $from, str_replace("\n", ' ', $this->escape($transitionLabel)), $to)];
 
         $linkStyle = $this->styleLink($transitionMeta);
@@ -210,8 +236,13 @@ class MermaidDumper implements DumperInterface
         return $transitionOutput;
     }
 
-    private function styleWorkflowTransition(string $from, string $to, int $transitionId, string $transitionLabel, array $transitionMeta): array
-    {
+    private function styleWorkflowTransition(
+        string $from,
+        string $to,
+        int $transitionId,
+        string $transitionLabel,
+        array $transitionMeta
+    ) {
         $transitionOutput = [];
 
         $transitionLabel = $this->escape($transitionLabel);

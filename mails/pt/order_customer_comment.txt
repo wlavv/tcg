@@ -7,6 +7,7 @@ Olá,
 Mensagem do cliente
 
 Recebeu uma nova mensagem sobre a encomenda com a referência {order_name}.
+
 Cliente: {firstname} {lastname} ({email})
 
 Mensagem do cliente:
@@ -14,4 +15,5 @@ Mensagem do cliente:
 {message}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

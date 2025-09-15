@@ -32,7 +32,7 @@ export default function (search: typeof Jets): void {
       .find('*[name=default]')
       .val();
 
-    $(button).on('click', () => {
+    $(button).click(() => {
       $editTranslationForm
         .find('*[name=translation_value]')
         .val(<string>defaultTranslationValue);
@@ -41,7 +41,7 @@ export default function (search: typeof Jets): void {
   });
 
   const showFlashMessageOnEdit = (form: HTMLElement) => {
-    $(form).on('submit', (event) => {
+    $(form).submit((event) => {
       event.preventDefault();
 
       const $editTranslationForm = $(event.target);

@@ -22,7 +22,7 @@ declare(strict_types=1);
 namespace PrestaShop\Module\Mbo\Addons\User;
 
 use PrestaShop\Module\Mbo\Accounts\Provider\AccountsDataProvider;
-use Symfony\Component\HttpFoundation\RequestStack;
+use Symfony\Component\HttpFoundation\Session\SessionInterface;
 
 /**
  * This class will read user information stored in cookies
@@ -30,20 +30,20 @@ use Symfony\Component\HttpFoundation\RequestStack;
 class AddonsUser implements UserInterface
 {
     /**
+     * @var SessionInterface
+     */
+    private $session;
+
+    /**
      * @var AccountsDataProvider
      */
     private $accountsDataProvider;
 
-    /**
-     * @var RequestStack
-     */
-    private $requestStack;
-
     public function __construct(
-        RequestStack $requestStack,
-        AccountsDataProvider $accountsDataProvider,
+        SessionInterface $session,
+        AccountsDataProvider $accountsDataProvider
     ) {
-        $this->requestStack = $requestStack;
+        $this->session = $session;
         $this->accountsDataProvider = $accountsDataProvider;
     }
 
@@ -116,7 +116,7 @@ class AddonsUser implements UserInterface
      */
     private function getAccountsTokenFromSession()
     {
-        return $this->requestStack->getSession()->get('accounts_token');
+        return $this->session->get('accounts_token');
     }
 
     /**

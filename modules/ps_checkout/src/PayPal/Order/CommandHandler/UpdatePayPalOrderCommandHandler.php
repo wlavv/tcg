@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,25 +20,58 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order\CommandHandler;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Builder\Payload\OrderPayloadBuilder;
 use PrestaShop\Module\PrestashopCheckout\Cart\Exception\CartException;
+use PrestaShop\Module\PrestashopCheckout\Event\EventDispatcherInterface;
 use PrestaShop\Module\PrestashopCheckout\Exception\PayPalException;
 use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 use PrestaShop\Module\PrestashopCheckout\Http\MaaslandHttpClient;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Command\UpdatePayPalOrderCommand;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Event\PayPalOrderUpdatedEvent;
-use PrestaShop\Module\PrestashopCheckout\PayPal\Order\EventSubscriber\PayPalOrderEventSubscriber;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Exception\PayPalOrderException;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PayPalOrderProvider;
 use PrestaShop\Module\PrestashopCheckout\Presenter\Cart\CartPresenter;
+use PrestaShop\Module\PrestashopCheckout\ShopContext;
 
 class UpdatePayPalOrderCommandHandler
 {
+    /**
+     * @var EventDispatcherInterface
+     */
+    private $eventDispatcher;
+
+    /**
+     * @var MaaslandHttpClient
+     */
+    private $httpClient;
+
+    /**
+     * @var ShopContext
+     */
+    private $shopContext;
+
+    /**
+     * @var PayPalOrderProvider
+     */
+    private $paypalOrderProvider;
+
+    /**
+     * @param MaaslandHttpClient $httpClient
+     * @param EventDispatcherInterface $eventDispatcher
+     * @param ShopContext $shopContext
+     * @param PayPalOrderProvider $paypalOrderProvider
+     */
     public function __construct(
-        private MaaslandHttpClient $httpClient,
-        private PayPalOrderProvider $paypalOrderProvider,
-        private PayPalOrderEventSubscriber $payPalOrderEventSubscriber,
+        MaaslandHttpClient $httpClient,
+        EventDispatcherInterface $eventDispatcher,
+        ShopContext $shopContext,
+        PayPalOrderProvider $paypalOrderProvider
     ) {
+        $this->httpClient = $httpClient;
+        $this->eventDispatcher = $eventDispatcher;
+        $this->shopContext = $shopContext;
+        $this->paypalOrderProvider = $paypalOrderProvider;
     }
 
     /**
@@ -47,13 +79,13 @@ class UpdatePayPalOrderCommandHandler
      *
      * @return void
      *
-     * @throws CartException|PayPalException|PayPalOrderException|PsCheckoutException|\Exception
+     * @throws CartException|PayPalException|PayPalOrderException|PsCheckoutException|Exception
      */
-    public function __invoke(UpdatePayPalOrderCommand $command)
+    public function handle(UpdatePayPalOrderCommand $command)
     {
         try {
             $paypalOrder = $this->paypalOrderProvider->getById($command->getPayPalOrderId()->getValue());
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             return;
         }
 
@@ -62,13 +94,19 @@ class UpdatePayPalOrderCommandHandler
         }
 
         $cartPresenter = (new CartPresenter())->present();
-        $builder = new OrderPayloadBuilder($cartPresenter);
+        $builder = new OrderPayloadBuilder($cartPresenter, true);
         $builder->setIsUpdate(true);
         $builder->setPaypalOrderId($command->getPayPalOrderId()->getValue());
         $builder->setIsCard($command->getFundingSource() === 'card' && $command->isHostedFields());
         $builder->setExpressCheckout($command->isExpressCheckout());
 
-        $builder->buildFullPayload();
+        if ($this->shopContext->isShop17()) {
+            // Build full payload in 1.7
+            $builder->buildFullPayload();
+        } else {
+            // if on 1.6 always build minimal payload
+            $builder->buildMinimalPayload();
+        }
 
         $payload = $builder->presentPayload()->getArray();
         $needToUpdate = false;
@@ -108,17 +146,14 @@ class UpdatePayPalOrderCommandHandler
             throw new PayPalOrderException('Failed to update PayPal Order', PayPalOrderException::PAYPAL_ORDER_UPDATE_FAILED);
         }
 
-        $event = new PayPalOrderUpdatedEvent(
+        $this->eventDispatcher->dispatch(new PayPalOrderUpdatedEvent(
             $command->getPayPalOrderId()->getValue(),
             $updatedPayPalOrder,
             $command->getCartId()->getValue(),
             $command->isHostedFields(),
             $command->isExpressCheckout(),
             $command->getFundingSource()
-        );
-
-        $this->payPalOrderEventSubscriber->updatePayPalOrder($event);
-        $this->payPalOrderEventSubscriber->clearCache($event);
+        ));
     }
 
     /**

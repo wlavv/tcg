@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -78,10 +77,16 @@ class LoggerConfiguration
     const LEVEL_EMERGENCY = 600;
 
     /**
+     * @var PrestaShopConfiguration
+     */
+    private $configuration;
+
+    /**
      * @param PrestaShopConfiguration $configuration
      */
-    public function __construct(private PrestaShopConfiguration $configuration)
+    public function __construct(PrestaShopConfiguration $configuration)
     {
+        $this->configuration = $configuration;
     }
 
     /**

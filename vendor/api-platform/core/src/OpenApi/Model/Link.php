@@ -17,8 +17,19 @@ final class Link
 {
     use ExtensionTrait;
 
-    public function __construct(private string $operationId, private ?\ArrayObject $parameters = null, private $requestBody = null, private string $description = '', private ?Server $server = null)
+    private $operationId;
+    private $parameters;
+    private $requestBody;
+    private $description;
+    private $server;
+
+    public function __construct(string $operationId, \ArrayObject $parameters = null, $requestBody = null, string $description = '', Server $server = null)
     {
+        $this->operationId = $operationId;
+        $this->parameters = $parameters;
+        $this->requestBody = $requestBody;
+        $this->description = $description;
+        $this->server = $server;
     }
 
     public function getOperationId(): string
@@ -86,3 +97,5 @@ final class Link
         return $clone;
     }
 }
+
+class_alias(Link::class, \ApiPlatform\Core\OpenApi\Model\Link::class);

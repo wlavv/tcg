@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\Bundle\Test;
 
+use ApiPlatform\Util\ClientTrait;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Component\BrowserKit\CookieJar;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -49,17 +50,23 @@ final class Client implements HttpClientInterface
         'extra' => [],
     ];
 
-    private array $defaultOptions = self::API_OPTIONS_DEFAULTS;
+    private $kernelBrowser;
 
-    private ?Response $response = null;
+    private $defaultOptions = self::API_OPTIONS_DEFAULTS;
+
+    /**
+     * @var Response
+     */
+    private $response;
 
     /**
      * @param array $defaultOptions Default options for the requests
      *
      * @see HttpClientInterface::OPTIONS_DEFAULTS for available options
      */
-    public function __construct(private readonly KernelBrowser $kernelBrowser, array $defaultOptions = [])
+    public function __construct(KernelBrowser $kernelBrowser, array $defaultOptions = [])
     {
+        $this->kernelBrowser = $kernelBrowser;
         $kernelBrowser->followRedirects(false);
         if ($defaultOptions) {
             $this->setDefaultOptions($defaultOptions);
@@ -89,13 +96,13 @@ final class Client implements HttpClientInterface
         // Convert headers to a $_SERVER-like array
         foreach (self::extractHeaders($options) as $key => $value) {
             $normalizedHeaderName = strtoupper(str_replace('-', '_', $key));
-            $header = \in_array($normalizedHeaderName, ['CONTENT_TYPE', 'REMOTE_ADDR'], true) ? $normalizedHeaderName : \sprintf('HTTP_%s', $normalizedHeaderName);
+            $header = \in_array($normalizedHeaderName, ['CONTENT_TYPE', 'REMOTE_ADDR'], true) ? $normalizedHeaderName : sprintf('HTTP_%s', $normalizedHeaderName);
             // BrowserKit doesn't support setting several headers with the same name
             $server[$header] = $value[0] ?? '';
         }
 
         if ($basic) {
-            $credentials = \is_array($basic) ? $basic : explode(':', (string) $basic, 2);
+            $credentials = \is_array($basic) ? $basic : explode(':', $basic, 2);
             $server['PHP_AUTH_USER'] = $credentials[0];
             $server['PHP_AUTH_PW'] = $credentials[1] ?? '';
         }
@@ -120,7 +127,7 @@ final class Client implements HttpClientInterface
     /**
      * {@inheritdoc}
      */
-    public function stream(ResponseInterface|iterable $responses, ?float $timeout = null): ResponseStreamInterface
+    public function stream($responses, float $timeout = null): ResponseStreamInterface
     {
         throw new \LogicException('Not implemented yet');
     }
@@ -178,7 +185,7 @@ final class Client implements HttpClientInterface
      *
      * @return Profile|false A Profile instance
      */
-    public function getProfile(): Profile|false
+    public function getProfile()
     {
         return $this->kernelBrowser->getProfile();
     }
@@ -228,7 +235,7 @@ final class Client implements HttpClientInterface
         /** @var string $key */
         foreach ($options['normalized_headers'] as $key => $values) {
             foreach ($values as $value) {
-                [, $value] = explode(': ', (string) $value, 2);
+                [, $value] = explode(': ', $value, 2);
                 $headers[$key][] = $value;
             }
         }
@@ -238,8 +245,14 @@ final class Client implements HttpClientInterface
 
     public function loginUser(UserInterface $user, string $firewallContext = 'main'): self
     {
+        if (!method_exists($this->kernelBrowser, 'loginUser')) {
+            throw new \LogicException(sprintf('"%s" requires symfony/framework-bundle 5.1+ to be installed.', __METHOD__));
+        }
+
         $this->kernelBrowser->loginUser($user, $firewallContext);
 
         return $this;
     }
 }
+
+class_alias(Client::class, \ApiPlatform\Core\Bridge\Symfony\Bundle\Test\Client::class);

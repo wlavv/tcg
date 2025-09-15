@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -39,10 +38,16 @@ class PayPalPayLaterConfiguration
     const PS_CHECKOUT_PAY_LATER_CART_PAGE_BUTTON = 'PS_CHECKOUT_PAY_IN_4X_CART_PAGE_BUTTON';
 
     /**
+     * @var PrestaShopConfiguration
+     */
+    private $configuration;
+
+    /**
      * @param PrestaShopConfiguration $configuration
      */
-    public function __construct(private PrestaShopConfiguration $configuration)
+    public function __construct(PrestaShopConfiguration $configuration)
     {
+        $this->configuration = $configuration;
     }
 
     public function isOrderPageMessageActive()

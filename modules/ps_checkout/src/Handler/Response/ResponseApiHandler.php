@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -52,7 +51,7 @@ class ResponseApiHandler
     /**
      * Check if the response is successful or not (response code 200 to 299)
      *
-     * @param array|null $responseContents
+     * @param array $responseContents
      * @param int $httpStatusCode
      *
      * @return bool

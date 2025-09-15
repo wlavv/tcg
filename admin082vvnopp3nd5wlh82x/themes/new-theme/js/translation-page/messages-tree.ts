@@ -81,7 +81,7 @@ export default function (): void {
       domainActions,
     );
 
-    $(domainToggler).on('click', (event) => {
+    $(domainToggler).click((event) => {
       let domainTitle;
 
       if ($(event.target).hasClass('domain-first-part')) {
@@ -127,7 +127,7 @@ export default function (): void {
     }
   }($('#jetsContent form').length, allDomainsMissingTranslations));
 
-  $('.domain-actions').on('click', (event) => {
+  $('.domain-actions').click((event) => {
     let domainActions = $(event.target);
 
     if (!$(event.target).hasClass('domain-actions')) {
@@ -138,7 +138,7 @@ export default function (): void {
     domainFirstPart.click();
   });
 
-  $('.btn-expand').on('click', () => {
+  $('.btn-expand').click(() => {
     $('.domain-first-part').each((index, domainToggler) => {
       const domainTitle = $(domainToggler);
       const isDomainExpanded = domainTitle.find('i').hasClass('expanded');
@@ -149,7 +149,7 @@ export default function (): void {
     });
   });
 
-  $('.btn-reduce').on('click', () => {
+  $('.btn-reduce').click(() => {
     $('.domain-first-part').each((index, domainToggler) => {
       const domainTitle = $(domainToggler);
       const isDomainExpanded = domainTitle.find('i').hasClass('expanded');

@@ -23,8 +23,6 @@
  * @copyright Since 2007 PrestaShop SA and Contributors
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
-use PrestaShopBundle\Security\Admin\LegacyAdminTokenValidator;
-
 class CmsControllerCore extends FrontController
 {
     public const CMS_CASE_PAGE = 1;
@@ -35,19 +33,23 @@ class CmsControllerCore extends FrontController
     public $assignCase;
 
     /**
+     * @deprecated Since 8.1, it will become protected in next major version. Use getCms() method instead.
+     *
      * @var CMS|null
      */
-    protected $cms;
+    public $cms;
 
     /**
+     * @deprecated Since 8.1, it will become protected in next major version. Use getCmsCategory() method instead.
+     *
      * @var CMSCategory|null
      */
-    protected $cms_category;
+    public $cms_category;
 
     /** @var bool */
     public $ssl = false;
 
-    public function canonicalRedirection(string $canonicalURL = ''): void
+    public function canonicalRedirection($canonicalURL = '')
     {
         if (Validate::isLoadedObject($this->cms) && ($canonicalURL = $this->context->link->getCMSLink($this->cms, $this->cms->link_rewrite))) {
             parent::canonicalRedirection($canonicalURL);
@@ -61,7 +63,7 @@ class CmsControllerCore extends FrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         if ($id_cms = (int) Tools::getValue('id_cms')) {
             $this->cms = new CMS($id_cms, $this->context->language->id, $this->context->shop->id);
@@ -79,16 +81,10 @@ class CmsControllerCore extends FrontController
         $this->canonicalRedirection();
 
         if (Validate::isLoadedObject($this->cms)) {
-            if (!$this->cms->isAssociatedToShop()) {
+            $adtoken = Tools::getAdminToken('AdminCmsContent' . (int) Tab::getIdFromClassName('AdminCmsContent') . (int) Tools::getValue('id_employee'));
+            if (!$this->cms->isAssociatedToShop() || !$this->cms->active && Tools::getValue('adtoken') != $adtoken) {
                 $this->redirect_after = '404';
                 $this->redirect();
-            } elseif (!$this->cms->active) {
-                $adminTokenValidator = $this->getContainer()->get(LegacyAdminTokenValidator::class);
-                $isAdminTokenValid = $adminTokenValidator->isTokenValid((int) Tools::getValue('id_employee'), Tools::getValue('adtoken'));
-                if (!$isAdminTokenValid) {
-                    $this->redirect_after = '404';
-                    $this->redirect();
-                }
             } else {
                 $this->assignCase = self::CMS_CASE_PAGE;
             }
@@ -105,7 +101,7 @@ class CmsControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         if ($this->assignCase == self::CMS_CASE_PAGE) {
             $cmsVar = $this->objectPresenter->present($this->cms);
@@ -168,12 +164,12 @@ class CmsControllerCore extends FrontController
      * Return an array of IDs of CMS pages, which shouldn't be forwared to their canonical URLs in SSL environment.
      * Required for pages which are shown in iframes.
      */
-    protected function getSSLCMSPageIds(): array
+    protected function getSSLCMSPageIds()
     {
         return [(int) Configuration::get('PS_CONDITIONS_CMS_ID'), (int) Configuration::get('LEGAL_CMS_ID_REVOCATION')];
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 
@@ -205,13 +201,7 @@ class CmsControllerCore extends FrontController
         return $breadcrumb;
     }
 
-    /**
-     * Initializes a set of commonly used variables related to the current page, available for use
-     * in the template. @see FrontController::assignGeneralPurposeVariables for more information.
-     *
-     * @return array
-     */
-    public function getTemplateVarPage(): array
+    public function getTemplateVarPage()
     {
         $page = parent::getTemplateVarPage();
 
@@ -227,7 +217,7 @@ class CmsControllerCore extends FrontController
         return $page;
     }
 
-    public function getTemplateVarCategoryCms(): array
+    public function getTemplateVarCategoryCms()
     {
         $categoryCms = [];
 
@@ -251,7 +241,7 @@ class CmsControllerCore extends FrontController
     /**
      * @return CMS|null
      */
-    public function getCms(): ?CMS
+    public function getCms()
     {
         return $this->cms;
     }
@@ -259,7 +249,7 @@ class CmsControllerCore extends FrontController
     /**
      * @return CMSCategory|null
      */
-    public function getCmsCategory(): ?CMSCategory
+    public function getCmsCategory()
     {
         return $this->cms_category;
     }
@@ -267,7 +257,7 @@ class CmsControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         if (Validate::isLoadedObject($this->cms)) {
             return $this->context->link->getCMSLink($this->cms, $this->cms->link_rewrite);

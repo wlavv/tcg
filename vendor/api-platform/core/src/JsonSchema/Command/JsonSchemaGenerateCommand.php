@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace ApiPlatform\JsonSchema\Command;
 
+use ApiPlatform\Core\Api\OperationType;
+use ApiPlatform\Core\JsonSchema\SchemaFactoryInterface as LegacySchemaFactoryInterface;
 use ApiPlatform\JsonSchema\Schema;
 use ApiPlatform\JsonSchema\SchemaFactoryInterface;
 use ApiPlatform\Metadata\HttpOperation;
@@ -31,10 +33,15 @@ use Symfony\Component\Console\Style\SymfonyStyle;
  */
 final class JsonSchemaGenerateCommand extends Command
 {
-    private array $formats;
+    /**
+     * @var SchemaFactoryInterface|LegacySchemaFactoryInterface
+     */
+    private $schemaFactory;
+    private $formats;
 
-    public function __construct(private readonly SchemaFactoryInterface $schemaFactory, array $formats)
+    public function __construct($schemaFactory, array $formats)
     {
+        $this->schemaFactory = $schemaFactory;
         $this->formats = array_keys($formats);
 
         parent::__construct();
@@ -43,14 +50,15 @@ final class JsonSchemaGenerateCommand extends Command
     /**
      * {@inheritdoc}
      */
-    protected function configure(): void
+    protected function configure()
     {
         $this
             ->setDescription('Generates the JSON Schema for a resource operation.')
             ->addArgument('resource', InputArgument::REQUIRED, 'The Fully Qualified Class Name (FQCN) of the resource')
-            ->addOption('operation', null, InputOption::VALUE_REQUIRED, 'The operation name')
+            ->addOption('itemOperation', null, InputOption::VALUE_REQUIRED, 'The item operation')
+            ->addOption('collectionOperation', null, InputOption::VALUE_REQUIRED, 'The collection operation')
             ->addOption('format', null, InputOption::VALUE_REQUIRED, 'The response format', (string) $this->formats[0])
-            ->addOption('type', null, InputOption::VALUE_REQUIRED, \sprintf('The type of schema to generate (%s or %s)', Schema::TYPE_INPUT, Schema::TYPE_OUTPUT), Schema::TYPE_INPUT);
+            ->addOption('type', null, InputOption::VALUE_REQUIRED, sprintf('The type of schema to generate (%s or %s)', Schema::TYPE_INPUT, Schema::TYPE_OUTPUT), Schema::TYPE_INPUT);
     }
 
     /**
@@ -62,26 +70,49 @@ final class JsonSchemaGenerateCommand extends Command
 
         /** @var string $resource */
         $resource = $input->getArgument('resource');
-        $operation = $input->getOption('operation');
+        /** @var ?string $itemOperation */
+        $itemOperation = $input->getOption('itemOperation');
+        /** @var ?string $collectionOperation */
+        $collectionOperation = $input->getOption('collectionOperation');
         /** @var string $format */
         $format = $input->getOption('format');
         /** @var string $type */
         $type = $input->getOption('type');
 
         if (!\in_array($type, [Schema::TYPE_INPUT, Schema::TYPE_OUTPUT], true)) {
-            $io->error(\sprintf('You can only use "%s" or "%s" for the "type" option', Schema::TYPE_INPUT, Schema::TYPE_OUTPUT));
+            $io->error(sprintf('You can only use "%s" or "%s" for the "type" option', Schema::TYPE_INPUT, Schema::TYPE_OUTPUT));
 
             return 1;
         }
 
         if (!\in_array($format, $this->formats, true)) {
-            throw new InvalidOptionException(\sprintf('The response format "%s" is not supported. Supported formats are : %s.', $format, implode(', ', $this->formats)));
+            throw new InvalidOptionException(sprintf('The response format "%s" is not supported. Supported formats are : %s.', $format, implode(', ', $this->formats)));
         }
 
-        $schema = $this->schemaFactory->buildSchema($resource, $format, $type, $operation ? (new class extends HttpOperation {})->withName($operation) : null);
+        /** @var ?string $operationType */
+        $operationType = null;
+        /** @var ?string $operationName */
+        $operationName = null;
 
-        if (!$schema->isDefined()) {
-            $io->error(\sprintf('There is no %s defined for the operation "%s" of the resource "%s".', $type, $operation, $resource));
+        if ($itemOperation && $collectionOperation) {
+            $io->error('You can only use one of "--itemOperation" and "--collectionOperation" options at the same time.');
+
+            return 1;
+        }
+
+        if (null !== $itemOperation || null !== $collectionOperation) {
+            $operationType = $itemOperation ? OperationType::ITEM : OperationType::COLLECTION;
+            $operationName = $itemOperation ?? $collectionOperation;
+        }
+
+        if ($this->schemaFactory instanceof LegacySchemaFactoryInterface) {
+            $schema = $this->schemaFactory->buildSchema($resource, $format, $type, $operationType, $operationName);
+        } else {
+            $schema = $this->schemaFactory->buildSchema($resource, $format, $type, $operationName ? (new class() extends HttpOperation {})->withName($operationName) : null);
+        }
+
+        if (null !== $operationType && null !== $operationName && !$schema->isDefined()) {
+            $io->error(sprintf('There is no %s defined for the operation "%s" of the resource "%s".', $type, $operationName, $resource));
 
             return 1;
         }
@@ -96,3 +127,5 @@ final class JsonSchemaGenerateCommand extends Command
         return 'api:json-schema:generate';
     }
 }
+
+class_alias(JsonSchemaGenerateCommand::class, \ApiPlatform\Core\JsonSchema\Command\JsonSchemaGenerateCommand::class);

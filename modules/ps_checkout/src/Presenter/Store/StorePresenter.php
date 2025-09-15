@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -31,14 +30,21 @@ class StorePresenter implements PresenterInterface
     /**
      * @var PresenterInterface[]
      */
-    private array $presenters;
+    private $presenters;
 
-    private array $store = [];
+    /**
+     * @var array
+     */
+    private $store;
 
-    public function __construct(array $presenters, array $store = [])
+    /**
+     * @param PresenterInterface[] $presenters
+     * @param array $store
+     */
+    public function __construct($presenters, array $store = [])
     {
         // Allow to set a custom store for tests purpose
-        if (!empty($store)) {
+        if (null !== $store) {
             $this->store = $store;
         }
 
@@ -52,12 +58,14 @@ class StorePresenter implements PresenterInterface
      */
     public function present()
     {
-        if (!empty($this->store)) {
+        if ([] !== $this->store) {
             return $this->store;
         }
 
         foreach ($this->presenters as $presenter) {
-            $this->store = array_merge($this->store, $presenter->present());
+            if ($presenter instanceof PresenterInterface) {
+                $this->store = array_merge($this->store, $presenter->present());
+            }
         }
 
         return $this->store;

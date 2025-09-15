@@ -22,17 +22,17 @@ use Symfony\Component\Workflow\Metadata\MetadataStoreInterface;
  */
 final class Definition
 {
-    private array $places = [];
-    private array $transitions = [];
-    private array $initialPlaces = [];
-    private MetadataStoreInterface $metadataStore;
+    private $places = [];
+    private $transitions = [];
+    private $initialPlaces = [];
+    private $metadataStore;
 
     /**
      * @param string[]             $places
      * @param Transition[]         $transitions
      * @param string|string[]|null $initialPlaces
      */
-    public function __construct(array $places, array $transitions, string|array|null $initialPlaces = null, ?MetadataStoreInterface $metadataStore = null)
+    public function __construct(array $places, array $transitions, $initialPlaces = null, MetadataStoreInterface $metadataStore = null)
     {
         foreach ($places as $place) {
             $this->addPlace($place);
@@ -76,11 +76,8 @@ final class Definition
         return $this->metadataStore;
     }
 
-    private function setInitialPlaces(string|array|null $places = null): void
+    private function setInitialPlaces($places = null)
     {
-        if (1 > \func_num_args()) {
-            trigger_deprecation('symfony/workflow', '6.2', 'Calling "%s()" without any arguments is deprecated, pass null explicitly instead.', __METHOD__);
-        }
         if (!$places) {
             return;
         }
@@ -96,7 +93,7 @@ final class Definition
         $this->initialPlaces = $places;
     }
 
-    private function addPlace(string $place): void
+    private function addPlace(string $place)
     {
         if (!\count($this->places)) {
             $this->initialPlaces = [$place];
@@ -105,7 +102,7 @@ final class Definition
         $this->places[$place] = $place;
     }
 
-    private function addTransition(Transition $transition): void
+    private function addTransition(Transition $transition)
     {
         $name = $transition->getName();
 

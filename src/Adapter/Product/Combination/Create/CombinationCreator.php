@@ -42,7 +42,6 @@ use PrestaShop\PrestaShop\Core\Domain\Product\Stock\ValueObject\OutOfStockType;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductId;
 use PrestaShop\PrestaShop\Core\Domain\Product\ValueObject\ProductType;
 use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\ShopAssociationNotFound;
-use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopCollection;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopId;
 use PrestaShop\PrestaShop\Core\Exception\CoreException;
@@ -167,7 +166,7 @@ class CombinationCreator
         $productStockAvailable = $this->stockAvailableRepository->getForProduct($productId, new ShopId($product->getShopId()));
         $outOfStockType = new OutOfStockType((int) $productStockAvailable->out_of_stock);
 
-        if ($shopConstraint->forAllShops() || ($shopConstraint instanceof ShopCollection && $shopConstraint->hasShopIds())) {
+        if ($shopConstraint->forAllShops()) {
             foreach ($shopIdsByConstraint as $shopId) {
                 $this->combinationRepository->updateCombinationOutOfStockType($productId, $outOfStockType, ShopConstraint::shop($shopId->getValue()));
             }

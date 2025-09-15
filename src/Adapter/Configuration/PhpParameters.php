@@ -90,7 +90,7 @@ class PhpParameters
             if (function_exists('opcache_invalidate')) {
                 @opcache_invalidate($this->filename);
             }
-        } catch (IOException) {
+        } catch (IOException $e) {
             return false;
         }
 

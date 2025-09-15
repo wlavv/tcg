@@ -17,8 +17,15 @@ final class License
 {
     use ExtensionTrait;
 
-    public function __construct(private string $name, private ?string $url = null, private ?string $identifier = null)
+    private $name;
+    private $url;
+    private $identifier;
+
+    public function __construct(string $name, string $url = null, string $identifier = null)
     {
+        $this->name = $name;
+        $this->url = $url;
+        $this->identifier = $identifier;
     }
 
     public function getName(): string
@@ -60,3 +67,5 @@ final class License
         return $clone;
     }
 }
+
+class_alias(License::class, \ApiPlatform\Core\OpenApi\Model\License::class);

@@ -69,7 +69,6 @@ class SystemInformation
             'server' => $this->hostingInformation->getServerInformation(),
             'instaWebInstalled' => $this->hostingInformation->isApacheInstawebModule(),
             'uname' => $this->hostingInformation->getUname(),
-            'hostname' => $this->hostingInformation->getHostname(),
             'database' => $this->hostingInformation->getDatabaseInformation(),
             'overrides' => $this->shopInformation->getOverridesList(),
             'shop' => $this->shopInformation->getShopInformation(),

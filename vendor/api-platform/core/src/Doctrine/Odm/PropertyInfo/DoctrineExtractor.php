@@ -13,7 +13,6 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Odm\PropertyInfo;
 
-use ApiPlatform\Metadata\Util\PropertyInfoToTypeInfoHelper;
 use Doctrine\Common\Collections\Collection;
 use Doctrine\ODM\MongoDB\Mapping\ClassMetadata as MongoDbClassMetadata;
 use Doctrine\ODM\MongoDB\Types\Type as MongoDbType;
@@ -23,8 +22,7 @@ use Doctrine\Persistence\ObjectManager;
 use Symfony\Component\PropertyInfo\PropertyAccessExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyListExtractorInterface;
 use Symfony\Component\PropertyInfo\PropertyTypeExtractorInterface;
-use Symfony\Component\PropertyInfo\Type as LegacyType;
-use Symfony\Component\TypeInfo\Type;
+use Symfony\Component\PropertyInfo\Type;
 
 /**
  * Extracts data using Doctrine MongoDB ODM metadata.
@@ -34,8 +32,11 @@ use Symfony\Component\TypeInfo\Type;
  */
 final class DoctrineExtractor implements PropertyListExtractorInterface, PropertyTypeExtractorInterface, PropertyAccessExtractorInterface
 {
-    public function __construct(private readonly ObjectManager $objectManager)
+    private $objectManager;
+
+    public function __construct(ObjectManager $objectManager)
     {
+        $this->objectManager = $objectManager;
     }
 
     /**
@@ -55,9 +56,9 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
     /**
      * {@inheritdoc}
      *
-     * @return LegacyType[]|null
+     * @return Type[]|null
      */
-    public function getTypes(string $class, string $property, array $context = []): ?array
+    public function getTypes($class, $property, array $context = []): ?array
     {
         if (null === $metadata = $this->getMetadata($class)) {
             return null;
@@ -74,19 +75,19 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
             if ($metadata->isSingleValuedAssociation($property)) {
                 $nullable = $metadata instanceof MongoDbClassMetadata && $metadata->isNullable($property);
 
-                return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, $class)];
+                return [new Type(Type::BUILTIN_TYPE_OBJECT, $nullable, $class)];
             }
 
-            $collectionKeyType = LegacyType::BUILTIN_TYPE_INT;
+            $collectionKeyType = Type::BUILTIN_TYPE_INT;
 
             return [
-                new LegacyType(
-                    LegacyType::BUILTIN_TYPE_OBJECT,
+                new Type(
+                    Type::BUILTIN_TYPE_OBJECT,
                     false,
                     Collection::class,
                     true,
-                    new LegacyType($collectionKeyType),
-                    new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, false, $class)
+                    new Type($collectionKeyType),
+                    new Type(Type::BUILTIN_TYPE_OBJECT, false, $class)
                 ),
             ];
         }
@@ -94,30 +95,21 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
         if ($metadata->hasField($property)) {
             $typeOfField = $metadata->getTypeOfField($property);
             $nullable = $metadata instanceof MongoDbClassMetadata && $metadata->isNullable($property);
-            $enumType = null;
-            if (null !== $enumClass = $metadata instanceof MongoDbClassMetadata ? $metadata->getFieldMapping($property)['enumType'] ?? null : null) {
-                $enumType = new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, $enumClass);
-            }
 
             switch ($typeOfField) {
                 case MongoDbType::DATE:
-                    return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, \DateTime::class)];
+                    return [new Type(Type::BUILTIN_TYPE_OBJECT, $nullable, 'DateTime')];
                 case MongoDbType::DATE_IMMUTABLE:
-                    return [new LegacyType(LegacyType::BUILTIN_TYPE_OBJECT, $nullable, \DateTimeImmutable::class)];
+                    return [new Type(Type::BUILTIN_TYPE_OBJECT, $nullable, 'DateTimeImmutable')];
                 case MongoDbType::HASH:
-                    return [new LegacyType(LegacyType::BUILTIN_TYPE_ARRAY, $nullable, null, true)];
+                    return [new Type(Type::BUILTIN_TYPE_ARRAY, $nullable, null, true)];
                 case MongoDbType::COLLECTION:
-                    return [new LegacyType(LegacyType::BUILTIN_TYPE_ARRAY, $nullable, null, true, new LegacyType(LegacyType::BUILTIN_TYPE_INT))];
-                case MongoDbType::INT:
-                case MongoDbType::STRING:
-                    if ($enumType) {
-                        return [$enumType];
-                    }
+                    return [new Type(Type::BUILTIN_TYPE_ARRAY, $nullable, null, true, new Type(Type::BUILTIN_TYPE_INT))];
+                default:
+                    $builtinType = $this->getPhpType($typeOfField);
+
+                    return $builtinType ? [new Type($builtinType, $nullable)] : null;
             }
-
-            $builtinType = $this->getPhpType($typeOfField);
-
-            return $builtinType ? [new LegacyType($builtinType, $nullable)] : null;
         }
 
         return null;
@@ -138,7 +130,7 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
     {
         if (
             null === ($metadata = $this->getMetadata($class))
-            || ($metadata instanceof MongoDbClassMetadata && MongoDbClassMetadata::GENERATOR_TYPE_NONE === $metadata->generatorType)
+            || $metadata instanceof MongoDbClassMetadata && MongoDbClassMetadata::GENERATOR_TYPE_NONE === $metadata->generatorType
             || !\in_array($property, $metadata->getIdentifierFieldNames(), true)
         ) {
             return null;
@@ -151,14 +143,9 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
     {
         try {
             return $this->objectManager->getClassMetadata($class);
-        } catch (MappingException) {
+        } catch (MappingException $exception) {
             return null;
         }
-    }
-
-    public function getType(string $class, string $property, array $context = []): ?Type
-    {
-        return PropertyInfoToTypeInfoHelper::convertLegacyTypesToType($this->getTypes($class, $property, $context));
     }
 
     /**
@@ -166,12 +153,33 @@ final class DoctrineExtractor implements PropertyListExtractorInterface, Propert
      */
     private function getPhpType(string $doctrineType): ?string
     {
-        return match ($doctrineType) {
-            MongoDbType::INTEGER, MongoDbType::INT, MongoDbType::INTID, MongoDbType::KEY => LegacyType::BUILTIN_TYPE_INT,
-            MongoDbType::FLOAT => LegacyType::BUILTIN_TYPE_FLOAT,
-            MongoDbType::STRING, MongoDbType::ID, MongoDbType::OBJECTID, MongoDbType::TIMESTAMP, MongoDbType::BINDATA, MongoDbType::BINDATABYTEARRAY, MongoDbType::BINDATACUSTOM, MongoDbType::BINDATAFUNC, MongoDbType::BINDATAMD5, MongoDbType::BINDATAUUID, MongoDbType::BINDATAUUIDRFC4122 => LegacyType::BUILTIN_TYPE_STRING,
-            MongoDbType::BOOLEAN, MongoDbType::BOOL => LegacyType::BUILTIN_TYPE_BOOL,
-            default => null,
-        };
+        switch ($doctrineType) {
+            case MongoDbType::INTEGER:
+            case MongoDbType::INT:
+            case MongoDbType::INTID:
+            case MongoDbType::KEY:
+                return Type::BUILTIN_TYPE_INT;
+            case MongoDbType::FLOAT:
+                return Type::BUILTIN_TYPE_FLOAT;
+            case MongoDbType::STRING:
+            case MongoDbType::ID:
+            case MongoDbType::OBJECTID:
+            case MongoDbType::TIMESTAMP:
+            case MongoDbType::BINDATA:
+            case MongoDbType::BINDATABYTEARRAY:
+            case MongoDbType::BINDATACUSTOM:
+            case MongoDbType::BINDATAFUNC:
+            case MongoDbType::BINDATAMD5:
+            case MongoDbType::BINDATAUUID:
+            case MongoDbType::BINDATAUUIDRFC4122:
+                return Type::BUILTIN_TYPE_STRING;
+            case MongoDbType::BOOLEAN:
+            case MongoDbType::BOOL:
+                return Type::BUILTIN_TYPE_BOOL;
+        }
+
+        return null;
     }
 }
+
+class_alias(DoctrineExtractor::class, \ApiPlatform\Core\Bridge\Doctrine\MongoDbOdm\PropertyInfo\DoctrineExtractor::class);

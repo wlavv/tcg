@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,13 +25,26 @@ use PrestaShop\Module\PrestashopCheckout\Translations\Translations;
 
 class PayPalOrderTranslationProvider
 {
-    private array $translations;
+    /**
+     * @var array
+     */
+    private $translations;
 
+    /**
+     * @var FundingSourceTranslationProvider
+     */
+    private $fundingSourceTranslationProvider;
+
+    /**
+     * @param Translations $translations
+     * @param FundingSourceTranslationProvider $fundingSourceTranslationProvider
+     */
     public function __construct(
         Translations $translations,
-        private FundingSourceTranslationProvider $fundingSourceTranslationProvider,
+        FundingSourceTranslationProvider $fundingSourceTranslationProvider
     ) {
         $this->translations = current($translations->getTranslations());
+        $this->fundingSourceTranslationProvider = $fundingSourceTranslationProvider;
     }
 
     /**
@@ -42,7 +54,9 @@ class PayPalOrderTranslationProvider
      */
     public function getTransactionStatusTranslated($transactionStatus)
     {
-        return $this->translations['paypal']['capture']['status'][$transactionStatus] ?? '';
+        return isset($this->translations['paypal']['capture']['status'][$transactionStatus])
+            ? $this->translations['paypal']['capture']['status'][$transactionStatus]
+            : '';
     }
 
     /**
@@ -52,7 +66,9 @@ class PayPalOrderTranslationProvider
      */
     public function getOrderStatusTranslated($orderStatus)
     {
-        return $this->translations['paypal']['order']['status'][$orderStatus] ?? '';
+        return isset($this->translations['paypal']['order']['status'][$orderStatus])
+            ? $this->translations['paypal']['order']['status'][$orderStatus]
+            : '';
     }
 
     /**

@@ -21,12 +21,17 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Module\SourceHandler;
 
+use GuzzleHttp\Exception\GuzzleException;
 use PrestaShop\Module\Mbo\Module\SourceRetriever\AddonsUrlSourceRetriever;
 use PrestaShop\PrestaShop\Core\Module\SourceHandler\SourceHandlerInterface;
 use PrestaShop\PrestaShop\Core\Module\SourceHandler\ZipSourceHandler;
 
 class AddonsUrlSourceHandler implements SourceHandlerInterface
 {
+    private const URL_VALIDATION_REGEX = "/^https?:\\/\\/(?:www\\.)?[-a-zA-Z0-9@:%._\\+~#=]{0,256}api-addons\\.prestashop\\.com(?:[-a-zA-Z0-9()@:%_\\+.~#?&\\/=]*)$/";
+
+    private const ZIP_FILENAME_PATTERN = '/(\w+)\.zip\b/';
+
     /**
      * @var ZipSourceHandler
      */
@@ -39,12 +44,15 @@ class AddonsUrlSourceHandler implements SourceHandlerInterface
 
     public function __construct(
         AddonsUrlSourceRetriever $addonsUrlSourceRetriever,
-        ZipSourceHandler $zipSourceHandler,
+        ZipSourceHandler $zipSourceHandler
     ) {
         $this->zipSourceHandler = $zipSourceHandler;
         $this->addonsUrlSourceRetriever = $addonsUrlSourceRetriever;
     }
 
+    /**
+     * @throws GuzzleException
+     */
     public function canHandle($source): bool
     {
         return $this->addonsUrlSourceRetriever->assertCanBeDownloaded($source);

@@ -13,16 +13,19 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Metadata\Property\Factory;
 
+use ApiPlatform\Exception\PropertyNotFoundException;
 use ApiPlatform\Metadata\ApiProperty;
-use ApiPlatform\Metadata\Exception\PropertyNotFoundException;
 
 /**
  * Populates defaults values of the resource properties using the default PHP values of properties.
  */
 final class DefaultPropertyMetadataFactory implements PropertyMetadataFactoryInterface
 {
-    public function __construct(private readonly ?PropertyMetadataFactoryInterface $decorated = null)
+    private $decorated;
+
+    public function __construct(PropertyMetadataFactoryInterface $decorated = null)
     {
+        $this->decorated = $decorated;
     }
 
     public function create(string $resourceClass, string $property, array $options = []): ApiProperty
@@ -32,14 +35,14 @@ final class DefaultPropertyMetadataFactory implements PropertyMetadataFactoryInt
         } else {
             try {
                 $propertyMetadata = $this->decorated->create($resourceClass, $property, $options);
-            } catch (PropertyNotFoundException) {
+            } catch (PropertyNotFoundException $propertyNotFoundException) {
                 $propertyMetadata = new ApiProperty();
             }
         }
 
         try {
             $reflectionClass = new \ReflectionClass($resourceClass);
-        } catch (\ReflectionException) {
+        } catch (\ReflectionException $reflectionException) {
             return $propertyMetadata;
         }
 

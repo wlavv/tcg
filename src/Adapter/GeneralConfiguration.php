@@ -27,20 +27,31 @@
 namespace PrestaShop\PrestaShop\Adapter;
 
 use Cookie;
-use PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer;
 use PrestaShop\PrestaShop\Core\Configuration\DataConfigurationInterface;
-use PrestaShop\PrestaShop\Core\Http\CookieOptions;
 
 /**
  * Manages the configuration data about general options.
  */
 class GeneralConfiguration implements DataConfigurationInterface
 {
-    public function __construct(
-        private readonly Configuration $configuration,
-        private readonly Cookie $cookie,
-        private readonly SymfonyCacheClearer $symfonyCacheClearer,
-    ) {
+    /**
+     * @var Configuration
+     */
+    private $configuration;
+
+    /**
+     * @var Cookie
+     */
+    private $cookie;
+
+    /**
+     * @param Configuration $configuration
+     * @param Cookie $cookie
+     */
+    public function __construct(Configuration $configuration, Cookie $cookie)
+    {
+        $this->configuration = $configuration;
+        $this->cookie = $cookie;
     }
 
     /**
@@ -78,9 +89,6 @@ class GeneralConfiguration implements DataConfigurationInterface
                 // Clear checksum to force the refresh
                 $this->cookie->checksum = '';
                 $this->cookie->write();
-
-                // Since the DB value PS_COOKIE_LIFETIME_BO impacts the Symfony security configuration we need to clear the cache
-                $this->symfonyCacheClearer->clear();
             }
         }
 
@@ -93,13 +101,13 @@ class GeneralConfiguration implements DataConfigurationInterface
     public function validateConfiguration(array $configuration)
     {
         $isValid = isset(
-            $configuration['check_ip_address'],
-            $configuration['front_cookie_lifetime'],
-            $configuration['back_cookie_lifetime']
-        ) && in_array(
-            $configuration['cookie_samesite'],
-            CookieOptions::SAMESITE_AVAILABLE_VALUES
-        );
+                $configuration['check_ip_address'],
+                $configuration['front_cookie_lifetime'],
+                $configuration['back_cookie_lifetime']
+            ) && in_array(
+                $configuration['cookie_samesite'],
+                Cookie::SAMESITE_AVAILABLE_VALUES
+            );
 
         return (bool) $isValid;
     }
@@ -114,8 +122,9 @@ class GeneralConfiguration implements DataConfigurationInterface
      */
     protected function validateSameSite(string $sameSite): bool
     {
-        if ($sameSite === CookieOptions::SAMESITE_NONE) {
-            return $this->configuration->get('PS_SSL_ENABLED');
+        $forceSsl = $this->configuration->get('PS_SSL_ENABLED') && $this->configuration->get('PS_SSL_ENABLED_EVERYWHERE');
+        if ($sameSite === Cookie::SAMESITE_NONE) {
+            return $forceSsl;
         }
 
         return true;

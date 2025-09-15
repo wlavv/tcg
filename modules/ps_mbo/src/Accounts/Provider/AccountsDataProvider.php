@@ -21,6 +21,9 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Accounts\Provider;
 
+use Db;
+use Exception;
+use PrestaShop\Module\PsAccounts\Repository\UserTokenRepository;
 use PrestaShop\PrestaShop\Adapter\ServiceLocator;
 use PrestaShop\PsAccountsInstaller\Installer\Exception\ModuleNotInstalledException;
 use PrestaShop\PsAccountsInstaller\Installer\Exception\ModuleVersionException;
@@ -35,8 +38,9 @@ class AccountsDataProvider
     private $psAccountsVersion;
 
     public function __construct(
-        string $psAccountsVersion,
-    ) {
+        string $psAccountsVersion
+    )
+    {
         $this->psAccountsVersion = $psAccountsVersion;
     }
 
@@ -46,24 +50,19 @@ class AccountsDataProvider
             return '';
         }
 
-        if (!class_exists('\PrestaShop\Module\PsAccounts\Repository\UserTokenRepository')) {
-            return '';
-        }
-
-        /** @var \Module|null $psAccountsModule */
         $psAccountsModule = ServiceLocator::get('ps_accounts');
-        if (null === $psAccountsModule || !method_exists($psAccountsModule, 'getService')) {
+
+        if (null === $psAccountsModule) {
             return '';
         }
 
-        $accountsUserTokenRepository = $psAccountsModule->getService('PrestaShop\Module\PsAccounts\Repository\UserTokenRepository');
-        if (!$accountsUserTokenRepository) {
-            return '';
-        }
-
+        /**
+         * @var UserTokenRepository $accountsUserTokenRepository
+         */
+        $accountsUserTokenRepository = $psAccountsModule->getService(UserTokenRepository::class);
         try {
             $token = $accountsUserTokenRepository->getOrRefreshToken();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return '';
         }
 
@@ -78,7 +77,7 @@ class AccountsDataProvider
 
         try {
             $shopUuid = $this->getAccountsService()->getShopUuid();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $shopUuid = null;
         }
 
@@ -89,7 +88,7 @@ class AccountsDataProvider
     {
         try {
             $userUuid = $this->getAccountsService()->getUserUuid();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $userUuid = null;
         }
 
@@ -100,7 +99,7 @@ class AccountsDataProvider
     {
         try {
             $email = $this->getAccountsService()->getEmail();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             $email = null;
         }
 
@@ -111,12 +110,15 @@ class AccountsDataProvider
     {
         try {
             return $this->getAccountsService()->isAccountLinked();
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             return false;
         }
     }
 
+
     /**
+     * @param string $serviceName
+     *
      * @return mixed
      *
      * @throws ModuleNotInstalledException
@@ -126,10 +128,8 @@ class AccountsDataProvider
     {
         if ($this->isPsAccountsInstalled()) {
             if ($this->checkPsAccountsVersion()) {
-                $module = \Module::getInstanceByName(Installer::PS_ACCOUNTS_MODULE_NAME);
-                if ($module && method_exists($module, 'getService')) {
-                    return $module->getService(PsAccounts::PS_ACCOUNTS_SERVICE);
-                }
+                return \Module::getInstanceByName(Installer::PS_ACCOUNTS_MODULE_NAME)
+                    ->getService(PsAccounts::PS_ACCOUNTS_SERVICE);
             }
             throw new ModuleVersionException('Module version expected : ' . $this->psAccountsVersion);
         }
@@ -149,15 +149,11 @@ class AccountsDataProvider
 
         $sqlQuery = 'SELECT `id_module` FROM `' . _DB_PREFIX_ . 'module` WHERE `name` = "' . pSQL($moduleName) . '" AND `active` = 1';
 
-        return (int) \Db::getInstance()->getValue($sqlQuery) > 0;
+        return (int) Db::getInstance()->getValue($sqlQuery) > 0;
     }
 
     private function checkPsAccountsVersion()
     {
-        if (!class_exists('Ps_accounts')) {
-            return false;
-        }
-
         $moduleName = Installer::PS_ACCOUNTS_MODULE_NAME;
 
         $module = \Module::getInstanceByName($moduleName);

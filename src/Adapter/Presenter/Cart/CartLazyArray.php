@@ -35,7 +35,6 @@ use Hook;
 use Link;
 use PrestaShop\PrestaShop\Adapter\Image\ImageRetriever;
 use PrestaShop\PrestaShop\Adapter\Presenter\AbstractLazyArray;
-use PrestaShop\PrestaShop\Adapter\Presenter\LazyArrayAttribute;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductLazyArray;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductListingLazyArray;
 use PrestaShop\PrestaShop\Adapter\Presenter\Product\ProductListingPresenter;
@@ -44,48 +43,107 @@ use PrestaShop\PrestaShop\Adapter\Product\ProductColorsRetriever;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Tools;
 
-#[LazyArrayAttribute(isRewritable: true)]
 class CartLazyArray extends AbstractLazyArray
 {
-    private bool $shouldSeparateGifts;
+    /**
+     * @var bool
+     */
+    private $shouldSeparateGifts;
 
-    private CartPresenter $cartPresenter;
+    /**
+     * @var CartPresenter
+     */
+    private $cartPresenter;
 
-    private Cart $cart;
+    /**
+     * @var Cart
+     */
+    private $cart;
 
-    private TranslatorInterface $translator;
+    /**
+     * @var TranslatorInterface
+     */
+    private $translator;
 
-    private PriceFormatter $priceFormatter;
+    /**
+     * @var PriceFormatter
+     */
+    private $priceFormatter;
 
-    private array $products;
+    /**
+     * @var array|null
+     */
+    private $products;
 
-    private array $totals;
+    /**
+     * @var array
+     */
+    private $totals;
 
-    private array $subTotals;
+    /**
+     * @var array
+     */
+    private $subTotals;
 
-    private string $summaryString;
+    /**
+     * @var string
+     */
+    private $summaryString;
 
-    private int $productsCount;
+    /**
+     * @var int
+     */
+    private $productsCount;
 
-    private array $vouchers;
+    /**
+     * @var array
+     */
+    private $vouchers;
 
-    private float $minimalPurchase;
+    /**
+     * @var float
+     */
+    private $minimalPurchase;
 
-    private string $minimalPurchaseRequired;
+    /**
+     * @var string
+     */
+    private $minimalPurchaseRequired;
 
-    private array $labels;
+    /**
+     * @var array
+     */
+    private $labels;
 
-    private int $idAddressDelivery;
+    /**
+     * @var int
+     */
+    private $idAddressDelivery;
 
-    private int $idAddressInvoice;
+    /**
+     * @var int
+     */
+    private $idAddressInvoice;
 
-    private bool $isVirtual;
+    /**
+     * @var bool
+     */
+    private $isVirtual;
 
-    private array $discounts;
+    /**
+     * @var array
+     */
+    private $discounts;
 
-    private Link $link;
+    /**
+     * @var Link
+     */
+    private $link;
 
-    private ImageRetriever $imageRetriever;
+    /**
+     * @var ImageRetriever
+     */
+    private $imageRetriever;
 
     public function __construct(Cart $cart, CartPresenter $cartPresenter, bool $shouldSeparateGifts = false)
     {
@@ -100,39 +158,28 @@ class CartLazyArray extends AbstractLazyArray
         parent::__construct();
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getProducts(): array
     {
-        // Get raw products
         if ($this->shouldSeparateGifts) {
             $rawProducts = $this->cart->getProductsWithSeparatedGifts();
         } else {
             $rawProducts = $this->cart->getProducts(true);
         }
 
-        /*
-         * Now, we will fetch additional product data by the assembler, like we do when presenting
-         * lists of products. With one exception. Assembler overwrites the previous data of the product,
-         * in our context, we need to keep it. That's why we will manually do array_merge and keep the data
-         * from rawProducts intact.
-         *
-         * We could possibly add something like $prioritizeOriginalData to ProductAssembler.
-         */
-        $assembledProducts = $this->cartPresenter->getProductAssembler()->assembleProducts($rawProducts);
-        foreach ($rawProducts as $k => $v) {
-            $rawProducts[$k] = array_merge($assembledProducts[$k], $v);
-        }
-
-        // Present them
-        $presentedProducts = array_map([$this, 'presentProduct'], $rawProducts);
-
-        // And add customizations made
-        $this->products = $this->cartPresenter->addCustomizedData($presentedProducts, $this->cart);
+        $products = array_map([$this, 'presentProduct'], $rawProducts);
+        $this->products = $this->cartPresenter->addCustomizedData($products, $this->cart);
 
         return $this->products;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getTotals(): array
     {
         $total_excluding_tax = $this->cart->getOrderTotal(false);
@@ -164,7 +211,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->totals;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getSubtotals(): array
     {
         $subtotals = [];
@@ -209,7 +259,7 @@ class CartLazyArray extends AbstractLazyArray
             'type' => 'shipping',
             'label' => $this->translator->trans('Shipping', [], 'Shop.Theme.Checkout'),
             'amount' => $shippingCost,
-            'value' => $this->getShippingDisplayValue($shippingCost),
+            'value' => $this->getShippingDisplayValue($this->cart, $shippingCost),
         ];
         $subtotals['tax'] = null;
         if (Configuration::get('PS_TAX_DISPLAY')) {
@@ -231,7 +281,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->subTotals;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getProductsCount(): int
     {
         // If product list is already available, no need to execute a new sql query
@@ -249,7 +302,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->productsCount;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getSummaryString(): string
     {
         $productsCount = $this->getProductsCount();
@@ -261,7 +317,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->summaryString;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getLabels(): array
     {
         $this->labels = [
@@ -276,7 +335,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->labels;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getIdAddressDelivery(): ?int
     {
         $this->idAddressDelivery = $this->cart->id_address_delivery;
@@ -284,7 +346,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->idAddressDelivery;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getIdAddressInvoice(): ?int
     {
         $this->idAddressInvoice = $this->cart->id_address_invoice;
@@ -292,7 +357,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->idAddressInvoice;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getIsVirtual(): bool
     {
         $this->isVirtual = $this->cart->isVirtualCart();
@@ -300,7 +368,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->isVirtual;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getVouchers(): array
     {
         $this->vouchers = $this->getTemplateVarVouchers();
@@ -308,7 +379,10 @@ class CartLazyArray extends AbstractLazyArray
         return $this->vouchers;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true)]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     */
     public function getDiscounts(): array
     {
         $vouchers = $this->getVouchers();
@@ -337,7 +411,12 @@ class CartLazyArray extends AbstractLazyArray
         return $this->discounts;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true, indexName: 'minimalPurchase')]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     *
+     * @indexName "minimalPurchase"
+     */
     public function getMinimalPurchase(): float
     {
         $minimalPurchase = $this->priceFormatter->convertAmount((float) Configuration::get('PS_PURCHASE_MINIMUM'));
@@ -350,7 +429,11 @@ class CartLazyArray extends AbstractLazyArray
         return $this->minimalPurchase;
     }
 
-    #[LazyArrayAttribute(arrayAccess: true, indexName: 'minimalPurchaseRequired')]
+    /**
+     * @arrayAccess
+     * @isRewritable
+     * @indexName "minimalPurchaseRequired"
+     */
     public function getMinimalPurchaseRequired(): string
     {
         $minimalPurchase = $this->getMinimalPurchase();
@@ -374,11 +457,12 @@ class CartLazyArray extends AbstractLazyArray
      * If the shipping cost is 0, then we must check if this is because of a free carrier and thus display 'Free' or
      * simply because the system was unable to determine shipping cost at this point and thus send an empty string to hide the shipping line.
      *
+     * @param Cart $cart
      * @param float $shippingCost
      *
      * @return string
      */
-    private function getShippingDisplayValue($shippingCost): string
+    private function getShippingDisplayValue($cart, $shippingCost): string
     {
         $shippingDisplayValue = '';
 
@@ -517,6 +601,9 @@ class CartLazyArray extends AbstractLazyArray
      */
     private function presentProduct(array $rawProduct)
     {
+        $assembledProduct = $this->cartPresenter->getProductAssembler()->assembleProduct($rawProduct);
+        $rawProduct = array_merge($assembledProduct, $rawProduct);
+
         if (isset($rawProduct['attributes']) && is_string($rawProduct['attributes'])) {
             $rawProduct['attributes'] = $this->cartPresenter->getAttributesArrayFromString($rawProduct['attributes']);
         }

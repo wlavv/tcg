@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -25,12 +24,23 @@ use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Exception\PayPalOrderExcep
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForCartIdQuery;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForCartIdQueryResult;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
+use Psr\SimpleCache\CacheInterface;
 
 class GetPayPalOrderForCartIdQueryHandler
 {
-    public function __construct(private ChainAdapter $orderPayPalCache, private PsCheckoutCartRepository $checkoutCartRepository)
+    /**
+     * @var CacheInterface
+     */
+    private $orderPayPalCache;
+    /**
+     * @var PsCheckoutCartRepository
+     */
+    private $checkoutCartRepository;
+
+    public function __construct(CacheInterface $orderPayPalCache, PsCheckoutCartRepository $checkoutCartRepository)
     {
+        $this->orderPayPalCache = $orderPayPalCache;
+        $this->checkoutCartRepository = $checkoutCartRepository;
     }
 
     /**
@@ -40,12 +50,12 @@ class GetPayPalOrderForCartIdQueryHandler
      *
      * @throws PayPalOrderException
      */
-    public function __invoke(GetPayPalOrderForCartIdQuery $getPayPalOrderQuery)
+    public function handle(GetPayPalOrderForCartIdQuery $getPayPalOrderQuery)
     {
         $psCheckoutCart = $this->checkoutCartRepository->findOneByCartId($getPayPalOrderQuery->getCartId()->getValue());
 
         /** @var array $order */
-        $order = $this->orderPayPalCache->getItem($psCheckoutCart->getPaypalOrderId())->get();
+        $order = $this->orderPayPalCache->get($psCheckoutCart->getPaypalOrderId());
 
         if (empty($order)) {
             throw new PayPalOrderException('PayPal order not found', PayPalOrderException::CANNOT_RETRIEVE_ORDER);

@@ -60,7 +60,7 @@
             <table>
               {foreach $store.business_hours as $day}
               <tr>
-                <th>{$day.day}</th>
+                <th>{$day.day|truncate:4:'.'}</th>
                 <td>
                   <ul>
                   {foreach $day.hours as $h}

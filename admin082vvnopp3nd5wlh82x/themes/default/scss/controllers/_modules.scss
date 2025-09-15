@@ -157,15 +157,15 @@ td.module_inactive {
 }
 
 .module-badge-popular {
-  background-color: var(--#{$cdk}blue-500);
+  background-color: $brand-addons;
 }
 
 .module-badge-partner {
-  background-color: var(--#{$cdk}primary-800);
+  background-color: $brand-primary;
 }
 
 .module-badge-bought {
-  background-color: var(--#{$cdk}primary-800);
+  background-color: $greenPrestashop;
 }
 
 .categoriesTitle {

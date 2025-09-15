@@ -77,7 +77,6 @@ class WebserviceOutputBuilderCore
      * Set the Content-type for the http header.
      *
      * @param WebserviceOutputInterface $obj_render
-     *
      * @throw WebserviceException if the object render is not an instance of WebserviceOutputInterface
      *
      * @return $this
@@ -163,7 +162,6 @@ class WebserviceOutputBuilderCore
 
     /**
      * @param string|null $key if null get all header params otherwise the params specified by the key
-     *
      * @throw WebserviceException if the key is corrupted (use Validate::isCleanHtml method)
      * @throw WebserviceException if the asked key does'nt exists.
      *
@@ -675,7 +673,7 @@ class WebserviceOutputBuilderCore
                         foreach ($object_assoc as $id) {
                             if ($class_name !== null) {
                                 $child_object = new $class_name($id);
-                                $output_details .= $this->renderEntity($child_object, $depth - 2 ? 0 : $depth - 2);
+                                $output_details .= $this->renderEntity($child_object, ($depth - 2 ? 0 : $depth - 2));
                             }
                         }
                     }

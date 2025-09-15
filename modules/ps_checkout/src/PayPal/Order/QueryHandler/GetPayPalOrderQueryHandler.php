@@ -24,12 +24,23 @@ namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order\QueryHandler;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderQuery;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderQueryResult;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
+use Psr\SimpleCache\CacheInterface;
 
 class GetPayPalOrderQueryHandler
 {
-    public function __construct(private ChainAdapter $orderPayPalCache, private PsCheckoutCartRepository $checkoutCartRepository)
+    /**
+     * @var CacheInterface
+     */
+    private $orderCache;
+    /**
+     * @var PsCheckoutCartRepository
+     */
+    private $checkoutCartRepository;
+
+    public function __construct(CacheInterface $orderCache, PsCheckoutCartRepository $checkoutCartRepository)
     {
+        $this->orderCache = $orderCache;
+        $this->checkoutCartRepository = $checkoutCartRepository;
     }
 
     /**
@@ -39,7 +50,7 @@ class GetPayPalOrderQueryHandler
      *
      * @throws \PrestaShopException
      */
-    public function __invoke(GetPayPalOrderQuery $query)
+    public function handle(GetPayPalOrderQuery $query)
     {
         $orderId = !$query->getOrderId()->getValue() ? null : $query->getOrderId()->getValue();
 
@@ -48,6 +59,6 @@ class GetPayPalOrderQueryHandler
             $orderId = $psCheckoutCart->paypal_order;
         }
 
-        return new GetPayPalOrderQueryResult($this->orderPayPalCache->getItem($orderId)->get());
+        return new GetPayPalOrderQueryResult($this->orderCache->get($orderId));
     }
 }

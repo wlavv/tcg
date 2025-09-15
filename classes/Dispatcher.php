@@ -66,8 +66,8 @@ class DispatcherCore
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_category'],
                 'rewrite' => ['regexp' => self::REWRITE_PATTERN],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
-                'categories' => ['regexp' => '[/_a-zA-Z0-9-\pL]*'],
             ],
         ],
         'supplier_rule' => [
@@ -76,6 +76,7 @@ class DispatcherCore
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_supplier'],
                 'rewrite' => ['regexp' => self::REWRITE_PATTERN],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
             ],
         ],
@@ -85,6 +86,7 @@ class DispatcherCore
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_manufacturer'],
                 'rewrite' => ['regexp' => self::REWRITE_PATTERN],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
             ],
         ],
@@ -94,6 +96,7 @@ class DispatcherCore
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_cms'],
                 'rewrite' => ['regexp' => self::REWRITE_PATTERN],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
             ],
         ],
@@ -103,6 +106,7 @@ class DispatcherCore
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_cms_category'],
                 'rewrite' => ['regexp' => self::REWRITE_PATTERN],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
             ],
         ],
@@ -119,7 +123,7 @@ class DispatcherCore
         ],
         'product_rule' => [
             'controller' => 'product',
-            'rule' => '{id}{-:id_product_attribute}-{rewrite}.html',
+            'rule' => '{category:/}{id}{-:id_product_attribute}-{rewrite}{-:ean13}.html',
             'keywords' => [
                 'id' => ['regexp' => '[0-9]+', 'param' => 'id_product'],
                 'id_product_attribute' => ['regexp' => '[0-9]*+', 'param' => 'id_product_attribute'],
@@ -128,6 +132,7 @@ class DispatcherCore
                 'category' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'categories' => ['regexp' => '[/_a-zA-Z0-9-\pL]*'],
                 'reference' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
+                'meta_keywords' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'meta_title' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'manufacturer' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
                 'supplier' => ['regexp' => '[_a-zA-Z0-9-\pL]*'],
@@ -187,7 +192,7 @@ class DispatcherCore
      *
      * @throws PrestaShopException
      */
-    public static function getInstance(?SymfonyRequest $request = null)
+    public static function getInstance(SymfonyRequest $request = null)
     {
         if (!self::$instance) {
             if (null === $request) {
@@ -206,7 +211,7 @@ class DispatcherCore
      *
      * @throws PrestaShopException
      */
-    protected function __construct(?SymfonyRequest $request = null)
+    protected function __construct(SymfonyRequest $request = null)
     {
         $this->setRequest($request);
 
@@ -243,7 +248,7 @@ class DispatcherCore
      *
      * @param SymfonyRequest|null $request
      */
-    private function setRequest(?SymfonyRequest $request = null)
+    private function setRequest(SymfonyRequest $request = null)
     {
         if (null === $request) {
             $request = SymfonyRequest::createFromGlobals();
@@ -270,7 +275,7 @@ class DispatcherCore
      *
      * @return string
      */
-    private function getDefaultController($frontControllerType, ?Employee $employee = null)
+    private function getDefaultController($frontControllerType, Employee $employee = null)
     {
         switch ($frontControllerType) {
             case self::FC_ADMIN:
@@ -373,7 +378,7 @@ class DispatcherCore
 
                 break;
 
-                // Dispatch module controller for front office
+            // Dispatch module controller for front office
             case self::FC_MODULE:
                 $module_name = Validate::isModuleName(Tools::getValue('module')) ? Tools::getValue('module') : '';
                 $module = Module::getInstanceByName($module_name);
@@ -400,7 +405,7 @@ class DispatcherCore
 
                 break;
 
-                // Dispatch back office controller + module back office controller
+            // Dispatch back office controller + module back office controller
             case self::FC_ADMIN:
                 if ($this->use_default_controller
                     && !Tools::getValue('token')
@@ -413,30 +418,34 @@ class DispatcherCore
                 }
 
                 $tab = Tab::getInstanceFromClassName($this->controller, (int) Configuration::get('PS_LANG_DEFAULT'));
+                $retrocompatibility_admin_tab = null;
 
                 if ($tab->module) {
-                    $controllers = Dispatcher::getControllers(_PS_MODULE_DIR_ . $tab->module . '/controllers/admin/');
-                    if (!isset($controllers[strtolower($this->controller)])) {
-                        $this->controller = $this->controller_not_found;
-                        $controller_class = 'AdminNotFoundController';
+                    if (file_exists(_PS_MODULE_DIR_ . "{$tab->module}/{$tab->class_name}.php")) {
+                        $retrocompatibility_admin_tab = _PS_MODULE_DIR_ . "{$tab->module}/{$tab->class_name}.php";
                     } else {
-                        $controller_name = $controllers[strtolower($this->controller)];
-                        // Controllers in modules can be named AdminXXX.php or AdminXXXController.php
-                        include_once _PS_MODULE_DIR_ . "{$tab->module}/controllers/admin/$controller_name.php";
-                        if (file_exists(
-                            _PS_OVERRIDE_DIR_ . "modules/{$tab->module}/controllers/admin/$controller_name.php"
-                        )) {
-                            include_once _PS_OVERRIDE_DIR_ . "modules/{$tab->module}/controllers/admin/$controller_name.php";
-                            $controller_class = $controller_name . (
-                                strpos($controller_name, 'Controller') ? 'Override' : 'ControllerOverride'
-                            );
+                        $controllers = Dispatcher::getControllers(_PS_MODULE_DIR_ . $tab->module . '/controllers/admin/');
+                        if (!isset($controllers[strtolower($this->controller)])) {
+                            $this->controller = $this->controller_not_found;
+                            $controller_class = 'AdminNotFoundController';
                         } else {
-                            $controller_class = $controller_name . (
-                                strpos($controller_name, 'Controller') ? '' : 'Controller'
-                            );
+                            $controller_name = $controllers[strtolower($this->controller)];
+                            // Controllers in modules can be named AdminXXX.php or AdminXXXController.php
+                            include_once _PS_MODULE_DIR_ . "{$tab->module}/controllers/admin/$controller_name.php";
+                            if (file_exists(
+                                _PS_OVERRIDE_DIR_ . "modules/{$tab->module}/controllers/admin/$controller_name.php"
+                            )) {
+                                include_once _PS_OVERRIDE_DIR_ . "modules/{$tab->module}/controllers/admin/$controller_name.php";
+                                $controller_class = $controller_name . (
+                                    strpos($controller_name, 'Controller') ? 'Override' : 'ControllerOverride'
+                                );
+                            } else {
+                                $controller_class = $controller_name . (
+                                    strpos($controller_name, 'Controller') ? '' : 'Controller'
+                                );
+                            }
                         }
                     }
-
                     $params_hook_action_dispatcher = [
                         'controller_type' => self::FC_ADMIN,
                         'controller_class' => $controller_class,
@@ -445,6 +454,7 @@ class DispatcherCore
                 } else {
                     $controllers = Dispatcher::getControllers(
                         [
+                            _PS_ADMIN_DIR_ . '/tabs/',
                             _PS_ADMIN_CONTROLLER_DIR_,
                             _PS_OVERRIDE_DIR_ . 'controllers/admin/',
                         ]
@@ -467,6 +477,19 @@ class DispatcherCore
                         'controller_class' => $controller_class,
                         'is_module' => 0,
                     ];
+
+                    if (file_exists(_PS_ADMIN_DIR_ . '/tabs/' . $controller_class . '.php')) {
+                        $retrocompatibility_admin_tab = _PS_ADMIN_DIR_ . '/tabs/' . $controller_class . '.php';
+                    }
+                }
+
+                // @retrocompatibility with admin/tabs/ old system
+                if ($retrocompatibility_admin_tab) {
+                    include_once $retrocompatibility_admin_tab;
+                    include_once _PS_ADMIN_DIR_ . '/functions.php';
+                    runAdminTab($this->controller, !empty($_REQUEST['ajaxMode']));
+
+                    return;
                 }
 
                 break;
@@ -519,7 +542,7 @@ class DispatcherCore
      *
      * @return string
      */
-    private function buildRequestUri($requestUri, $isMultiLanguageActivated, ?Shop $shop = null)
+    private function buildRequestUri($requestUri, $isMultiLanguageActivated, Shop $shop = null)
     {
         // Decode raw request URI
         $requestUri = rawurldecode($requestUri);
@@ -533,18 +556,14 @@ class DispatcherCore
             );
         }
 
-        // If friendly URLs are activated and there are more than one languages on the shop, we handle the language
-        // Set $_GET['isolang'] and remove the language part from the request URI
-        if ($this->use_routes && $isMultiLanguageActivated) {
-            // If we find a language in the URL, we assign it and remove it from the URL
-            if (preg_match('#^/([a-z]{2})(?:/.*)?$#', $requestUri, $matches)) {
-                $_GET['isolang'] = $matches[1];
-                $requestUri = substr($requestUri, 3);
-            // Otherwise, we use the default language
-            } else {
-                $defaultLanguage = new Language((int) Configuration::get('PS_LANG_DEFAULT'));
-                $_GET['isolang'] = $defaultLanguage->iso_code;
-            }
+        // If there are several languages, set $_GET['isolang'] and remove the language part from the request URI
+        if (
+            $this->use_routes &&
+            $isMultiLanguageActivated &&
+            preg_match('#^/([a-z]{2})(?:/.*)?$#', $requestUri, $matches)
+        ) {
+            $_GET['isolang'] = $matches[1];
+            $requestUri = substr($requestUri, 3);
         }
 
         return $requestUri;
@@ -965,7 +984,7 @@ class DispatcherCore
             $index_link = $this->use_routes ? '' : 'index.php';
 
             return ($route_id == 'index') ? $index_link . (($query) ? '?' . $query : '') :
-                ((trim($route_id) == '') ? '' : $index_link . '?controller=' . $route_id) . (($query) ? '&' . $query : '') . $anchor;
+                ((trim($route_id) == '') ? '' : 'index.php?controller=' . $route_id) . (($query) ? '&' . $query : '') . $anchor;
         }
         $route = $this->routes[$id_shop][$id_lang][$route_id];
         // Check required fields

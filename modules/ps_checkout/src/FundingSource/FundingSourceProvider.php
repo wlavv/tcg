@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,15 +25,40 @@ use PrestaShop\Module\PrestashopCheckout\Repository\PaymentTokenRepository;
 
 class FundingSourceProvider
 {
-    private FundingSourceCollection $collection;
+    /**
+     * @var FundingSourceCollection
+     */
+    private $collection;
 
+    /**
+     * @var FundingSourcePresenter
+     */
+    private $presenter;
+    /**
+     * @var PaymentTokenRepository
+     */
+    private $paymentTokenRepository;
+    /**
+     * @var PayPalConfiguration
+     */
+    private $payPalConfiguration;
+
+    /**
+     * @param FundingSourceCollectionBuilder $fundingSourceCollectionBuilder
+     * @param FundingSourcePresenter $presenter
+     * @param PaymentTokenRepository $paymentTokenRepository
+     * @param PayPalConfiguration $payPalConfiguration
+     */
     public function __construct(
         FundingSourceCollectionBuilder $fundingSourceCollectionBuilder,
-        private FundingSourcePresenter $presenter,
-        private PaymentTokenRepository $paymentTokenRepository,
-        private PayPalConfiguration $payPalConfiguration,
+        FundingSourcePresenter $presenter,
+        PaymentTokenRepository $paymentTokenRepository,
+        PayPalConfiguration $payPalConfiguration
     ) {
         $this->collection = new FundingSourceCollection($fundingSourceCollectionBuilder->create());
+        $this->presenter = $presenter;
+        $this->paymentTokenRepository = $paymentTokenRepository;
+        $this->payPalConfiguration = $payPalConfiguration;
     }
 
     /**

@@ -34,14 +34,13 @@ use PrestaShop\PrestaShop\Adapter\Category\Repository\CategoryRepository;
 use PrestaShop\PrestaShop\Adapter\Configuration;
 use PrestaShop\PrestaShop\Adapter\Product\Image\ProductImagePathFactory;
 use PrestaShop\PrestaShop\Adapter\Product\Image\Repository\ProductImageRepository;
+use PrestaShop\PrestaShop\Adapter\Product\Options\RedirectTargetProvider;
 use PrestaShop\PrestaShop\Adapter\Product\Repository\ProductRepository;
 use PrestaShop\PrestaShop\Adapter\Product\SpecificPrice\Repository\SpecificPriceRepository;
 use PrestaShop\PrestaShop\Adapter\Product\Stock\Repository\StockAvailableRepository;
 use PrestaShop\PrestaShop\Adapter\Product\VirtualProduct\Repository\VirtualProductFileRepository;
-use PrestaShop\PrestaShop\Adapter\SEO\RedirectTargetProvider;
 use PrestaShop\PrestaShop\Adapter\Tax\TaxComputer;
 use PrestaShop\PrestaShop\Core\Category\NameBuilder\CategoryDisplayNameBuilder;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsQueryHandler;
 use PrestaShop\PrestaShop\Core\Domain\Attachment\QueryResult\AttachmentInformation;
 use PrestaShop\PrestaShop\Core\Domain\Category\ValueObject\CategoryId;
 use PrestaShop\PrestaShop\Core\Domain\Country\ValueObject\CountryId;
@@ -77,7 +76,6 @@ use Tag;
 /**
  * Handles the query @see GetProductForEditing using legacy ObjectModel
  */
-#[AsQueryHandler]
 class GetProductForEditingHandler implements GetProductForEditingHandlerInterface
 {
     /**
@@ -223,8 +221,7 @@ class GetProductForEditingHandler implements GetProductForEditingHandlerInterfac
             $this->getAttachments($query->getProductId()),
             $this->getProductStockInformation($product),
             $this->getVirtualProductFile($product),
-            $this->getCover($query->getProductId(), $product->getShopId()),
-            array_map(fn (ShopId $shopId) => $shopId->getValue(), $this->productRepository->getAssociatedShopIds($query->getProductId()))
+            $this->getCover($query->getProductId(), $product->getShopId())
         );
     }
 
@@ -506,7 +503,7 @@ class GetProductForEditingHandler implements GetProductForEditingHandlerInterfac
     {
         try {
             $stockAvailable = $this->stockAvailableRepository->getForProduct(new ProductId($product->id), new ShopId($product->getShopId()));
-        } catch (StockAvailableNotFoundException) {
+        } catch (StockAvailableNotFoundException $e) {
             $stockAvailable = $this->stockAvailableRepository->createStockAvailable(new ProductId($product->id), new ShopId($product->getShopId()));
         }
 
@@ -536,7 +533,7 @@ class GetProductForEditingHandler implements GetProductForEditingHandlerInterfac
     {
         try {
             $virtualProductFile = $this->virtualProductFileRepository->findByProductId(new ProductId($product->id));
-        } catch (VirtualProductFileNotFoundException) {
+        } catch (VirtualProductFileNotFoundException $e) {
             return null;
         }
 

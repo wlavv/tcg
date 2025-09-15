@@ -13,7 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Api;
 
-use ApiPlatform\Metadata\Exception\RuntimeException;
+use ApiPlatform\Exception\RuntimeException;
 use ApiPlatform\Metadata\Operation;
 
 /**
@@ -26,7 +26,9 @@ interface IdentifiersExtractorInterface
     /**
      * Finds identifiers from an Item (object).
      *
+     * @param object $item
+     *
      * @throws RuntimeException
      */
-    public function getIdentifiersFromItem(object $item, ?Operation $operation = null, array $context = []): array;
+    public function getIdentifiersFromItem($item, ?Operation $operation = null, array $context = []): array;
 }

@@ -84,7 +84,6 @@ export interface CartShipping {
   giftMessage: string;
   recycledPackaging: boolean;
   selectedCarrierId: number | null | string;
-  virtual: boolean;
 }
 
 export interface CartSummary {
@@ -733,9 +732,6 @@ export default class CreateOrderPage {
 
     $(createOrderMap.cartBlock).removeClass('d-none');
     $(createOrderMap.cartBlock).data('cartId', cartInfo.cartId);
-    if (cartInfo.shipping?.virtual) {
-      $(createOrderMap.shippingBlock).addClass('d-none');
-    }
   }
 
   /**

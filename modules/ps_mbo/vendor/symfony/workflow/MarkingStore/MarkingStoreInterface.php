@@ -26,13 +26,13 @@ interface MarkingStoreInterface
 {
     /**
      * Gets a Marking from a subject.
+     *
+     * @return Marking
      */
-    public function getMarking(object $subject): Marking;
+    public function getMarking(object $subject);
 
     /**
      * Sets a Marking to a subject.
-     *
-     * @return void
      */
     public function setMarking(object $subject, Marking $marking, array $context = []);
 }

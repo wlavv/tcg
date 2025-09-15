@@ -13,10 +13,11 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Metadata\Property\Factory;
 
+use ApiPlatform\Api\ResourceClassResolverInterface;
+use ApiPlatform\Exception\ResourceClassNotFoundException;
 use ApiPlatform\Metadata\ApiProperty;
-use ApiPlatform\Metadata\Exception\ResourceClassNotFoundException;
-use ApiPlatform\Metadata\ResourceClassResolverInterface;
-use ApiPlatform\Metadata\Util\ResourceClassInfoTrait;
+use ApiPlatform\Util\ResourceClassInfoTrait;
+use Symfony\Component\PropertyInfo\Type;
 use Symfony\Component\Serializer\Mapping\AttributeMetadataInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface as SerializerClassMetadataFactoryInterface;
 
@@ -30,8 +31,13 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
 {
     use ResourceClassInfoTrait;
 
-    public function __construct(private readonly SerializerClassMetadataFactoryInterface $serializerClassMetadataFactory, private readonly PropertyMetadataFactoryInterface $decorated, ?ResourceClassResolverInterface $resourceClassResolver = null)
+    private $serializerClassMetadataFactory;
+    private $decorated;
+
+    public function __construct(SerializerClassMetadataFactoryInterface $serializerClassMetadataFactory, PropertyMetadataFactoryInterface $decorated, ResourceClassResolverInterface $resourceClassResolver = null)
     {
+        $this->serializerClassMetadataFactory = $serializerClassMetadataFactory;
+        $this->decorated = $decorated;
         $this->resourceClassResolver = $resourceClassResolver;
     }
 
@@ -43,7 +49,7 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
         $propertyMetadata = $this->decorated->create($resourceClass, $property, $options);
 
         try {
-            [$normalizationGroups, $denormalizationGroups] = $this->getEffectiveSerializerGroups($options);
+            [$normalizationGroups, $denormalizationGroups] = $this->getEffectiveSerializerGroups($options, $resourceClass);
 
             if ($normalizationGroups && !\is_array($normalizationGroups)) {
                 $normalizationGroups = [$normalizationGroups];
@@ -52,23 +58,14 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
             if ($denormalizationGroups && !\is_array($denormalizationGroups)) {
                 $denormalizationGroups = [$denormalizationGroups];
             }
-        } catch (ResourceClassNotFoundException) {
+        } catch (ResourceClassNotFoundException $e) {
             // TODO: for input/output classes, the serializer groups must be read from the actual resource class
             return $propertyMetadata;
         }
 
         $propertyMetadata = $this->transformReadWrite($propertyMetadata, $resourceClass, $property, $normalizationGroups, $denormalizationGroups);
-        $types = $propertyMetadata->getBuiltinTypes() ?? [];
 
-        if (!$this->isResourceClass($resourceClass) && $types) {
-            foreach ($types as $builtinType) {
-                if ($builtinType->isCollection()) {
-                    return $propertyMetadata->withReadableLink(true)->withWritableLink(true);
-                }
-            }
-        }
-
-        return $this->transformLinkStatus($propertyMetadata, $normalizationGroups, $denormalizationGroups, $types);
+        return $this->transformLinkStatus($propertyMetadata, $normalizationGroups, $denormalizationGroups);
     }
 
     /**
@@ -79,12 +76,14 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
      *
      * @param string[]|null $normalizationGroups
      * @param string[]|null $denormalizationGroups
+     *
+     * @return ApiProperty $propertyMetadata
      */
-    private function transformReadWrite(ApiProperty $propertyMetadata, string $resourceClass, string $propertyName, ?array $normalizationGroups = null, ?array $denormalizationGroups = null): ApiProperty
+    private function transformReadWrite(ApiProperty $propertyMetadata, string $resourceClass, string $propertyName, array $normalizationGroups = null, array $denormalizationGroups = null)
     {
         $serializerAttributeMetadata = $this->getSerializerAttributeMetadata($resourceClass, $propertyName);
         $groups = $serializerAttributeMetadata ? $serializerAttributeMetadata->getGroups() : [];
-        $ignored = $serializerAttributeMetadata && $serializerAttributeMetadata->isIgnored();
+        $ignored = $serializerAttributeMetadata && method_exists($serializerAttributeMetadata, 'isIgnored') ? $serializerAttributeMetadata->isIgnored() : false;
 
         if (false !== $propertyMetadata->isReadable()) {
             $propertyMetadata = $propertyMetadata->withReadable(!$ignored && (null === $normalizationGroups || array_intersect($normalizationGroups, $groups)));
@@ -106,45 +105,48 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
      * @param string[]|null $normalizationGroups
      * @param string[]|null $denormalizationGroups
      */
-    private function transformLinkStatus(ApiProperty $propertyMetadata, ?array $normalizationGroups = null, ?array $denormalizationGroups = null, ?array $types = null): ApiProperty
+    private function transformLinkStatus(ApiProperty $propertyMetadata, array $normalizationGroups = null, array $denormalizationGroups = null)
     {
         // No need to check link status if property is not readable and not writable
         if (false === $propertyMetadata->isReadable() && false === $propertyMetadata->isWritable()) {
             return $propertyMetadata;
         }
 
-        foreach ($types as $type) {
-            if (
-                $type->isCollection()
-                && $collectionValueType = $type->getCollectionValueTypes()[0] ?? null
-            ) {
-                $relatedClass = $collectionValueType->getClassName();
-            } else {
-                $relatedClass = $type->getClassName();
-            }
+        // TODO: 3.0 support multiple types, default value of types will be [] instead of null
+        $type = $propertyMetadata->getBuiltinTypes()[0] ?? null;
 
-            // if property is not a resource relation, don't set link status (as it would have no meaning)
-            if (null === $relatedClass || !$this->isResourceClass($relatedClass)) {
-                continue;
-            }
-
-            // find the resource class
-            // this prevents serializer groups on non-resource child class from incorrectly influencing the decision
-            if (null !== $this->resourceClassResolver) {
-                $relatedClass = $this->resourceClassResolver->getResourceClass(null, $relatedClass);
-            }
-
-            $relatedGroups = $this->getClassSerializerGroups($relatedClass);
-
-            if (null === $propertyMetadata->isReadableLink()) {
-                $propertyMetadata = $propertyMetadata->withReadableLink(null !== $normalizationGroups && !empty(array_intersect($normalizationGroups, $relatedGroups)));
-            }
-
-            if (null === $propertyMetadata->isWritableLink()) {
-                $propertyMetadata = $propertyMetadata->withWritableLink(null !== $denormalizationGroups && !empty(array_intersect($denormalizationGroups, $relatedGroups)));
-            }
-
+        if (null === $type) {
             return $propertyMetadata;
+        }
+
+        if (
+            $type->isCollection() &&
+            $collectionValueType = method_exists(Type::class, 'getCollectionValueTypes') ? ($type->getCollectionValueTypes()[0] ?? null) : $type->getCollectionValueType()
+        ) {
+            $relatedClass = $collectionValueType->getClassName();
+        } else {
+            $relatedClass = $type->getClassName();
+        }
+
+        // if property is not a resource relation, don't set link status (as it would have no meaning)
+        if (null === $relatedClass || !$this->isResourceClass($relatedClass)) {
+            return $propertyMetadata;
+        }
+
+        // find the resource class
+        // this prevents serializer groups on non-resource child class from incorrectly influencing the decision
+        if (null !== $this->resourceClassResolver) {
+            $relatedClass = $this->resourceClassResolver->getResourceClass(null, $relatedClass);
+        }
+
+        $relatedGroups = $this->getClassSerializerGroups($relatedClass);
+
+        if (null === $propertyMetadata->isReadableLink()) {
+            $propertyMetadata = $propertyMetadata->withReadableLink(null !== $normalizationGroups && !empty(array_intersect($normalizationGroups, $relatedGroups)));
+        }
+
+        if (null === $propertyMetadata->isWritableLink()) {
+            $propertyMetadata = $propertyMetadata->withWritableLink(null !== $denormalizationGroups && !empty(array_intersect($denormalizationGroups, $relatedGroups)));
         }
 
         return $propertyMetadata;
@@ -156,12 +158,14 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
      * Groups are extracted in the following order:
      *
      * - From the "serializer_groups" key of the $options array.
-     * - From metadata of the given operation ("operation_name" key).
+     * - From metadata of the given operation ("collection_operation_name" and "item_operation_name" keys).
      * - From metadata of the current resource.
      *
-     * @return (string[]|string|null)[]
+     * @throws ResourceClassNotFoundException
+     *
+     * @return (string[]|null|string)[]
      */
-    private function getEffectiveSerializerGroups(array $options): array
+    private function getEffectiveSerializerGroups(array $options, string $resourceClass): array
     {
         if (isset($options['serializer_groups'])) {
             $groups = (array) $options['serializer_groups'];
@@ -200,9 +204,9 @@ final class SerializerPropertyMetadataFactory implements PropertyMetadataFactory
 
         $groups = [];
         foreach ($serializerClassMetadata->getAttributesMetadata() as $serializerAttributeMetadata) {
-            $groups[] = $serializerAttributeMetadata->getGroups();
+            $groups = array_merge($groups, $serializerAttributeMetadata->getGroups());
         }
 
-        return array_unique(array_merge(...$groups));
+        return array_unique($groups);
     }
 }

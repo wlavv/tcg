@@ -56,7 +56,7 @@ class SqlQueryValidator
             if (!$validate || count($requestSql->error_sql)) {
                 $errors = $this->getErrors($requestSql->error_sql);
             }
-        } catch (ErrorException|PrestaShopException|PrestaShopDatabaseException) {
+        } catch (ErrorException|PrestaShopException|PrestaShopDatabaseException $e) {
             $errors[] = [
                 'key' => 'Bad SQL query',
                 'parameters' => [],

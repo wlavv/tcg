@@ -19,10 +19,10 @@ use Symfony\Component\Workflow\WorkflowInterface;
  */
 class TransitionException extends LogicException
 {
-    private object $subject;
-    private string $transitionName;
-    private WorkflowInterface $workflow;
-    private array $context;
+    private $subject;
+    private $transitionName;
+    private $workflow;
+    private $context;
 
     public function __construct(object $subject, string $transitionName, WorkflowInterface $workflow, string $message, array $context = [])
     {
@@ -34,9 +34,6 @@ class TransitionException extends LogicException
         $this->context = $context;
     }
 
-    /**
-     * @return object
-     */
     public function getSubject()
     {
         return $this->subject;

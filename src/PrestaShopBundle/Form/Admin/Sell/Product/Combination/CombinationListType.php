@@ -55,7 +55,7 @@ class CombinationListType extends CollectionType
     /**
      * {@inheritdoc}
      */
-    public function getBlockPrefix(): string
+    public function getBlockPrefix()
     {
         return 'combination_list';
     }

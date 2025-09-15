@@ -103,7 +103,7 @@ abstract class AbstractOrderStateHandler
             $orderState->deleted = true;
 
             return (bool) $orderState->update();
-        } catch (PrestaShopException) {
+        } catch (PrestaShopException $e) {
             throw new OrderStateException(sprintf(
                 'An error occurred when deleting OrderState object with id "%s".',
                 $orderState->id

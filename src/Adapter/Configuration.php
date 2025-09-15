@@ -26,19 +26,17 @@
 
 namespace PrestaShop\PrestaShop\Adapter;
 
-use ArrayIterator;
 use Combination;
 use Configuration as ConfigurationLegacy;
-use Exception;
 use Feature;
 use Language;
-use LogicException;
 use PrestaShop\PrestaShop\Core\Domain\Configuration\ShopConfigurationInterface;
 use PrestaShop\PrestaShop\Core\Domain\Shop\Exception\ShopException;
 use PrestaShop\PrestaShop\Core\Domain\Shop\ValueObject\ShopConstraint;
 use PrestaShopBundle\Exception\NotImplementedException;
 use Shop;
 use Symfony\Component\HttpFoundation\ParameterBag;
+use Traversable;
 
 /**
  * Adapter of Configuration ObjectModel.
@@ -54,16 +52,14 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
     {
         // Do nothing
         if (!empty($parameters)) {
-            throw new LogicException('No parameter can be handled in constructor. Use method set() instead.');
+            throw new \LogicException('No parameter can be handled in constructor. Use method set() instead.');
         }
     }
 
     /**
-     * @param string|null $key
-     *
      * @throws NotImplementedException
      */
-    public function all(?string $key = null): array
+    public function all()
     {
         throw new NotImplementedException();
     }
@@ -71,7 +67,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
     /**
      * {@inheritdoc}
      */
-    public function keys(): array
+    public function keys()
     {
         return array_keys($this->all());
     }
@@ -105,7 +101,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      *
      * @return mixed
      */
-    public function get($key, $default = null, ?ShopConstraint $shopConstraint = null): mixed
+    public function get($key, $default = null, ShopConstraint $shopConstraint = null)
     {
         if (null === $shopConstraint) {
             $shopConstraint = $this->buildShopConstraintFromContext();
@@ -118,7 +114,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
         $shopId = $this->getShopId($shopConstraint);
         $shopGroupId = $this->getShopGroupId($shopConstraint);
 
-        // If configuration has never been accessed it is still empty and hasKey/isLangKey will always return false
+        //If configuration has never been accessed it is still empty and hasKey/isLangKey will always return false
         if (!ConfigurationLegacy::configurationIsLoaded()) {
             ConfigurationLegacy::loadConfiguration();
         }
@@ -159,9 +155,9 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      *
      * @return $this
      *
-     * @throws Exception
+     * @throws \Exception
      */
-    public function set($key, $value, ?ShopConstraint $shopConstraint = null, array $options = [])
+    public function set($key, $value, ShopConstraint $shopConstraint = null, array $options = [])
     {
         if ($this->shop instanceof Shop && null === $shopConstraint) {
             $shopGroupId = $this->shop->id_shop_group;
@@ -183,7 +179,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
         );
 
         if (!$success) {
-            throw new Exception('Could not update configuration');
+            throw new \Exception('Could not update configuration');
         }
 
         return $this;
@@ -196,7 +192,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      *
      * @return bool
      */
-    public function has($key, ?ShopConstraint $shopConstraint = null): bool
+    public function has($key, ShopConstraint $shopConstraint = null)
     {
         if (null === $shopConstraint) {
             $shopConstraint = $this->buildShopConstraintFromContext();
@@ -264,12 +260,12 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      */
     public function remove($key)
     {
-        $success = ConfigurationLegacy::deleteByName(
+        $success = \Configuration::deleteByName(
             $key
         );
 
         if (!$success) {
-            throw new Exception('Could not delete configuration');
+            throw new \Exception('Could not delete configuration');
         }
 
         return $this;
@@ -282,7 +278,7 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      *
      * @return void
      *
-     * @throws Exception
+     * @throws \Exception
      *
      * @deprecated since version 1.7.4.0
      */
@@ -294,9 +290,9 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
     /**
      * {@inheritdoc}
      */
-    public function getIterator(): ArrayIterator
+    public function getIterator(): Traversable
     {
-        return new ArrayIterator($this->all());
+        return new \ArrayIterator($this->all());
     }
 
     /**
@@ -380,9 +376,9 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
         if (null !== $shopConstraint->getShopGroupId()) {
             return $shopConstraint->getShopGroupId()->getValue();
         } elseif (null !== $shopConstraint->getShopId()) {
-            $shopGroupId = Shop::getGroupIdFromShopId((int) $shopConstraint->getShopId()->getValue());
+            $shopGroupId = Shop::getGroupFromShop((int) $shopConstraint->getShopId()->getValue(), true);
             // $shopGroupId can not be false, it would mean that the shop group was not found for the given shop
-            if (empty($shopGroupId)) {
+            if ($shopGroupId === false) {
                 throw new ShopException(
                     sprintf(
                         'Shop group was not found for the shop with id %d.',
@@ -426,6 +422,11 @@ class Configuration extends ParameterBag implements ShopConfigurationInterface
      */
     private function buildShopConstraintFromContext(): ShopConstraint
     {
+        @trigger_error(
+            'Not specifying the optional ShopConstraint parameter is deprecated since version 1.7.8.0',
+            E_USER_DEPRECATED
+        );
+
         if (Shop::getContext() === Shop::CONTEXT_SHOP) {
             return ShopConstraint::shop(Shop::getContextShopID());
         } elseif (Shop::getContext() === Shop::CONTEXT_GROUP) {

@@ -28,7 +28,6 @@ namespace PrestaShop\PrestaShop\Core\Cart;
 
 use CartCore;
 use Currency;
-use Exception;
 use PrestaShop\PrestaShop\Core\Localization\CLDR\ComputingPrecision;
 use Tools;
 
@@ -127,7 +126,7 @@ class Calculator
     /**
      * insert a new cart rule in the calculator.
      *
-     * @param CartRuleData $cartRule
+     * @param \PrestaShop\PrestaShop\Core\Cart\CartRuleData $cartRule
      *
      * @return $this
      */
@@ -167,15 +166,15 @@ class Calculator
      *
      * @return AmountImmutable
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getTotal($ignoreProcessedFlag = false)
     {
         if (!$this->isProcessed && !$ignoreProcessedFlag) {
-            throw new Exception('Cart must be processed before getting its total');
+            throw new \Exception('Cart must be processed before getting its total');
         }
 
-        $amount = $this->rounded($this->getRowTotalWithoutDiscount(), $this->computePrecision);
+        $amount = $this->getRowTotalWithoutDiscount();
         $amount = $amount->sub($this->rounded($this->getDiscountTotal(), $this->computePrecision));
         $shippingFees = $this->fees->getInitialShippingFees();
         if (null !== $shippingFees) {
@@ -192,7 +191,7 @@ class Calculator
     /**
      * @return AmountImmutable
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getRowTotal()
     {
@@ -207,7 +206,7 @@ class Calculator
     /**
      * @return AmountImmutable
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getRowTotalWithoutDiscount()
     {
@@ -222,7 +221,7 @@ class Calculator
     /**
      * @return AmountImmutable
      *
-     * @throws Exception
+     * @throws \Exception
      */
     public function getDiscountTotal()
     {
@@ -287,7 +286,7 @@ class Calculator
     }
 
     /**
-     * @return Fees
+     * @return \PrestaShop\PrestaShop\Core\Cart\Fees
      */
     public function getFees()
     {

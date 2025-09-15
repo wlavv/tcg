@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,7 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Sdk;
 
-use PrestaShop\Module\PrestashopCheckout\CommandBus\QueryBusInterface;
+use Exception;
+use PrestaShop\Module\PrestashopCheckout\CommandBus\CommandBusInterface;
 use PrestaShop\Module\PrestashopCheckout\Context\PrestaShopContext;
 use PrestaShop\Module\PrestashopCheckout\Customer\ValueObject\CustomerId;
 use PrestaShop\Module\PrestashopCheckout\Environment\Env;
@@ -46,18 +46,84 @@ class PayPalSdkConfigurationBuilder
      */
     const NOT_FUNDING_SOURCES = ['google_pay', 'apple_pay'];
 
+    /**
+     * @var PayPalConfiguration
+     */
+    private $configuration;
+
+    /**
+     * @var PayPalPayLaterConfiguration
+     */
+    private $payLaterConfiguration;
+
+    /**
+     * @var FundingSourceConfigurationRepository
+     */
+    private $fundingSourceConfigurationRepository;
+
+    /** @var ExpressCheckoutConfiguration */
+    private $expressCheckoutConfiguration;
+
+    /** @var ShopContext */
+    private $shopContext;
+
+    /** @var array */
+    private static $cache = [];
+    /**
+     * @var CommandBusInterface
+     */
+    private $commandBus;
+    /**
+     * @var PrestaShopContext
+     */
+    private $prestaShopContext;
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+    /**
+     * @var Env
+     */
+    private $env;
+    /**
+     * @var FundingSourceEligibilityConstraint
+     */
+    private $fundingSourceEligibilityConstraint;
+
+    /**
+     * @param \Ps_checkout $module
+     * @param Env $env
+     * @param PayPalConfiguration $configuration
+     * @param PayPalPayLaterConfiguration $payLaterConfiguration
+     * @param FundingSourceConfigurationRepository $fundingSourceConfigurationRepository
+     * @param ExpressCheckoutConfiguration $expressCheckoutConfiguration
+     * @param ShopContext $shopContext
+     * @param PrestaShopContext $prestaShopContext
+     * @param LoggerInterface $logger
+     * @param FundingSourceEligibilityConstraint $fundingSourceEligibilityConstraint
+     */
     public function __construct(
-        private Env $env,
-        private PayPalConfiguration $configuration,
-        private PayPalPayLaterConfiguration $payLaterConfiguration,
-        private FundingSourceConfigurationRepository $fundingSourceConfigurationRepository,
-        private ExpressCheckoutConfiguration $expressCheckoutConfiguration,
-        private ShopContext $shopContext,
-        private PrestaShopContext $prestaShopContext,
-        private LoggerInterface $psCheckoutLogger,
-        private FundingSourceEligibilityConstraint $fundingSourceEligibilityConstraint,
-        private QueryBusInterface $queryBus,
+        \Ps_checkout $module,
+        Env $env,
+        PayPalConfiguration $configuration,
+        PayPalPayLaterConfiguration $payLaterConfiguration,
+        FundingSourceConfigurationRepository $fundingSourceConfigurationRepository,
+        ExpressCheckoutConfiguration $expressCheckoutConfiguration,
+        ShopContext $shopContext,
+        PrestaShopContext $prestaShopContext,
+        LoggerInterface $logger,
+        FundingSourceEligibilityConstraint $fundingSourceEligibilityConstraint
     ) {
+        $this->configuration = $configuration;
+        $this->payLaterConfiguration = $payLaterConfiguration;
+        $this->fundingSourceConfigurationRepository = $fundingSourceConfigurationRepository;
+        $this->expressCheckoutConfiguration = $expressCheckoutConfiguration;
+        $this->shopContext = $shopContext;
+        $this->commandBus = $module->getService('ps_checkout.bus.command');
+        $this->prestaShopContext = $prestaShopContext;
+        $this->logger = $logger;
+        $this->env = $env;
+        $this->fundingSourceEligibilityConstraint = $fundingSourceEligibilityConstraint;
     }
 
     /**
@@ -105,10 +171,10 @@ class PayPalSdkConfigurationBuilder
         if ($this->configuration->isVaultingEnabled() && $this->prestaShopContext->customerIsLogged() && $this->prestaShopContext->getCustomerId() && 'order' === $this->getPageName()) {
             try {
                 /** @var GetPayPalGetUserIdTokenQueryResult $queryResult */
-                $queryResult = $this->queryBus->handle(new GetPayPalGetUserIdTokenQuery(new CustomerId($this->prestaShopContext->getCustomerId())));
+                $queryResult = $this->commandBus->handle(new GetPayPalGetUserIdTokenQuery(new CustomerId($this->prestaShopContext->getCustomerId())));
                 $params['dataUserIdToken'] = $queryResult->getUserIdToken();
-            } catch (\Exception $exception) {
-                $this->psCheckoutLogger->error('Failed to get PayPal User ID token.', ['exception' => $exception]);
+            } catch (Exception $exception) {
+                $this->logger->error('Failed to get PayPal User ID token.', ['exception' => $exception]);
             }
         }
 
@@ -117,7 +183,7 @@ class PayPalSdkConfigurationBuilder
         }
 
         if ('SANDBOX' === $this->configuration->getPaymentMode()) {
-            //            $params['debug'] = 'true';
+//            $params['debug'] = 'true';
             $params['buyerCountry'] = $this->getCountry();
         }
 

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,22 +20,30 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\CommandHandler;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Command\DeletePaymentTokenCommand;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\PaymentMethodTokenService;
 use PrestaShop\Module\PrestashopCheckout\Repository\PaymentTokenRepository;
 
 class DeletePaymentTokenCommandHandler
 {
-    public function __construct(
-        private PaymentMethodTokenService $paymentMethodTokenService,
-        private PaymentTokenRepository $paymentTokenRepository,
-    ) {
+    /** @var PaymentTokenRepository */
+    private $paymentTokenRepository;
+    /**
+     * @var PaymentMethodTokenService
+     */
+    private $paymentMethodTokenService;
+
+    public function __construct(PaymentMethodTokenService $paymentMethodTokenService, PaymentTokenRepository $paymentTokenRepository)
+    {
+        $this->paymentTokenRepository = $paymentTokenRepository;
+        $this->paymentMethodTokenService = $paymentMethodTokenService;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    public function __invoke(DeletePaymentTokenCommand $command)
+    public function handle(DeletePaymentTokenCommand $command)
     {
         $tokenBelongsToCustomer = false;
         $tokens = $this->paymentTokenRepository->findByPrestaShopCustomerId($command->getCustomerId()->getValue());
@@ -49,7 +56,7 @@ class DeletePaymentTokenCommandHandler
             $this->paymentMethodTokenService->deletePaymentToken($command->getPaymentTokenId());
             $this->paymentTokenRepository->deleteById($command->getPaymentTokenId());
         } else {
-            throw new \Exception('Failed to remove saved payment token');
+            throw new Exception('Failed to remove saved payment token');
         }
     }
 }

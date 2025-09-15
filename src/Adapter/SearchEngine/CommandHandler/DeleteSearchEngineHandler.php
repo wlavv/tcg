@@ -29,7 +29,6 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\SearchEngine\CommandHandler;
 
 use PrestaShop\PrestaShop\Adapter\SearchEngine\AbstractSearchEngineHandler;
-use PrestaShop\PrestaShop\Core\CommandBus\Attributes\AsCommandHandler;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\Command\DeleteSearchEngineCommand;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\CommandHandler\DeleteSearchEngineHandlerInterface;
 use PrestaShop\PrestaShop\Core\Domain\SearchEngine\Exception\DeleteSearchEngineException;
@@ -39,7 +38,6 @@ use PrestaShopException;
 /**
  * Handles command that deletes Search Engine.
  */
-#[AsCommandHandler]
 final class DeleteSearchEngineHandler extends AbstractSearchEngineHandler implements DeleteSearchEngineHandlerInterface
 {
     /**
@@ -55,7 +53,7 @@ final class DeleteSearchEngineHandler extends AbstractSearchEngineHandler implem
             if (!$searchEngine->delete()) {
                 throw new DeleteSearchEngineException(sprintf('Cannot delete Search Engine object with id "%d"', $command->getSearchEngineId()->getValue()), DeleteSearchEngineException::FAILED_DELETE);
             }
-        } catch (PrestaShopException) {
+        } catch (PrestaShopException $e) {
             throw new SearchEngineException(sprintf('An error occurred when deleting Search Engine object with id "%d"', $command->getSearchEngineId()->getValue()));
         }
     }

@@ -13,22 +13,18 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Common\State;
 
-use ApiPlatform\Metadata\Exception\OperationNotFoundException;
-use ApiPlatform\Metadata\Exception\RuntimeException;
+use ApiPlatform\Exception\OperationNotFoundException;
+use ApiPlatform\Exception\RuntimeException;
 use ApiPlatform\Metadata\GraphQl\Operation as GraphQlOperation;
 use ApiPlatform\Metadata\GraphQl\Query;
 use ApiPlatform\Metadata\HttpOperation;
+use ApiPlatform\Metadata\Link;
 use ApiPlatform\Metadata\Operation;
-use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
 
 trait LinksHandlerTrait
 {
-    private ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory;
-
     /**
-     * @param array{linkClass?: string, linkProperty?: string}&array<string, mixed> $context
-     *
-     * @return \ApiPlatform\Metadata\Link[]
+     * @return Link[]
      */
     private function getLinks(string $resourceClass, Operation $operation, array $context): array
     {
@@ -38,22 +34,12 @@ trait LinksHandlerTrait
             return $links;
         }
 
-        $newLink = null;
-        $linkProperty = $context['linkProperty'] ?? null;
+        $newLinks = [];
 
         foreach ($links as $link) {
-            if ($linkClass === $link->getFromClass() && $linkProperty === $link->getFromProperty()) {
-                $newLink = $link;
-                break;
+            if ($linkClass === $link->getFromClass()) {
+                $newLinks[] = $link;
             }
-        }
-
-        if ($newLink) {
-            return [$newLink];
-        }
-
-        if (!$this->resourceMetadataCollectionFactory) {
-            return [];
         }
 
         // Using GraphQL, it's possible that we won't find a GraphQL Operation of the same type (e.g. it is disabled).
@@ -67,34 +53,30 @@ trait LinksHandlerTrait
 
             // Instead, we'll look for the first Query available.
             foreach ($resourceMetadataCollection as $resourceMetadata) {
-                foreach ($resourceMetadata->getGraphQlOperations() as $op) {
-                    if ($op instanceof Query) {
-                        $linkedOperation = $op;
+                foreach ($resourceMetadata->getGraphQlOperations() as $operation) {
+                    if ($operation instanceof Query) {
+                        $linkedOperation = $operation;
                     }
                 }
             }
         }
 
         foreach ($this->getOperationLinks($linkedOperation ?? null) as $link) {
-            if ($resourceClass === $link->getToClass() && $linkProperty === $link->getFromProperty()) {
-                $newLink = $link;
-                break;
+            if ($resourceClass === $link->getToClass()) {
+                $newLinks[] = $link;
             }
         }
 
-        if (!$newLink) {
-            throw new RuntimeException(\sprintf('The class "%s" cannot be retrieved from "%s".', $resourceClass, $linkClass));
+        if (!$newLinks) {
+            throw new RuntimeException(sprintf('The class "%s" cannot be retrieved from "%s".', $resourceClass, $linkClass));
         }
 
-        return [$newLink];
+        return $newLinks;
     }
 
-    /**
-     * @param array<int|string,mixed> $identifiers
-     */
-    private function getIdentifierValue(array &$identifiers, ?string $name = null): mixed
+    private function getIdentifierValue(array &$identifiers, string $name = null)
     {
-        if (null !== $name && isset($identifiers[$name])) {
+        if (isset($identifiers[$name])) {
             $value = $identifiers[$name];
             unset($identifiers[$name]);
 
@@ -104,9 +86,6 @@ trait LinksHandlerTrait
         return array_shift($identifiers);
     }
 
-    /**
-     * @return \ApiPlatform\Metadata\Link[]|array
-     */
     private function getOperationLinks(?Operation $operation = null): array
     {
         if ($operation instanceof GraphQlOperation) {

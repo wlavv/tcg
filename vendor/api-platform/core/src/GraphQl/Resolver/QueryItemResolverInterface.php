@@ -20,5 +20,10 @@ namespace ApiPlatform\GraphQl\Resolver;
  */
 interface QueryItemResolverInterface
 {
-    public function __invoke(?object $item, array $context): object;
+    /**
+     * @param object|null $item
+     *
+     * @return object
+     */
+    public function __invoke($item, array $context);
 }

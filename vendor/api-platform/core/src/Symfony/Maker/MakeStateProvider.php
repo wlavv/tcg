@@ -43,7 +43,7 @@ final class MakeStateProvider extends AbstractMaker
     /**
      * {@inheritdoc}
      */
-    public function configureCommand(Command $command, InputConfiguration $inputConfig): void
+    public function configureCommand(Command $command, InputConfiguration $inputConfig)
     {
         $command
             ->addArgument('name', InputArgument::REQUIRED, 'Choose a class name for your state provider (e.g. <fg=yellow>AwesomeStateProvider</>)')
@@ -53,14 +53,14 @@ final class MakeStateProvider extends AbstractMaker
     /**
      * {@inheritdoc}
      */
-    public function configureDependencies(DependencyBuilder $dependencies): void
+    public function configureDependencies(DependencyBuilder $dependencies)
     {
     }
 
     /**
      * {@inheritdoc}
      */
-    public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator): void
+    public function generate(InputInterface $input, ConsoleStyle $io, Generator $generator)
     {
         $stateProviderClassNameDetails = $generator->createClassNameDetails(
             $input->getArgument('name'),

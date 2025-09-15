@@ -13,8 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Odm;
 
-use ApiPlatform\Metadata\Exception\InvalidArgumentException;
-use ApiPlatform\State\Pagination\HasNextPagePaginatorInterface;
+use ApiPlatform\Exception\InvalidArgumentException;
 use ApiPlatform\State\Pagination\PaginatorInterface;
 use Doctrine\ODM\MongoDB\Iterator\Iterator;
 use Doctrine\ODM\MongoDB\UnitOfWork;
@@ -25,21 +24,51 @@ use Doctrine\ODM\MongoDB\UnitOfWork;
  * @author Kévin Dunglas <dunglas@gmail.com>
  * @author Alan Poulain <contact@alanpoulain.eu>
  */
-final class Paginator implements \IteratorAggregate, PaginatorInterface, HasNextPagePaginatorInterface
+final class Paginator implements \IteratorAggregate, PaginatorInterface
 {
     public const LIMIT_ZERO_MARKER_FIELD = '___';
     public const LIMIT_ZERO_MARKER = 'limit0';
 
-    private ?\ArrayIterator $iterator = null;
+    /**
+     * @var Iterator
+     */
+    private $mongoDbOdmIterator;
+    /**
+     * @var array
+     */
+    private $pipeline;
+    /**
+     * @var UnitOfWork
+     */
+    private $unitOfWork;
+    /**
+     * @var string
+     */
+    private $resourceClass;
 
-    private readonly int $firstResult;
+    /** @var \ArrayIterator|null */
+    private $iterator;
 
-    private readonly int $maxResults;
+    /**
+     * @var int
+     */
+    private $firstResult;
+    /**
+     * @var int
+     */
+    private $maxResults;
+    /**
+     * @var int
+     */
+    private $totalItems;
 
-    private readonly int $totalItems;
-
-    public function __construct(private readonly Iterator $mongoDbOdmIterator, private readonly UnitOfWork $unitOfWork, private readonly string $resourceClass, private readonly array $pipeline)
+    public function __construct(Iterator $mongoDbOdmIterator, UnitOfWork $unitOfWork, string $resourceClass, array $pipeline)
     {
+        $this->mongoDbOdmIterator = $mongoDbOdmIterator;
+        $this->unitOfWork = $unitOfWork;
+        $this->resourceClass = $resourceClass;
+        $this->pipeline = $pipeline;
+
         $resultsFacetInfo = $this->getFacetInfo('results');
         $this->getFacetInfo('count');
 
@@ -97,7 +126,9 @@ final class Paginator implements \IteratorAggregate, PaginatorInterface, HasNext
      */
     public function getIterator(): \Traversable
     {
-        return $this->iterator ?? $this->iterator = new \ArrayIterator(array_map(fn ($result): object => $this->unitOfWork->getOrCreateDocument($this->resourceClass, $result), $this->mongoDbOdmIterator->toArray()[0]['results']));
+        return $this->iterator ?? $this->iterator = new \ArrayIterator(array_map(function ($result) {
+            return $this->unitOfWork->getOrCreateDocument($this->resourceClass, $result);
+        }, $this->mongoDbOdmIterator->toArray()[0]['results']));
     }
 
     /**
@@ -105,15 +136,7 @@ final class Paginator implements \IteratorAggregate, PaginatorInterface, HasNext
      */
     public function count(): int
     {
-        return is_countable($this->mongoDbOdmIterator->toArray()[0]['results']) ? \count($this->mongoDbOdmIterator->toArray()[0]['results']) : 0;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function hasNextPage(): bool
-    {
-        return $this->getLastPage() > $this->getCurrentPage();
+        return \count($this->mongoDbOdmIterator->toArray()[0]['results']);
     }
 
     /**
@@ -159,3 +182,5 @@ final class Paginator implements \IteratorAggregate, PaginatorInterface, HasNext
         return false;
     }
 }
+
+class_alias(Paginator::class, \ApiPlatform\Core\Bridge\Doctrine\MongoDbOdm\Paginator::class);

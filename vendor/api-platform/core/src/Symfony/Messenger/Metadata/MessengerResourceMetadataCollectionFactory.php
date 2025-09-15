@@ -19,12 +19,18 @@ use ApiPlatform\Symfony\Messenger\Processor;
 
 final class MessengerResourceMetadataCollectionFactory implements ResourceMetadataCollectionFactoryInterface
 {
-    public function __construct(private readonly ResourceMetadataCollectionFactoryInterface $decorated)
+    /**
+     * @var ResourceMetadataCollectionFactoryInterface
+     */
+    private $decorated;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $decorated)
     {
+        $this->decorated = $decorated;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function create(string $resourceClass): ResourceMetadataCollection
     {

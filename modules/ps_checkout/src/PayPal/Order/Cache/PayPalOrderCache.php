@@ -21,36 +21,32 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order\Cache;
 
-use Psr\Cache\InvalidArgumentException;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
+use PsCheckoutCart;
+use Symfony\Component\Cache\Simple\ChainCache;
 
-class PayPalOrderCache extends ChainAdapter
+class PayPalOrderCache extends ChainCache
 {
-    public const CACHE_TTL = [
-        \PsCheckoutCart::STATUS_CREATED => 600,
-        \PsCheckoutCart::STATUS_PAYER_ACTION_REQUIRED => 600,
-        \PsCheckoutCart::STATUS_APPROVED => 600,
-        \PsCheckoutCart::STATUS_VOIDED => 3600,
-        \PsCheckoutCart::STATUS_SAVED => 3600,
-        \PsCheckoutCart::STATUS_CANCELED => 3600,
-        \PsCheckoutCart::STATUS_COMPLETED => 3600,
+    const CACHE_TTL = [
+        PsCheckoutCart::STATUS_CREATED => 600,
+        PsCheckoutCart::STATUS_PAYER_ACTION_REQUIRED => 600,
+        PsCheckoutCart::STATUS_APPROVED => 600,
+        PsCheckoutCart::STATUS_VOIDED => 3600,
+        PsCheckoutCart::STATUS_SAVED => 3600,
+        PsCheckoutCart::STATUS_CANCELED => 3600,
+        PsCheckoutCart::STATUS_COMPLETED => 3600,
     ];
 
     /**
-     * @param string $key
-     * @param array $value
-     * @param int $ttl
+     * {@inheritdoc}
      *
-     * @throws InvalidArgumentException
+     * @return bool
      */
-    public function set($key, $value, $ttl = null): bool
+    public function set($key, $value, $ttl = null)
     {
-        if (!$ttl && isset($value['status'], self::CACHE_TTL[$value['status']])) {
+        if (!$ttl && isset($value['status']) && isset(self::CACHE_TTL[$value['status']])) {
             $ttl = self::CACHE_TTL[$value['status']];
         }
 
-        $cacheItem = $this->getItem($key)->set($value)->expiresAfter($ttl);
-
-        return $this->save($cacheItem);
+        return parent::set($key, $value, $ttl);
     }
 }

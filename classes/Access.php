@@ -24,8 +24,6 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-use PrestaShop\PrestaShop\Core\Security\Permission;
-
 /**
  * Class AccessCore.
  */
@@ -135,7 +133,6 @@ class AccessCore extends ObjectModel
      * @param string $authSlug Slug
      *
      * @return string Tab ID
-     *
      * @todo: Find out if we should return an int instead. (breaking change)
      */
     public static function findIdTabByAuthSlug($authSlug)
@@ -217,7 +214,7 @@ class AccessCore extends ObjectModel
      */
     public static function sluggifyTab($tab, $authorization = '')
     {
-        return sprintf('%s%s_%s', Permission::PREFIX_TAB, strtoupper($tab['class_name'] ?? ''), $authorization);
+        return sprintf('ROLE_MOD_TAB_%s_%s', strtoupper($tab['class_name'] ?? ''), $authorization);
     }
 
     /**
@@ -230,7 +227,7 @@ class AccessCore extends ObjectModel
      */
     public static function sluggifyModule($module, $authorization = '')
     {
-        return sprintf('%s%s_%s', Permission::PREFIX_MODULE, strtoupper($module['name'] ?? ''), $authorization);
+        return sprintf('ROLE_MOD_MODULE_%s_%s', strtoupper($module['name'] ?? ''), $authorization);
     }
 
     /**
@@ -347,7 +344,7 @@ class AccessCore extends ObjectModel
         $idTab = (int) $idTab;
 
         if ($idTab == -1) {
-            $slug = Permission::PREFIX_TAB . '%_';
+            $slug = 'ROLE_MOD_TAB_%_';
         } else {
             $slug = self::findSlugByIdTab($idTab);
         }
@@ -376,7 +373,7 @@ class AccessCore extends ObjectModel
         ');
 
         if (empty($roles)) {
-            throw new Exception('Cannot find role slug');
+            throw new \Exception('Cannot find role slug');
         }
 
         $res = [];
@@ -407,7 +404,7 @@ class AccessCore extends ObjectModel
         $idModule = (int) $idModule;
 
         if ($idModule == -1) {
-            $slug = Permission::PREFIX_MODULE . '%_';
+            $slug = 'ROLE_MOD_MODULE_%_';
         } else {
             $slug = self::findSlugByIdModule($idModule);
         }

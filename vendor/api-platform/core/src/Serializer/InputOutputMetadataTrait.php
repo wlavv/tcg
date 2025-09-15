@@ -17,9 +17,12 @@ use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInter
 
 trait InputOutputMetadataTrait
 {
-    protected ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory = null;
+    /**
+     * @var ResourceMetadataCollectionFactoryInterface|null
+     */
+    protected $resourceMetadataCollectionFactory;
 
-    protected function getInputClass(array $context = []): ?string
+    protected function getInputClass(string $class, array $context = []): ?string
     {
         if (!$this->resourceMetadataCollectionFactory) {
             return $context['input']['class'] ?? null;
@@ -32,7 +35,7 @@ trait InputOutputMetadataTrait
         return null;
     }
 
-    protected function getOutputClass(array $context = []): ?string
+    protected function getOutputClass(string $class, array $context = []): ?string
     {
         if (!$this->resourceMetadataCollectionFactory) {
             return $context['output']['class'] ?? null;

@@ -32,22 +32,15 @@ class PricesDropControllerCore extends ProductListingFrontController
     /** @var string */
     public $php_self = 'prices-drop';
 
-    /**
-     * Returns canonical URL for prices-drop page
-     *
-     * @return string
-     */
     public function getCanonicalURL(): string
     {
         return $this->buildPaginatedUrl($this->context->link->getPageLink('prices-drop'));
     }
 
     /**
-     * Assign template vars related to page content.
-     *
-     * @see FrontController::initContent()
+     * {@inheritdoc}
      */
-    public function initContent(): void
+    public function initContent()
     {
         parent::initContent();
 
@@ -55,12 +48,9 @@ class PricesDropControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Gets the product search query for the controller. This is a set of information that
-     * a filtering module or the default provider will use to fetch our products.
-     *
      * @return ProductSearchQuery
      */
-    protected function getProductSearchQuery(): ProductSearchQuery
+    protected function getProductSearchQuery()
     {
         $query = new ProductSearchQuery();
         $query
@@ -71,18 +61,16 @@ class PricesDropControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Default product search provider used if no filtering module stood up for the job
-     *
      * @return PricesDropProductSearchProvider
      */
-    protected function getDefaultProductSearchProvider(): PricesDropProductSearchProvider
+    protected function getDefaultProductSearchProvider()
     {
         return new PricesDropProductSearchProvider(
             $this->getTranslator()
         );
     }
 
-    public function getListingLabel(): string
+    public function getListingLabel()
     {
         return $this->trans(
             'Prices drop',
@@ -91,7 +79,7 @@ class PricesDropControllerCore extends ProductListingFrontController
         );
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
 

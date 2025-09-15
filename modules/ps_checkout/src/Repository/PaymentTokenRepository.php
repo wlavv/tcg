@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,9 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\Repository;
 
+use Db;
+use DbQuery;
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Customer\ValueObject\PayPalCustomerId;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Entity\PaymentToken;
@@ -28,8 +30,14 @@ use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\ValueObject\Payment
 
 class PaymentTokenRepository
 {
-    public function __construct(private \Db $db)
+    /**
+     * @var Db
+     */
+    private $db;
+
+    public function __construct(Db $db)
     {
+        $this->db = $db;
     }
 
     /**
@@ -55,9 +63,9 @@ class PaymentTokenRepository
                 ],
                 false,
                 true,
-                \Db::REPLACE
+                Db::REPLACE
             );
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while saving PayPal Payment Token', 0, $exception);
         }
     }
@@ -73,7 +81,7 @@ class PaymentTokenRepository
     {
         try {
             return $this->db->delete(PaymentToken::TABLE, sprintf('`token_id` = "%s"', pSQL($paymentTokenId->getValue())));
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while deleting PayPal Payment Token', 0, $exception);
         }
     }
@@ -88,12 +96,12 @@ class PaymentTokenRepository
     public function findByPrestaShopCustomerId($psCustomerId, $onlyVaulted = false, $merchantId = null)
     {
         try {
-            $query = new \DbQuery();
+            $query = new DbQuery();
             $query->select('t.*');
             $query->from(PaymentToken::TABLE, 't');
             $query->leftJoin('pscheckout_customer', 'c', 't.`paypal_customer_id` = c.`paypal_customer_id`');
             $query->where(sprintf('c.`id_customer` = %d', (int) $psCustomerId));
-            //            $query->orderBy('t.`is_favorite` DESC');
+//            $query->orderBy('t.`is_favorite` DESC');
             $query->orderBy('t.`id` ASC');
 
             if ($merchantId) {
@@ -105,7 +113,7 @@ class PaymentTokenRepository
             }
 
             $queryResult = $this->db->executeS($query);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while fetching PayPal Payment Tokens', 0, $exception);
         }
 
@@ -128,14 +136,14 @@ class PaymentTokenRepository
     public function findByPayPalCustomerId(PayPalCustomerId $customerId)
     {
         try {
-            $query = new \DbQuery();
+            $query = new DbQuery();
             $query->select('t.*');
             $query->from(PaymentToken::TABLE, 't');
             $query->where(sprintf('t.`paypal_customer_id` = "%s"', pSQL($customerId->getValue())));
             $query->orderBy('t.`is_favorite` DESC');
             $query->orderBy('t.`id` ASC');
             $queryResult = $this->db->executeS($query);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while fetching PayPal Payment Tokens', 0, $exception);
         }
 
@@ -158,12 +166,12 @@ class PaymentTokenRepository
     public function findById(PaymentTokenId $id)
     {
         try {
-            $query = new \DbQuery();
+            $query = new DbQuery();
             $query->select('*');
             $query->from(PaymentToken::TABLE);
             $query->where(sprintf('`token_id` = "%s"', pSQL($id->getValue())));
             $result = $this->db->getRow($query);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while fetching PayPal Payment Token', 0, $exception);
         }
 
@@ -191,7 +199,7 @@ class PaymentTokenRepository
             try {
                 $this->db->update(PaymentToken::TABLE, ['is_favorite' => 0], sprintf('`paypal_customer_id` = "%s"', pSQL($customerId)));
                 $this->db->update(PaymentToken::TABLE, ['is_favorite' => 1], sprintf('`token_id` = "%s"', pSQL($paymentTokenId->getValue())));
-            } catch (\Exception $exception) {
+            } catch (Exception $exception) {
                 throw new PsCheckoutException('Error while setting PayPal Payment Token as favorite', 0, $exception);
             }
 
@@ -211,7 +219,7 @@ class PaymentTokenRepository
     public function getCount($customerId = null, $merchantId = null)
     {
         try {
-            $query = new \DbQuery();
+            $query = new DbQuery();
             $query->select('COUNT(t.id)');
             $query->from(PaymentToken::TABLE, 't');
 
@@ -225,7 +233,7 @@ class PaymentTokenRepository
             }
 
             return (int) $this->db->getValue($query);
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PsCheckoutException('Error while counting PayPal Payment Tokens', 0, $exception);
         }
     }

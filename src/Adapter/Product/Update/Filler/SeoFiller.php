@@ -28,7 +28,6 @@ declare(strict_types=1);
 namespace PrestaShop\PrestaShop\Adapter\Product\Update\Filler;
 
 use PrestaShop\PrestaShop\Adapter\Category\Repository\CategoryRepository;
-use PrestaShop\PrestaShop\Adapter\Domain\LocalizedObjectModelTrait;
 use PrestaShop\PrestaShop\Adapter\Product\Repository\ProductRepository;
 use PrestaShop\PrestaShop\Adapter\Tools;
 use PrestaShop\PrestaShop\Core\Domain\Category\Exception\CategoryNotFoundException;
@@ -41,8 +40,6 @@ use Product;
 
 class SeoFiller implements ProductFillerInterface
 {
-    use LocalizedObjectModelTrait;
-
     /**
      * @var ProductRepository
      */
@@ -92,12 +89,14 @@ class SeoFiller implements ProductFillerInterface
 
         $localizedMetaDescriptions = $command->getLocalizedMetaDescriptions();
         if (null !== $localizedMetaDescriptions) {
-            $this->fillLocalizedValues($product, 'meta_description', $localizedMetaDescriptions, $updatableProperties);
+            $product->meta_description = $localizedMetaDescriptions;
+            $updatableProperties['meta_description'] = array_keys($localizedMetaDescriptions);
         }
 
         $localizedMetaTitles = $command->getLocalizedMetaTitles();
         if (null !== $localizedMetaTitles) {
-            $this->fillLocalizedValues($product, 'meta_title', $localizedMetaTitles, $updatableProperties);
+            $product->meta_title = $localizedMetaTitles;
+            $updatableProperties['meta_title'] = array_keys($localizedMetaTitles);
         }
 
         $localizedLinkRewrites = $command->getLocalizedLinkRewrites();
@@ -124,9 +123,9 @@ class SeoFiller implements ProductFillerInterface
 
             $product->link_rewrite[$langId] = $this->tools->linkRewrite($product->name[$langId]);
 
-            if (!isset($updatableProperties['link_rewrite'])
+            if (!isset($updatableProperties['link_rewrite']) ||
                 // strict false is important, because array_search could also return 0 as found item index
-                || false === array_search($langId, $updatableProperties['link_rewrite'], true)
+                false === array_search($langId, $updatableProperties['link_rewrite'], true)
             ) {
                 // we only add updatable property for lang if it is not yet added
                 $updatableProperties['link_rewrite'][] = $langId;

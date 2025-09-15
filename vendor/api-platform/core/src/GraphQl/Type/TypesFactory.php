@@ -23,11 +23,16 @@ use Psr\Container\ContainerInterface;
  */
 final class TypesFactory implements TypesFactoryInterface
 {
+    private $typeLocator;
+    private $typeIds;
+
     /**
      * @param string[] $typeIds
      */
-    public function __construct(private readonly ContainerInterface $typeLocator, private readonly array $typeIds)
+    public function __construct(ContainerInterface $typeLocator, array $typeIds)
     {
+        $this->typeLocator = $typeLocator;
+        $this->typeIds = $typeIds;
     }
 
     public function getTypes(): array
@@ -43,3 +48,5 @@ final class TypesFactory implements TypesFactoryInterface
         return $types;
     }
 }
+
+class_alias(TypesFactory::class, \ApiPlatform\Core\GraphQl\Type\TypesFactory::class);

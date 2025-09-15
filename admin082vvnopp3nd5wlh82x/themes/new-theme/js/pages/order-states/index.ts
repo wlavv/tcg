@@ -23,29 +23,37 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
+import Grid from '@components/grid/grid';
+import ReloadListActionExtension from '@components/grid/extension/reload-list-extension';
+import ExportToSqlManagerExtension from '@components/grid/extension/export-to-sql-manager-extension';
+import FiltersResetExtension from '@components/grid/extension/filters-reset-extension';
+import SortingExtension from '@components/grid/extension/sorting-extension';
+import ColumnTogglingExtension from '@components/grid/extension/column-toggling-extension';
+import SubmitBulkActionExtension from '@components/grid/extension/submit-bulk-action-extension';
+import BulkActionCheckboxExtension from '@components/grid/extension/bulk-action-checkbox-extension';
+import SubmitRowActionExtension from '@components/grid/extension/action/row/submit-row-action-extension';
+
+const {$} = window;
+
 $(() => {
-  const orderStatesGrid = new window.prestashop.component.Grid('order_states');
+  const orderStatesGrid = new Grid('order_states');
 
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.FiltersResetExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.FiltersSubmitButtonEnablerExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.SortingExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.ExportToSqlManagerExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.ReloadListExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.BulkActionCheckboxExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitGridActionExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitBulkActionExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitRowActionExtension());
-  orderStatesGrid.addExtension(new window.prestashop.component.GridExtensions.ColumnTogglingExtension());
+  orderStatesGrid.addExtension(new FiltersResetExtension());
+  orderStatesGrid.addExtension(new SortingExtension());
+  orderStatesGrid.addExtension(new ExportToSqlManagerExtension());
+  orderStatesGrid.addExtension(new ReloadListActionExtension());
+  orderStatesGrid.addExtension(new BulkActionCheckboxExtension());
+  orderStatesGrid.addExtension(new SubmitBulkActionExtension());
+  orderStatesGrid.addExtension(new SubmitRowActionExtension());
+  orderStatesGrid.addExtension(new ColumnTogglingExtension());
 
-  const orderReturnStatusesGrid = new window.prestashop.component.Grid('order_return_states');
+  const orderReturnStatusesGrid = new Grid('order_return_states');
 
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.FiltersResetExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.FiltersSubmitButtonEnablerExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.SortingExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.ExportToSqlManagerExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.ReloadListExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.BulkActionCheckboxExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitGridActionExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitBulkActionExtension());
-  orderReturnStatusesGrid.addExtension(new window.prestashop.component.GridExtensions.SubmitRowActionExtension());
+  orderReturnStatusesGrid.addExtension(new FiltersResetExtension());
+  orderReturnStatusesGrid.addExtension(new SortingExtension());
+  orderReturnStatusesGrid.addExtension(new ExportToSqlManagerExtension());
+  orderReturnStatusesGrid.addExtension(new ReloadListActionExtension());
+  orderReturnStatusesGrid.addExtension(new BulkActionCheckboxExtension());
+  orderReturnStatusesGrid.addExtension(new SubmitBulkActionExtension());
+  orderReturnStatusesGrid.addExtension(new SubmitRowActionExtension());
 });

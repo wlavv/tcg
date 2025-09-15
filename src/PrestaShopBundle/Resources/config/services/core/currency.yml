@@ -33,10 +33,5 @@ services:
       - '@prestashop.core.currency.exchange_rate.circuit_breaker'
       - '@cache.app'
 
-  PrestaShop\PrestaShop\Core\Localization\Currency\PatternTransformer: ~
-
   prestashop.core.localization.currency.pattern_transformer:
-    alias: PrestaShop\PrestaShop\Core\Localization\Currency\PatternTransformer
-    deprecated:
-      package: PrestaShop/PrestaShop
-      version: 9.0
+    class: PrestaShop\PrestaShop\Core\Localization\Currency\PatternTransformer

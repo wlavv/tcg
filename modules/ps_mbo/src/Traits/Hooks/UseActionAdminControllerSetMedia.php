@@ -21,14 +21,16 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
+use Exception;
 use PrestaShop\Module\Mbo\Tab\Tab;
+use Tools;
 
 trait UseActionAdminControllerSetMedia
 {
     /**
      * @return void
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function bootUseActionAdminControllerSetMedia(): void
     {
@@ -40,9 +42,9 @@ trait UseActionAdminControllerSetMedia
     /**
      * Hook actionAdminControllerSetMedia.
      */
-    public function hookActionAdminControllerSetMedia($params): void
+    public function hookActionAdminControllerSetMedia(): void
     {
-        if (\Tools::getValue('controller') === 'AdminPsMboModule') {
+        if (Tools::getValue('controller') === "AdminPsMboModule") {
             $this->context->controller->addJs(
                 sprintf('%sviews/js/upload_module_with_cdc.js?v=%s', $this->getPathUri(), $this->version)
             );
@@ -58,7 +60,7 @@ trait UseActionAdminControllerSetMedia
             return $a['order'] === $b['order'] ? 0 : $order;
         });
         foreach ($this->adminControllerMediaMethods as $setMediaMethod) {
-            $this->{$setMediaMethod['method']}($params);
+            $this->{$setMediaMethod['method']}();
         }
     }
 
@@ -73,7 +75,7 @@ trait UseActionAdminControllerSetMedia
     protected function addAdminControllerMedia(string $setMediaMethod, int $order = 1): void
     {
         if (!method_exists($this, $setMediaMethod)) {
-            throw new \Exception("Method '{$setMediaMethod}' is not defined.");
+            throw new Exception("Method '{$setMediaMethod}' is not defined.");
         }
         $this->adminControllerMediaMethods[] = [
             'method' => $setMediaMethod,
@@ -84,39 +86,37 @@ trait UseActionAdminControllerSetMedia
     /**
      * Add JS and CSS file
      *
-     * @param array $hookParams
-     *
      * @return void
      */
-    protected function loadMediaForAdminControllerSetMedia(array $hookParams): void
+    protected function loadMediaForAdminControllerSetMedia(): void
     {
-        if (in_array(\Tools::getValue('controller'), self::CONTROLLERS_WITH_CDC_SCRIPT)) {
+        if (in_array(Tools::getValue('controller'), self::CONTROLLERS_WITH_CDC_SCRIPT)) {
             $this->context->controller->addJs('/js/jquery/plugins/growl/jquery.growl.js?v=' . $this->version);
             $this->context->controller->addCSS($this->getPathUri() . 'views/css/module-catalog.css');
         }
-        if (in_array(\Tools::getValue('controller'), self::CONTROLLERS_WITH_CONNECTION_TOOLBAR)) {
+        if (in_array(Tools::getValue('controller'), self::CONTROLLERS_WITH_CONNECTION_TOOLBAR)) {
             $this->context->controller->addCSS($this->getPathUri() . 'views/css/connection-toolbar.css');
             $this->context->controller->addJS($this->getPathUri() . 'views/js/connection-toolbar.js');
         }
-        if ('AdminPsMboModule' === \Tools::getValue('controller')) {
+        if ('AdminPsMboModule' === Tools::getValue('controller')) {
             $this->context->controller->addCSS($this->getPathUri() . 'views/css/hide-toolbar.css');
         }
         if ($this->isAdminLegacyContext()) {
             // Add it to have all script work on all pages...
             $this->context->controller->addJs('/admin-dev/themes/default/js/bundle/default.js?v=' . _PS_VERSION_);
         }
-        $this->loadCdcMedia($hookParams);
+        $this->loadCdcMedia();
     }
 
-    private function loadCdcMedia(array $hookParams): void
+    private function loadCdcMedia(): void
     {
-        $controllerName = \Tools::getValue('controller');
-        if (!is_string($controllerName)) {
+        $controllerName = Tools::getValue('controller');
+        if(!is_string($controllerName)) {
             return;
         }
         if (
-            !Tab::mayDisplayRecommendedModules($controllerName)
-            && !in_array($controllerName, self::CONTROLLERS_WITH_CDC_SCRIPT)
+            !Tab::mayDisplayRecommendedModules($controllerName) &&
+            !in_array($controllerName, self::CONTROLLERS_WITH_CDC_SCRIPT)
         ) {
             return;
         }

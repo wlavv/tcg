@@ -10,9 +10,14 @@
 
 namespace PrestaShop\TranslationToolsBundle\Translation\Compiler\Smarty;
 
+use Smarty_Internal_SmartyTemplateCompiler;
+use Smarty_Internal_Template;
+use Smarty_Internal_Templateparser;
+use SmartyCompilerException;
+use SmartyException;
 use Symfony\Component\Filesystem\Exception\FileNotFoundException;
 
-class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompiler
+class TranslationTemplateCompiler extends Smarty_Internal_SmartyTemplateCompiler
 {
     /**
      * @var bool
@@ -51,19 +56,19 @@ class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompile
                 }
 
                 $this->parser->doParse($this->lex->token, $this->lex->value);
-                if ($this->lex->token === \Smarty_Internal_Templateparser::TP_TEXT) {
+                if ($this->lex->token === Smarty_Internal_Templateparser::TP_TEXT) {
                     $comment = [
                         'line' => $this->lex->line,
                         'value' => $this->lex->value,
                     ];
                 }
-            } catch (\SmartyCompilerException $e) {
-                if ($tag = $this->explodeLTag($this->parser->yystack)) {
+            } catch (SmartyCompilerException $e) {
+                if (($tag = $this->explodeLTag($this->parser->yystack))) {
                     $tagFound[] = $this->getTag($tag, $e, $comment);
                 }
 
                 $this->parser->yy_accept();
-            } catch (\SmartyException $e) {
+            } catch (SmartyException $e) {
             }
         }
 
@@ -91,7 +96,7 @@ class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompile
           then written to compiled files. */
         // init the lexer/parser to compile the template
         $this->parent_compiler = $this;
-        $this->template = new \Smarty_Internal_Template($this->templateFile, $this->smarty);
+        $this->template = new Smarty_Internal_Template($this->templateFile, $this->smarty);
         $this->lex = new $this->lexer_class(file_get_contents($this->templateFile), $this);
         $this->parser = new $this->parser_class($this->lex, $this);
 
@@ -109,7 +114,7 @@ class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompile
     private function naturalize($string, $token = null)
     {
         switch ($token) {
-            case \Smarty_Internal_Templateparser::TP_TEXT:
+            case Smarty_Internal_Templateparser::TP_TEXT:
                 return trim($string, " \t\n\r\0\x0B{*}");
             default:
                 return substr($string, 1, -1);
@@ -148,7 +153,7 @@ class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompile
     /**
      * @return array
      */
-    private function getTag(array $value, \SmartyCompilerException $exception, array $previousComment)
+    private function getTag(array $value, SmartyCompilerException $exception, array $previousComment)
     {
         $tag = [
             'tag' => $value,
@@ -157,7 +162,7 @@ class TranslationTemplateCompiler extends \Smarty_Internal_SmartyTemplateCompile
         ];
 
         if (!empty($previousComment) && $previousComment['line'] == $tag['line'] - 1) {
-            $tag['comment'] = $this->naturalize($previousComment['value'], \Smarty_Internal_Templateparser::TP_TEXT);
+            $tag['comment'] = $this->naturalize($previousComment['value'], Smarty_Internal_Templateparser::TP_TEXT);
         }
 
         return $tag;

@@ -190,7 +190,6 @@ class Btmegamenu extends ObjectModel
             }
         }
         /* Multilingual fields */
-        /*
         if (count($this->fieldsValidateLang)) {
             $languages = Language::getLanguages(false);
             foreach ($languages as $language) {
@@ -203,7 +202,7 @@ class Btmegamenu extends ObjectModel
                     unset($validation);
                 }
             }
-        }*/
+        }
         $this->groupBox = is_array($this->groupBox) ? implode(',', $this->groupBox) : $this->groupBox;
     }
 

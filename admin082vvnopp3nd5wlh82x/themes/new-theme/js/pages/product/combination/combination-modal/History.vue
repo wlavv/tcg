@@ -195,7 +195,7 @@
   top: 50%;
   transform: translateY(-50%);
   height: 95%;
-  margin: 0 var(--#{$cdk}size-16);
+  margin: 0 1rem;
   border-top-right-radius: 0;
 
   &-list {
@@ -209,7 +209,7 @@
 
   .card-block {
     padding: 0;
-    height: calc(100% - 162px);
+    height: calc(100% - 7rem);
     overflow: auto;
   }
 
@@ -221,39 +221,39 @@
     height: calc(100% - 4rem);
 
     &-tip {
-      color: var(--#{$cdk}primary-600);
-      font-size: var(--#{$cdk}size-16);
+      color: #8a8a8a;
+      font-size: 1rem;
       text-align: center;
       max-width: 280px;
-      margin-top: var(--#{$cdk}size-28);
+      margin-top: 1.75rem;
     }
   }
 
   &-item {
     list-style-type: none;
-    padding: var(--#{$cdk}size-12) var(--#{$cdk}size-16);
+    padding: 0.75rem 1rem;
     transition: 0.25s ease-out;
     cursor: pointer;
     position: relative;
 
     i {
-      color: var(--#{$cdk}primary-800);
+      color: $primary;
       opacity: 0;
       position: absolute;
       top: 50%;
       transform: translateY(-50%);
-      right: var(--#{$cdk}size-16);
-      font-size: var(--#{$cdk}size-20);
+      right: 1rem;
+      font-size: 1.25rem;
       transition: 0.25s ease-out;
     }
 
     &.selected {
-      background: var(--#{$cdk}primary-200);
+      background: #f7f7f7;
     }
 
     &:hover {
-      background: var(--#{$cdk}primary-100);
-      color: var(--#{$cdk}primary-800);
+      background: #f0fcfd;
+      color: $primary;
 
       i {
         opacity: 1;
@@ -263,24 +263,24 @@
 
   .history-handle {
     position: absolute;
-    top: 0;
-    right: calc(-1 * var(--#{$cdk}size-32));
-    background-color: var(--#{$cdk}primary-100);
-    width: var(--#{$cdk}size-32);
-    height: var(--#{$cdk}size-40);
-    border: 1px solid var(--#{$cdk}primary-400);
-    border-top-right-radius: var(--#{$cdk}size-5);
-    border-bottom-right-radius: var(--#{$cdk}size-5);
+    top: -1px;
+    right: -2rem;
+    background-color: #fafbfc;
+    width: 2rem;
+    height: 46px;
+    border: 1px solid #dbe6e9;
+    border-top-right-radius: 5px;
+    border-bottom-right-radius: 5px;
     border-left: none;
     cursor: pointer;
 
     &::after {
       position: absolute;
       top: 50%;
-      right: var(--#{$cdk}size-4);
+      right: 0.25rem;
       transform: translateY(-50%);
-      font-family: var(--#{$cdk}font-family-material-icons);
-      font-size: var(--#{$cdk}size-24);
+      font-family: "Material Icons",Arial,Verdana,Tahoma,sans-serif;
+      font-size: 1.5rem;
       content: 'keyboard_arrow_left';
     }
   }
@@ -293,9 +293,9 @@
     border: none;
 
     .history-handle {
-      border: none;
-      right: calc(-1 * var(--#{$cdk}size-32));
-      background-color: var(--#{$cdk}white);
+      top: -0.5px;
+      right: -2rem;
+      background-color: #fff;
 
       &::after {
         content: 'history';

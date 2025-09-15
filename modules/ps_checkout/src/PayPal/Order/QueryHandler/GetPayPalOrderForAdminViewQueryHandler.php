@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,7 +25,7 @@ use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForAdm
 
 class GetPayPalOrderForAdminViewQueryHandler
 {
-    public function __invoke(GetPayPalOrderForAdminViewQuery $query)
+    public function handle(GetPayPalOrderForAdminViewQuery $query)
     {
         return new GetPayPalOrderForAdminViewQueryResult();
     }

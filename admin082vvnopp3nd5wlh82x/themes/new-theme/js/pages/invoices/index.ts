@@ -24,16 +24,17 @@
  */
 
 import initDatePickers from '@app/utils/datepicker';
+import TranslatableInput from '@components/translatable-input';
 
 const {$} = window;
 
 $(() => {
   initDatePickers();
+  new TranslatableInput();
 
   window.prestashop.component.initComponents(
     [
       'MultistoreConfigField',
-      'TranslatableInput',
     ],
   );
 });

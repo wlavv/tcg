@@ -93,7 +93,7 @@ class CustomizationFieldDeleter
 
             try {
                 $this->performDeletion($customizationField);
-            } catch (CannotDeleteCustomizationFieldException) {
+            } catch (CannotDeleteCustomizationFieldException $e) {
                 $failedIds[] = $customizationFieldId->getValue();
             }
         }

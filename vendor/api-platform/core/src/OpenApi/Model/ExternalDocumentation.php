@@ -17,8 +17,13 @@ final class ExternalDocumentation
 {
     use ExtensionTrait;
 
-    public function __construct(private string $description = '', private string $url = '')
+    private $description;
+    private $url;
+
+    public function __construct(string $description = '', string $url = '')
     {
+        $this->description = $description;
+        $this->url = $url;
     }
 
     public function getDescription(): string
@@ -47,3 +52,5 @@ final class ExternalDocumentation
         return $clone;
     }
 }
+
+class_alias(ExternalDocumentation::class, \ApiPlatform\Core\OpenApi\Model\ExternalDocumentation::class);

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,9 +25,16 @@ if (!defined('_PS_VERSION_')) {
 
 class Ps_checkout extends PaymentModule
 {
+    /**
+     * Default hook to install
+     * 1.6 and 1.7
+     *
+     * @var array
+     */
     const HOOK_LIST = [
         'displayAdminAfterHeader',
         'displayOrderConfirmation',
+        'displayAdminOrderLeft',
         'displayAdminOrderMainBottom',
         'actionObjectShopAddAfter',
         'actionObjectShopDeleteAfter',
@@ -41,6 +47,14 @@ class Ps_checkout extends PaymentModule
         'displayPaymentReturn',
         'displayOrderDetail',
         'moduleRoutes',
+    ];
+
+    /**
+     * Hook to install for 1.7
+     *
+     * @var array
+     */
+    const HOOK_LIST_17 = [
         'paymentOptions',
         'actionCartUpdateQuantityBefore',
         'displayInvoiceLegalFreeText',
@@ -53,6 +67,18 @@ class Ps_checkout extends PaymentModule
     const MODULE_ADMIN_CONTROLLERS = [
         'AdminAjaxPrestashopCheckout',
         'AdminPaypalOnboardingPrestashopCheckout',
+    ];
+
+    /**
+     * Hook to install for 1.6
+     *
+     * @var array
+     */
+    const HOOK_LIST_16 = [
+        'actionBeforeCartUpdateQty',
+        'actionAfterDeleteProductInCart',
+        'displayPayment',
+        'displayCartTotalPriceLabel',
     ];
 
     public $configurationList = [
@@ -90,19 +116,19 @@ class Ps_checkout extends PaymentModule
 
     // Needed in order to retrieve the module version easier (in api call headers) than instanciate
     // the module each time to get the version
-    const VERSION = '9.4.3.3';
+    const VERSION = '8.4.4.0';
 
     const INTEGRATION_DATE = '2024-04-01';
 
-    /** @var Psr\Log\LoggerInterface */
+    /** @var \Psr\Log\LoggerInterface */
     private $logger;
 
     /**
-     * @var PrestaShop\ModuleLibServiceContainer\DependencyInjection\ServiceContainer
+     * @var \PrestaShop\ModuleLibServiceContainer\DependencyInjection\ServiceContainer
      */
     private $serviceContainer;
-    private ?bool $merchantIsValid = null;
-    private array $currencyIsAllowed = [];
+    private static $merchantIsValid;
+    private static $currencyIsAllowed;
 
     public function __construct()
     {
@@ -111,7 +137,7 @@ class Ps_checkout extends PaymentModule
 
         // We cannot use the const VERSION because the const is not computed by addons marketplace
         // when the zip is uploaded
-        $this->version = '9.4.3.3';
+        $this->version = '8.4.4.0';
         $this->author = 'PrestaShop';
         $this->currencies = true;
         $this->currencies_mode = 'checkbox';
@@ -126,7 +152,7 @@ class Ps_checkout extends PaymentModule
         $this->description = $this->l('Provide the most commonly used payment methods to your customers in this all-in-one module, and manage all your sales in a centralized interface.');
 
         $this->confirmUninstall = $this->l('Are you sure you want to uninstall this module?');
-        $this->ps_versions_compliancy = ['min' => '9.0.0', 'max' => _PS_VERSION_];
+        $this->ps_versions_compliancy = ['min' => '8.0.0', 'max' => _PS_VERSION_];
 
         // $this->disableSegment = false;
     }
@@ -144,16 +170,17 @@ class Ps_checkout extends PaymentModule
         $savedGroupShopId = Shop::getContextShopGroupID();
         Shop::setContext(Shop::CONTEXT_ALL);
 
-        $result = parent::install()
-            && $this->installConfiguration()
-            && $this->installHooks()
-            && (new PrestaShop\Module\PrestashopCheckout\Database\TableManager())->createTable()
-            && (new PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceInstaller())->createFundingSourcesOnAllShops()
-            && $this->installTabs()
-            && $this->disableIncompatibleCountries()
-            && $this->disableIncompatibleCurrencies();
+        // Install for both 1.7 and 1.6
+        $result = parent::install() &&
+            $this->installConfiguration() &&
+            $this->installHooks() &&
+            (new PrestaShop\Module\PrestashopCheckout\Database\TableManager())->createTable() &&
+            (new PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceInstaller())->createFundingSourcesOnAllShops() &&
+            $this->installTabs() &&
+            $this->disableIncompatibleCountries() &&
+            $this->disableIncompatibleCurrencies();
 
-        (new PrestaShop\Module\PrestashopCheckout\Order\State\OrderStateInstaller())->install();
+        (new \PrestaShop\Module\PrestashopCheckout\Order\State\OrderStateInstaller())->install();
 
         // Restore initial PrestaShop shop context
         if (Shop::CONTEXT_SHOP === $savedShopContext) {
@@ -169,9 +196,23 @@ class Ps_checkout extends PaymentModule
 
     public function installHooks()
     {
-        $result = $this->registerHook(self::HOOK_LIST);
+        $result = (bool) $this->registerHook(self::HOOK_LIST);
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
 
-        $this->updatePosition(Hook::getIdByName('paymentOptions'), false, 1);
+        // Install specific to prestashop 1.6
+        if (!$shopContext->isShop17()) {
+            $result = $result && $this->registerHook(self::HOOK_LIST_16);
+            $this->updatePosition(\Hook::getIdByName('payment'), false, 1);
+
+            return $result;
+        }
+
+        // Install specific to prestashop 1.7
+        if ($shopContext->isShop17()) {
+            $result = $result && (bool) $this->registerHook(self::HOOK_LIST_17);
+            $this->updatePosition(\Hook::getIdByName('paymentOptions'), false, 1);
+        }
 
         return $result;
     }
@@ -185,16 +226,16 @@ class Ps_checkout extends PaymentModule
     {
         $result = true;
 
-        foreach (Shop::getShops(false, null, true) as $shopId) {
+        foreach (\Shop::getShops(false, null, true) as $shopId) {
             foreach ($this->configurationList as $name => $value) {
                 if (false === Configuration::hasKey($name, null, null, (int) $shopId)) {
-                    $result = $result && Configuration::updateValue(
-                        $name,
-                        $value,
-                        false,
-                        null,
-                        (int) $shopId
-                    );
+                    $result = $result && (bool) Configuration::updateValue(
+                            $name,
+                            $value,
+                            false,
+                            null,
+                            (int) $shopId
+                        );
                 }
             }
         }
@@ -238,20 +279,20 @@ class Ps_checkout extends PaymentModule
      */
     public function disableIncompatibleCountries()
     {
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
-        $paypalConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
+        $paypalConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
         $incompatibleCodes = $paypalConfiguration->getIncompatibleCountryCodes(false);
         $result = true;
 
         foreach ($incompatibleCodes as $incompatibleCode) {
-            $db = Db::getInstance();
+            $db = \Db::getInstance();
 
             $result = $result && $db->execute('
                 DELETE FROM ' . _DB_PREFIX_ . 'module_country
                 WHERE id_country = (SELECT id_country FROM ' . _DB_PREFIX_ . 'country WHERE iso_code = "' . $incompatibleCode . '")
                 AND id_module = ' . $this->id . '
-                AND id_shop = ' . Context::getContext()->shop->id
-            );
+                AND id_shop = ' . \Context::getContext()->shop->id
+                );
         }
 
         return $result;
@@ -264,20 +305,20 @@ class Ps_checkout extends PaymentModule
      */
     public function disableIncompatibleCurrencies()
     {
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
-        $paypalConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
+        $paypalConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
         $incompatibleCodes = $paypalConfiguration->getIncompatibleCurrencyCodes(false);
         $result = true;
 
         foreach ($incompatibleCodes as $incompatibleCode) {
-            $db = Db::getInstance();
+            $db = \Db::getInstance();
 
             $result = $result && $db->execute('
                 DELETE FROM ' . _DB_PREFIX_ . 'module_currency
                 WHERE id_currency = (SELECT id_currency FROM ' . _DB_PREFIX_ . 'currency WHERE iso_code = "' . $incompatibleCode . '")
                 AND id_module = ' . $this->id . '
-                AND id_shop = ' . Context::getContext()->shop->id
-            );
+                AND id_shop = ' . \Context::getContext()->shop->id
+                );
         }
 
         return $result;
@@ -326,7 +367,7 @@ class Ps_checkout extends PaymentModule
         $uninstallTabCompleted = true;
 
         foreach (static::MODULE_ADMIN_CONTROLLERS as $controllerName) {
-            $id_tab = Tab::getIdFromClassName($controllerName);
+            $id_tab = (int) Tab::getIdFromClassName($controllerName);
             $tab = new Tab($id_tab);
             if (Validate::isLoadedObject($tab)) {
                 $uninstallTabCompleted = $uninstallTabCompleted && $tab->delete();
@@ -339,9 +380,9 @@ class Ps_checkout extends PaymentModule
     public function getContent()
     {
         try {
-            /** @var PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts $psAccountsFacade */
+            /** @var \PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts $psAccountsFacade */
             $psAccountsFacade = $this->getService('ps_accounts.facade');
-            /** @var PrestaShop\PsAccountsInstaller\Installer\Presenter\InstallerPresenter $psAccountsPresenter */
+            /** @var \PrestaShop\PsAccountsInstaller\Installer\Presenter\InstallerPresenter $psAccountsPresenter */
             $psAccountsPresenter = $psAccountsFacade->getPsAccountsPresenter();
             // @phpstan-ignore-next-line
             $contextPsAccounts = $psAccountsPresenter->present($this->name);
@@ -357,21 +398,21 @@ class Ps_checkout extends PaymentModule
             );
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Presenter\Store\StorePresenter $storePresenter */
-        $storePresenter = $this->getService(PrestaShop\Module\PrestashopCheckout\Presenter\Store\StorePresenter::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Presenter\Store\StorePresenter $storePresenter */
+        $storePresenter = $this->getService(\PrestaShop\Module\PrestashopCheckout\Presenter\Store\StorePresenter::class);
 
         Media::addJsDef([
             'store' => $storePresenter->present(),
             'contextPsAccounts' => $contextPsAccounts,
         ]);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Environment\Env $env */
-        $env = $this->getService(PrestaShop\Module\PrestashopCheckout\Environment\Env::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Environment\Env $env */
+        $env = $this->getService(\PrestaShop\Module\PrestashopCheckout\Environment\Env::class);
         $boSdkUrl = $env->getEnv('CHECKOUT_BO_SDK_URL');
         if (substr($boSdkUrl, -3) !== '.js') {
             $boSdkVersion = $env->getEnv('CHECKOUT_BO_SDK_VERSION');
             if (empty($boSdkVersion)) {
-                /** @var PrestaShop\Module\PrestashopCheckout\Version\Version $version */
+                /** @var \PrestaShop\Module\PrestashopCheckout\Version\Version $version */
                 $version = $this->getService('ps_checkout.module.version');
                 $majorModuleVersion = explode('.', $version->getSemVersion())[0];
                 $boSdkVersion = "$majorModuleVersion.X.X";
@@ -387,7 +428,7 @@ class Ps_checkout extends PaymentModule
 
         if ($isShopContext) {
             try {
-                $mboInstaller = new Prestashop\ModuleLibMboInstaller\DependencyBuilder($this);
+                $mboInstaller = new \Prestashop\ModuleLibMboInstaller\DependencyBuilder($this);
                 $requiredDependencies = $mboInstaller->handleDependencies();
                 $hasRequiredDependencies = $mboInstaller->areDependenciesMet();
             } catch (Exception $exception) {
@@ -419,6 +460,26 @@ class Ps_checkout extends PaymentModule
     }
 
     /**
+     * This hook is called only in PrestaShop 1.6.1 to 1.6.1.24
+     * Deprecated since PrestaShop 1.7.0.0
+     */
+    public function hookActionAfterDeleteProductInCart()
+    {
+        if (!$this->merchantIsValid()) {
+            return;
+        }
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+
+        if ($shopContext->isShop17()) {
+            return;
+        }
+
+        $this->hookActionCartUpdateQuantityBefore();
+    }
+
+    /**
      * This hook is called only since PrestaShop 1.7.0.0
      */
     public function hookActionCartUpdateQuantityBefore()
@@ -431,8 +492,8 @@ class Ps_checkout extends PaymentModule
             return;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
-        $psCheckoutCartRepository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
+        $psCheckoutCartRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
 
         /** @var PsCheckoutCart|false $psCheckoutCart */
         $psCheckoutCart = $psCheckoutCartRepository->findOneByCartId((int) $this->context->cart->id);
@@ -444,6 +505,84 @@ class Ps_checkout extends PaymentModule
         if ($psCheckoutCart->isExpressCheckout || !$psCheckoutCart->isOrderAvailable() || !$this->context->cart->nbProducts()) {
             $this->context->cookie->__unset('paypalEmail');
         }
+    }
+
+    /**
+     * This hook is called only in PrestaShop 1.6.1 to 1.6.1.24
+     * Deprecated since PrestaShop 1.7.0.0
+     */
+    public function hookActionBeforeCartUpdateQty()
+    {
+        if (!$this->merchantIsValid()) {
+            return;
+        }
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+
+        if ($shopContext->isShop17()) {
+            return;
+        }
+
+        $this->hookActionCartUpdateQuantityBefore();
+    }
+
+    /**
+     * Add payment option at the checkout in the front office (prestashop 1.6)
+     */
+    public function hookDisplayPayment()
+    {
+        if (false === Validate::isLoadedObject($this->context->cart)
+            || false === $this->checkCurrency($this->context->cart)
+            || false === $this->merchantIsValid()
+        ) {
+            return '';
+        }
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
+        $fundingSourceProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
+        $paymentOptions = [];
+
+        foreach ($fundingSourceProvider->getAll() as $fundingSource) {
+            $paymentOptions[$fundingSource->name] = $fundingSource->label;
+        }
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
+        $psCheckoutCartRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+
+        /** @var PsCheckoutCart|false $psCheckoutCart */
+        $psCheckoutCart = $psCheckoutCartRepository->findOneByCartId((int) $this->context->cart->id);
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $configurationPayPal */
+        $configurationPayPal = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+
+        $isExpressCheckout = false !== $psCheckoutCart && $psCheckoutCart->isExpressCheckout && $psCheckoutCart->isOrderAvailable();
+
+        $this->context->smarty->assign([
+            'cancelTranslatedText' => $this->l('Choose another payment method'),
+            'is17' => $shopContext->isShop17(),
+            'isExpressCheckout' => $isExpressCheckout,
+            'modulePath' => $this->getPathUri(),
+            'paymentOptions' => $paymentOptions,
+            'isHostedFieldsAvailable' => $configurationPayPal->isHostedFieldsEnabled() && in_array($configurationPayPal->getCardHostedFieldsStatus(), ['SUBSCRIBED', 'LIMITED'], true),
+            'isOnePageCheckout16' => !$shopContext->isShop17() && (bool) Configuration::get('PS_ORDER_PROCESS_TYPE'),
+            'spinnerPath' => $this->getPathUri() . 'views/img/tail-spin.svg',
+            'loaderTranslatedText' => $this->l('Please wait, loading additional payment methods.'),
+            'paypalLogoPath' => $this->getPathUri() . 'views/img/paypal_express.png',
+            'translatedText' => strtr(
+                $this->l('You have selected your [PAYPAL_ACCOUNT] PayPal account to proceed to the payment.'),
+                [
+                    '[PAYPAL_ACCOUNT]' => $this->context->cookie->__get('paypalEmail') ? $this->context->cookie->__get('paypalEmail') : '',
+                ]
+            ),
+            'shoppingCartWarningPath' => $this->getPathUri() . 'views/img/shopping-cart-warning.svg',
+            'warningTranslatedText' => $this->l('Warning'),
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/hook/displayPayment.tpl');
     }
 
     /**
@@ -465,11 +604,11 @@ class Ps_checkout extends PaymentModule
             return [];
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
-        $fundingSourceProvider = $this->getService(PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
+        $fundingSourceProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $configurationPayPal */
-        $configurationPayPal = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $configurationPayPal */
+        $configurationPayPal = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
 
         $paymentOptions = [];
 
@@ -538,7 +677,7 @@ class Ps_checkout extends PaymentModule
     /**
      * Hook executed at the order confirmation
      *
-     * @param array{cookie: Cookie, cart: Cart, altern: int, order: Order, objOrder?: Order} $params
+     * @param array{cookie: Cookie, cart: Cart, altern: int, order: Order, objOrder: Order} $params
      *
      * @return string
      */
@@ -555,8 +694,8 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
-        $orderSummaryViewBuilder = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
+        $orderSummaryViewBuilder = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
 
         try {
             $orderSummaryView = $orderSummaryViewBuilder->build($order);
@@ -579,12 +718,12 @@ class Ps_checkout extends PaymentModule
      */
     public function checkCurrency($cart)
     {
-        if (isset($this->currencyIsAllowed[$cart->id_currency])) {
-            return $this->currencyIsAllowed[$cart->id_currency];
+        if (isset(static::$currencyIsAllowed[$cart->id_currency])) {
+            return static::$currencyIsAllowed[$cart->id_currency];
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PayPalCodeRepository $codeRepository */
-        $codeRepository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PayPalCodeRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PayPalCodeRepository $codeRepository */
+        $codeRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PayPalCodeRepository::class);
         $currency_order = Currency::getCurrencyInstance($cart->id_currency);
         $isCurrencySupported = false;
 
@@ -595,7 +734,7 @@ class Ps_checkout extends PaymentModule
         }
 
         if (!$isCurrencySupported) {
-            $this->currencyIsAllowed[$cart->id_currency] = false;
+            static::$currencyIsAllowed[$cart->id_currency] = false;
 
             return false;
         }
@@ -604,20 +743,20 @@ class Ps_checkout extends PaymentModule
         $currencies_module = $this->getCurrency($cart->id_currency);
 
         if (empty($currencies_module)) {
-            $this->currencyIsAllowed[$cart->id_currency] = false;
+            static::$currencyIsAllowed[$cart->id_currency] = false;
 
             return false;
         }
 
         foreach ($currencies_module as $currency_module) {
             if ($currency_order->id == $currency_module['id_currency']) {
-                $this->currencyIsAllowed[$cart->id_currency] = true;
+                static::$currencyIsAllowed[$cart->id_currency] = true;
 
                 return true;
             }
         }
 
-        $this->currencyIsAllowed[$cart->id_currency] = false;
+        static::$currencyIsAllowed[$cart->id_currency] = false;
 
         return false;
     }
@@ -627,18 +766,20 @@ class Ps_checkout extends PaymentModule
      */
     public function hookDisplayAdminAfterHeader()
     {
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
-        $paypalConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository $psAccount */
-        $psAccount = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository::class);
-        /** @var PrestaShop\Module\PrestashopCheckout\Presenter\Store\Modules\ContextModule $moduleContext */
-        $moduleContext = $this->getService(PrestaShop\Module\PrestashopCheckout\Presenter\Store\Modules\ContextModule::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $paypalConfiguration */
+        $paypalConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository $psAccount */
+        $psAccount = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Presenter\Store\Modules\ContextModule $moduleContext */
+        $moduleContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\Presenter\Store\Modules\ContextModule::class);
+        $isShop17 = $shopContext->isShop17();
         $isFullyOnboarded = $psAccount->onBoardingIsCompleted() && $paypalConfiguration->getMerchantId();
 
-        if ('AdminPayment' === Tools::getValue('controller')) {
-            $moduleManager = PrestaShop\PrestaShop\Core\Addon\Module\ModuleManagerBuilder::getInstance()->build();
+        if ('AdminPayment' === Tools::getValue('controller') && $isShop17) { // Display on PrestaShop 1.7.x.x only
             if (in_array($this->getShopDefaultCountryCode(), ['FR', 'IT'])
-                && $moduleManager->isEnabled('ps_checkout')
+                && Module::isEnabled('ps_checkout')
                 && Configuration::get('PS_CHECKOUT_PAYPAL_ID_MERCHANT')
             ) {
                 return false;
@@ -658,18 +799,20 @@ class Ps_checkout extends PaymentModule
             $template = 'views/templates/hook/adminAfterHeader/promotionBlock.tpl';
         } elseif ('AdminCountries' === Tools::getValue('controller') && $isFullyOnboarded) {
             $params = [
+                'isShop17' => $isShop17,
                 'codesType' => 'countries',
                 'incompatibleCodes' => $paypalConfiguration->getIncompatibleCountryCodes(),
                 'paypalLink' => 'https://developer.paypal.com/docs/api/reference/country-codes/#',
-                'paymentPreferencesLink' => $moduleContext->getGeneratedLink('AdminPayment'),
+                'paymentPreferencesLink' => $moduleContext->getGeneratedLink($isShop17 ? 'AdminPaymentPreferences' : 'AdminPayment'),
             ];
             $template = 'views/templates/hook/adminAfterHeader/incompatibleCodes.tpl';
         } elseif ('AdminCurrencies' === Tools::getValue('controller') && $isFullyOnboarded) {
             $params = [
+                'isShop17' => $isShop17,
                 'codesType' => 'currencies',
                 'incompatibleCodes' => $paypalConfiguration->getIncompatibleCurrencyCodes(),
                 'paypalLink' => 'https://developer.paypal.com/docs/api/reference/currency-codes/#',
-                'paymentPreferencesLink' => $moduleContext->getGeneratedLink('AdminPayment'),
+                'paymentPreferencesLink' => $moduleContext->getGeneratedLink($isShop17 ? 'AdminPaymentPreferences' : 'AdminPayment'),
             ];
             $template = 'views/templates/hook/adminAfterHeader/incompatibleCodes.tpl';
         } else {
@@ -686,7 +829,7 @@ class Ps_checkout extends PaymentModule
      */
     public function hookActionAdminControllerSetMedia()
     {
-        /** @var PrestaShop\Module\PrestashopCheckout\Version\Version $version */
+        /** @var \PrestaShop\Module\PrestashopCheckout\Version\Version $version */
         $version = $this->getService('ps_checkout.module.version');
 
         if ('AdminModules' === Tools::getValue('controller') && 'ps_checkout' === Tools::getValue('configure')) {
@@ -746,13 +889,13 @@ class Ps_checkout extends PaymentModule
      */
     public function merchantIsValid()
     {
-        if ($this->merchantIsValid === null) {
-            /** @var PrestaShop\Module\PrestashopCheckout\Validator\MerchantValidator $merchantValidator */
-            $merchantValidator = $this->getService(PrestaShop\Module\PrestashopCheckout\Validator\MerchantValidator::class);
-            $this->merchantIsValid = $merchantValidator->merchantIsValid();
+        if (static::$merchantIsValid === null) {
+            /** @var \PrestaShop\Module\PrestashopCheckout\Validator\MerchantValidator $merchantValidator */
+            $merchantValidator = $this->getService(\PrestaShop\Module\PrestashopCheckout\Validator\MerchantValidator::class);
+            static::$merchantIsValid = $merchantValidator->merchantIsValid();
         }
 
-        return $this->merchantIsValid;
+        return static::$merchantIsValid;
     }
 
     /**
@@ -766,10 +909,10 @@ class Ps_checkout extends PaymentModule
             $controller = $this->context->controller->php_self;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Validator\FrontControllerValidator $frontControllerValidator */
-        $frontControllerValidator = $this->getService(PrestaShop\Module\PrestashopCheckout\Validator\FrontControllerValidator::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Validator\FrontControllerValidator $frontControllerValidator */
+        $frontControllerValidator = $this->getService(\PrestaShop\Module\PrestashopCheckout\Validator\FrontControllerValidator::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Version\Version $version */
+        /** @var \PrestaShop\Module\PrestashopCheckout\Version\Version $version */
         $version = $this->getService('ps_checkout.module.version');
 
         if ($frontControllerValidator->shouldLoadFrontCss($controller)) {
@@ -795,28 +938,28 @@ class Ps_checkout extends PaymentModule
             return;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\Sdk\PayPalSdkConfigurationBuilder $payPalSdkConfigurationBuilder */
-        $payPalSdkConfigurationBuilder = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\Sdk\PayPalSdkConfigurationBuilder::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\Sdk\PayPalSdkConfigurationBuilder $payPalSdkConfigurationBuilder */
+        $payPalSdkConfigurationBuilder = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\Sdk\PayPalSdkConfigurationBuilder::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\ExpressCheckout\ExpressCheckoutConfiguration $expressCheckoutConfiguration */
-        $expressCheckoutConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\ExpressCheckout\ExpressCheckoutConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\ExpressCheckout\ExpressCheckoutConfiguration $expressCheckoutConfiguration */
+        $expressCheckoutConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\ExpressCheckout\ExpressCheckoutConfiguration::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $payPalConfiguration */
-        $payPalConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration $payPalConfiguration */
+        $payPalConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalConfiguration::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
-        $fundingSourceProvider = $this->getService(PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
+        $fundingSourceProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalPayLaterConfiguration $payLaterConfiguration */
-        $payLaterConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalPayLaterConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalPayLaterConfiguration $payLaterConfiguration */
+        $payLaterConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalPayLaterConfiguration::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
-        $shopContext = $this->getService(PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Version\Version $version */
+        /** @var \PrestaShop\Module\PrestashopCheckout\Version\Version $version */
         $version = $this->getService('ps_checkout.module.version');
 
-        $advancedCheckoutEligibility = new PrestaShop\Module\PrestashopCheckout\PayPal\AdvancedCheckoutEligibility();
+        $advancedCheckoutEligibility = new \PrestaShop\Module\PrestashopCheckout\PayPal\AdvancedCheckoutEligibility();
         $supportedCardBrands = $advancedCheckoutEligibility->getSupportedCardBrands();
 
         if (Validate::isLoadedObject($this->context->currency) && Validate::isLoadedObject($this->context->country)) {
@@ -860,8 +1003,8 @@ class Ps_checkout extends PaymentModule
         // Sometimes we can be in Front Office without a cart...
         if (Validate::isLoadedObject($this->context->cart)) {
             $cartProductCount = (int) $this->context->cart->nbProducts();
-            /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
-            $psCheckoutCartRepository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+            /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
+            $psCheckoutCartRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
 
             /** @var PsCheckoutCart|false $psCheckoutCart */
             $psCheckoutCart = $psCheckoutCartRepository->findOneByCartId((int) $this->context->cart->id);
@@ -984,14 +1127,14 @@ class Ps_checkout extends PaymentModule
             ],
         ]);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Environment\Env $env */
-        $env = $this->getService(PrestaShop\Module\PrestashopCheckout\Environment\Env::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Environment\Env $env */
+        $env = $this->getService(\PrestaShop\Module\PrestashopCheckout\Environment\Env::class);
 
         $foSdkUrl = $env->getEnv('CHECKOUT_FO_SDK_URL');
         if (substr($foSdkUrl, -3) !== '.js') {
             $foSdkVersion = $env->getEnv('CHECKOUT_FO_SDK_VERSION');
             if (empty($foSdkVersion)) {
-                /** @var PrestaShop\Module\PrestashopCheckout\Version\Version $version */
+                /** @var \PrestaShop\Module\PrestashopCheckout\Version\Version $version */
                 $version = $this->getService('ps_checkout.module.version');
                 $majorModuleVersion = explode('.', $version->getSemVersion())[0];
                 $foSdkVersion = "$majorModuleVersion.X.X";
@@ -1027,6 +1170,12 @@ class Ps_checkout extends PaymentModule
      */
     public function addCheckboxCarrierRestrictionsForModule(array $shopsList = [])
     {
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+        if (false === $shopContext->isShop17()) {
+            return true;
+        }
+
         $shopsList = empty($shopsList) ? Shop::getShops(true, null, true) : $shopsList;
         $carriersList = Carrier::getCarriers((int) Context::getContext()->language->id, false, false, false, null, Carrier::ALL_CARRIERS);
         $allCarriers = array_column($carriersList, 'id_reference');
@@ -1042,7 +1191,7 @@ class Ps_checkout extends PaymentModule
             }
         }
 
-        return Db::getInstance()->insert(
+        return \Db::getInstance()->insert(
             'module_carrier',
             $dataToInsert,
             false,
@@ -1056,19 +1205,19 @@ class Ps_checkout extends PaymentModule
      * Add checkbox country restrictions for a new module.
      * Associate with all countries allowed in geolocation management
      *
-     * @param array $shops List of Shop identifier
+     * @see PaymentModuleCore
+     *
+     * @param array $shopsList List of Shop identifier
      *
      * @return bool
-     *
-     * @see PaymentModuleCore
      */
-    public function addCheckboxCountryRestrictionsForModule(array $shops = [])
+    public function addCheckboxCountryRestrictionsForModule(array $shopsList = [])
     {
-        parent::addCheckboxCountryRestrictionsForModule($shops);
+        parent::addCheckboxCountryRestrictionsForModule($shopsList);
         // Then add all countries allowed in geolocation management
-        $db = Db::getInstance();
+        $db = \Db::getInstance();
         // Get active shop ids
-        $shops = empty($shops) ? Shop::getShops(true, null, true) : $shops;
+        $shopsList = empty($shopsList) ? Shop::getShops(true, null, true) : $shopsList;
         // Get countries
         /** @var array $countries */
         $countries = $db->executeS('SELECT `id_country`, `iso_code` FROM `' . _DB_PREFIX_ . 'country`');
@@ -1078,9 +1227,9 @@ class Ps_checkout extends PaymentModule
         }
         $dataToInsert = [];
 
-        foreach ($shops as $idShop) {
+        foreach ($shopsList as $idShop) {
             // Get countries allowed in geolocation management for this shop
-            $activeCountries = Configuration::get(
+            $activeCountries = \Configuration::get(
                 'PS_ALLOWED_COUNTRIES',
                 null,
                 null,
@@ -1109,7 +1258,7 @@ class Ps_checkout extends PaymentModule
     }
 
     /**
-     * @return Psr\Log\LoggerInterface
+     * @return \Psr\Log\LoggerInterface
      */
     public function getLogger()
     {
@@ -1133,7 +1282,7 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var Order $order */
+        /** @var \Order $order */
         $order = $params['order'];
 
         // This order has not been paid with this module
@@ -1143,14 +1292,14 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
-        $psCheckoutCartRepository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
+        $psCheckoutCartRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
 
         /** @var PsCheckoutCart|false $psCheckoutCart */
         $psCheckoutCart = $psCheckoutCartRepository->findOneByCartId((int) $order->id_cart);
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Configuration\PrestaShopConfiguration $psConfiguration */
-        $psConfiguration = $this->getService(PrestaShop\Module\PrestashopCheckout\Configuration\PrestaShopConfiguration::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Configuration\PrestaShopConfiguration $psConfiguration */
+        $psConfiguration = $this->getService(\PrestaShop\Module\PrestashopCheckout\Configuration\PrestaShopConfiguration::class);
 
         // No PayPal Order found for this Order
         if (false === $psCheckoutCart) {
@@ -1171,15 +1320,15 @@ class Ps_checkout extends PaymentModule
             $legalFreeText .= PHP_EOL . PHP_EOL;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderTranslationProvider $translationService */
-        $translationService = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderTranslationProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderTranslationProvider $translationService */
+        $translationService = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderTranslationProvider::class);
         $translations = $translationService->getSummaryTranslations();
 
         $legalFreeText .= $translations['blockTitle'] . PHP_EOL;
         $legalFreeText .= $translations['orderIdentifier'] . ' ' . $psCheckoutCart->getPaypalOrderId() . PHP_EOL;
         $legalFreeText .= $translations['orderStatus'] . ' ' . $psCheckoutCart->getPaypalStatus() . PHP_EOL;
 
-        /** @var OrderPayment[] $orderPayments */
+        /** @var \OrderPayment[] $orderPayments */
         $orderPayments = $order->getOrderPaymentCollection();
 
         foreach ($orderPayments as $orderPayment) {
@@ -1202,9 +1351,9 @@ class Ps_checkout extends PaymentModule
         $shop = $params['object'];
         $now = date('Y-m-d H:i:s');
 
-        $toggleShopConfigurationCommandHandler = new PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommandHandler();
+        $toggleShopConfigurationCommandHandler = new \PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommandHandler();
         $toggleShopConfigurationCommandHandler->handle(
-            new PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommand(
+            new \PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommand(
                 (int) Configuration::get('PS_SHOP_DEFAULT'),
                 (bool) Shop::isFeatureActive()
             )
@@ -1258,6 +1407,31 @@ class Ps_checkout extends PaymentModule
     }
 
     /**
+     * This hook called on BO Order view page before 1.7.7
+     *
+     * @param array{cookie: Cookie, cart: Cart, altern: int, id_order: int} $params
+     *
+     * @return string
+     */
+    public function hookDisplayAdminOrderLeft(array $params)
+    {
+        $order = new Order((int) $params['id_order']);
+
+        if ($order->module !== $this->name) {
+            return '';
+        }
+
+        $this->context->smarty->assign([
+            'moduleLogoUri' => $this->getPathUri() . 'logo.png',
+            'moduleName' => $this->displayName,
+            'orderPrestaShopId' => $order->id,
+            'orderPayPalBaseUrl' => $this->context->link->getAdminLink('AdminAjaxPrestashopCheckout'),
+        ]);
+
+        return $this->display(__FILE__, 'views/templates/hook/displayAdminOrderLeft.tpl');
+    }
+
+    /**
      * This hook called on BO Order view page after 1.7.7
      *
      * @param array{cookie: Cookie, cart: Cart, altern: int, id_order: int} $params
@@ -1296,8 +1470,11 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
-        $psCheckoutCartRepository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $psCheckoutCartRepository */
+        $psCheckoutCartRepository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
 
         /** @var PsCheckoutCart|false $psCheckoutCart */
         $psCheckoutCart = $psCheckoutCartRepository->findOneByCartId((int) $this->context->cart->id);
@@ -1306,7 +1483,9 @@ class Ps_checkout extends PaymentModule
 
         $this->context->smarty->assign([
             'cancelTranslatedText' => $this->l('Choose another payment method'),
+            'is17' => $shopContext->isShop17(),
             'isExpressCheckout' => $isExpressCheckout,
+            'isOnePageCheckout16' => !$shopContext->isShop17() && (bool) Configuration::get('PS_ORDER_PROCESS_TYPE'),
             'spinnerPath' => $this->getPathUri() . 'views/img/tail-spin.svg',
             'loaderTranslatedText' => $this->l('Please wait, loading additional payment methods.'),
             'paypalLogoPath' => $this->getPathUri() . 'views/img/paypal_express.png',
@@ -1331,7 +1510,7 @@ class Ps_checkout extends PaymentModule
     public function getService($serviceName)
     {
         if ($this->serviceContainer === null) {
-            $this->serviceContainer = new PrestaShop\ModuleLibServiceContainer\DependencyInjection\ServiceContainer(
+            $this->serviceContainer = new \PrestaShop\ModuleLibServiceContainer\DependencyInjection\ServiceContainer(
                 $this->name . str_replace(['.', '-', '+'], '', $this->version),
                 $this->getLocalPath()
             );
@@ -1359,8 +1538,8 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
-        $fundingSourceProvider = $this->getService(PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider $fundingSourceProvider */
+        $fundingSourceProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceProvider::class);
         $paymentOptions = [];
 
         foreach ($fundingSourceProvider->getSavedTokens($cart->id_customer) as $fundingSource) {
@@ -1385,7 +1564,35 @@ class Ps_checkout extends PaymentModule
      */
     private function getCheckoutPageUrl()
     {
-        return $this->context->link->getPageLink('order');
+        /** @var \PrestaShop\Module\PrestashopCheckout\ShopContext $shopContext */
+        $shopContext = $this->getService(\PrestaShop\Module\PrestashopCheckout\ShopContext::class);
+
+        if ($shopContext->isShop17()) {
+            return $this->context->link->getPageLink(
+                'order',
+                true,
+                (int) $this->context->language->id
+            );
+        }
+
+        // PrestaShop 1.6 legacy native one page checkout
+        if (1 === (int) Configuration::get('PS_ORDER_PROCESS_TYPE')) {
+            return $this->context->link->getPageLink(
+                'order-opc',
+                true,
+                (int) $this->context->language->id
+            );
+        }
+
+        // PrestaShop 1.6 standard checkout
+        return $this->context->link->getPageLink(
+            'order',
+            true,
+            (int) $this->context->language->id,
+            [
+                'step' => 1,
+            ]
+        );
     }
 
     /**
@@ -1411,7 +1618,7 @@ class Ps_checkout extends PaymentModule
     /**
      * When an OrderPayment is created or updated we should update fields payment_method and transaction_id
      *
-     * @param array{cookie: Cookie, cart: Cart, altern: int, object?: OrderPayment} $params
+     * @param array{cookie: Cookie, cart: Cart, altern: int, object: OrderPayment} $params
      *
      * @return void
      */
@@ -1421,7 +1628,7 @@ class Ps_checkout extends PaymentModule
             return;
         }
 
-        /** @var OrderPayment $orderPayment */
+        /** @var \OrderPayment $orderPayment */
         $orderPayment = $params['object'];
 
         if (!Validate::isLoadedObject($orderPayment)
@@ -1447,8 +1654,8 @@ class Ps_checkout extends PaymentModule
             return;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $repository */
-        $repository = $this->getService(PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository $repository */
+        $repository = $this->getService(\PrestaShop\Module\PrestashopCheckout\Repository\PsCheckoutCartRepository::class);
 
         $psCheckoutCart = $repository->findOneByCartId($id_cart);
 
@@ -1456,8 +1663,8 @@ class Ps_checkout extends PaymentModule
             return;
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\PayPalOrderProvider $paypalOrderProvider */
-        $paypalOrderProvider = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\PayPalOrderProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\PayPalOrderProvider $paypalOrderProvider */
+        $paypalOrderProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\PayPalOrderProvider::class);
 
         $paypalOrder = $paypalOrderProvider->getById($psCheckoutCart->paypal_order);
 
@@ -1477,10 +1684,10 @@ class Ps_checkout extends PaymentModule
             $cardBrand = $paypalOrder['payment_source']['card']['brand'];
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceTranslationProvider $fundingSourceTranslationProvider */
-        $fundingSourceTranslationProvider = $this->getService(PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceTranslationProvider::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceTranslationProvider $fundingSourceTranslationProvider */
+        $fundingSourceTranslationProvider = $this->getService(\PrestaShop\Module\PrestashopCheckout\FundingSource\FundingSourceTranslationProvider::class);
 
-        Db::getInstance()->update(
+        \Db::getInstance()->update(
             'order_payment',
             [
                 'payment_method' => pSQL($fundingSourceTranslationProvider->getPaymentMethodName($psCheckoutCart->paypal_funding)),
@@ -1499,7 +1706,7 @@ class Ps_checkout extends PaymentModule
     {
         $defaultCountry = '';
 
-        if (Configuration::hasKey('PS_COUNTRY_DEFAULT')) {
+        if (empty($defaultCountry) && Configuration::hasKey('PS_COUNTRY_DEFAULT')) {
             $defaultCountry = (new Country((int) Configuration::get('PS_COUNTRY_DEFAULT')))->iso_code;
         }
 
@@ -1513,9 +1720,9 @@ class Ps_checkout extends PaymentModule
      */
     public function hookActionObjectShopDeleteAfter(array $params)
     {
-        $toggleShopConfigurationCommandHandler = new PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommandHandler();
+        $toggleShopConfigurationCommandHandler = new \PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommandHandler();
         $toggleShopConfigurationCommandHandler->handle(
-            new PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommand(
+            new \PrestaShop\Module\PrestashopCheckout\Configuration\ToggleShopConfigurationCommand(
                 (int) Configuration::get('PS_SHOP_DEFAULT'),
                 (bool) Shop::isFeatureActive()
             )
@@ -1525,7 +1732,7 @@ class Ps_checkout extends PaymentModule
     /**
      * Display payment status on order confirmation page
      *
-     * @param array{cookie: Cookie, cart: Cart, altern: int, order: Order, objOrder?: Order} $params
+     * @param array{cookie: Cookie, cart: Cart, altern: int, order: Order, objOrder: Order} $params
      *
      * @return string
      */
@@ -1542,8 +1749,8 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
-        $orderSummaryViewBuilder = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
+        $orderSummaryViewBuilder = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
 
         try {
             $orderSummaryView = $orderSummaryViewBuilder->build($order);
@@ -1576,8 +1783,8 @@ class Ps_checkout extends PaymentModule
             return '';
         }
 
-        /** @var PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
-        $orderSummaryViewBuilder = $this->getService(PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
+        /** @var \PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder $orderSummaryViewBuilder */
+        $orderSummaryViewBuilder = $this->getService(\PrestaShop\Module\PrestashopCheckout\PayPal\Order\PayPalOrderSummaryViewBuilder::class);
 
         try {
             $orderSummaryView = $orderSummaryViewBuilder->build($order);

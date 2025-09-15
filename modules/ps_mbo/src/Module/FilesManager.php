@@ -21,6 +21,7 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Module;
 
+use Exception;
 use PrestaShop\Module\Mbo\Addons\Exception\DownloadModuleException;
 use PrestaShop\Module\Mbo\Addons\Provider\AddonsDataProvider;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
@@ -41,7 +42,7 @@ class FilesManager
 
     public function __construct(
         AddonsDataProvider $addonsDataProvider,
-        SourceHandlerFactory $sourceHandlerFactory,
+        SourceHandlerFactory $sourceHandlerFactory
     ) {
         $this->addonsDataProvider = $addonsDataProvider;
         $this->sourceHandlerFactory = $sourceHandlerFactory;
@@ -63,7 +64,7 @@ class FilesManager
         try {
             $handler = $this->sourceHandlerFactory->getHandler($source);
             $handler->handle($source);
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
             throw new UnexpectedModuleSourceContentException('The module download failed', 0, $e);
         }
@@ -77,10 +78,10 @@ class FilesManager
     {
         try {
             $this->sourceHandlerFactory->getHandler($source);
-        } catch (SourceHandlerNotFoundException $e) {
+        } catch(SourceHandlerNotFoundException $e) {
             ErrorHelper::reportError($e);
             throw $e;
-        } catch (\Exception $e) {
+        } catch (Exception $e) {
             ErrorHelper::reportError($e);
             throw new UnexpectedModuleSourceContentException('The module download failed', 0, $e);
         }
@@ -102,8 +103,8 @@ class FilesManager
         if (is_dir($directory)) {
             $objects = scandir($directory);
             foreach ($objects as $object) {
-                if ($object != '.' && $object != '..') {
-                    if (is_dir($directory . DIRECTORY_SEPARATOR . $object) && !is_link($directory . '/' . $object)) {
+                if ($object != "." && $object != "..") {
+                    if (is_dir($directory. DIRECTORY_SEPARATOR .$object) && !is_link($directory."/".$object)) {
                         $this->deleteDirectoryRecursively($directory . DIRECTORY_SEPARATOR . $object);
                     } else {
                         @unlink($directory . DIRECTORY_SEPARATOR . $object);

@@ -27,7 +27,6 @@
 namespace PrestaShop\PrestaShop\Adapter;
 
 use PrestaShop\PrestaShop\Adapter\File\HtaccessFileGenerator;
-use PrestaShopException;
 use Tools as LegacyTools;
 
 /**
@@ -113,9 +112,9 @@ class Tools
     }
 
     /**
-     * Returns the rounded value of $value to specified precision, according to your configuration.
+     * returns the rounded value of $value to specified precision, according to your configuration;.
      *
-     * Warning - this method accepts our own PS rounding constants with different integer values.
+     * @note : PHP 5.3.0 introduce a 3rd parameter mode in round function
      *
      * @param float $value
      * @param int $precision
@@ -191,11 +190,25 @@ class Tools
     }
 
     /**
+     * Delete unicode class from regular expression patterns.
+     *
+     * @deprecated Since 8.0.0 and will be removed in the next major.
+     *
+     * @param string $pattern
+     *
+     * @return string pattern
+     */
+    public function cleanNonUnicodeSupport($pattern)
+    {
+        return LegacyTools::cleanNonUnicodeSupport($pattern);
+    }
+
+    /**
      * @see LegacyTools::displayDate()
      *
      * @return string
      *
-     * @throws PrestaShopException
+     * @throws \PrestaShopException
      */
     public function displayDate($date, $full = false)
     {

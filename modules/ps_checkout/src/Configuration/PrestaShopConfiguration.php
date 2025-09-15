@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -29,8 +28,17 @@ use PrestaShop\Module\PrestashopCheckout\Exception\PsCheckoutException;
  */
 class PrestaShopConfiguration
 {
-    public function __construct(private PrestaShopConfigurationOptionsResolver $optionsResolver)
+    /**
+     * @var PrestaShopConfigurationOptionsResolver
+     */
+    private $optionsResolver;
+
+    /**
+     * @param PrestaShopConfigurationOptionsResolver $optionsResolver
+     */
+    public function __construct(PrestaShopConfigurationOptionsResolver $optionsResolver)
     {
+        $this->optionsResolver = $optionsResolver;
     }
 
     /**
@@ -43,7 +51,7 @@ class PrestaShopConfiguration
     {
         $settings = $this->optionsResolver->resolve($options);
 
-        return (bool) \Configuration::hasKey(
+        return (bool) Configuration::hasKey(
             $key,
             $settings['id_lang'],
             $settings['id_shop_group'],
@@ -61,7 +69,7 @@ class PrestaShopConfiguration
     {
         $settings = $this->optionsResolver->resolve($options);
 
-        $value = \Configuration::get(
+        $value = Configuration::get(
             $key,
             $settings['id_lang'],
             $settings['id_shop_group'],
@@ -90,7 +98,7 @@ class PrestaShopConfiguration
     {
         $settings = $this->optionsResolver->resolve($options);
 
-        $success = (bool) \Configuration::updateValue(
+        $success = (bool) Configuration::updateValue(
             $key,
             $value,
             $settings['html'],
@@ -114,7 +122,7 @@ class PrestaShopConfiguration
      */
     public function remove($key)
     {
-        $success = (bool) \Configuration::deleteByName($key);
+        $success = (bool) Configuration::deleteByName($key);
 
         if (false === $success) {
             throw new PsCheckoutException(sprintf('Could not remove key %s from PrestaShop configuration', $key));

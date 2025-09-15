@@ -8,4 +8,5 @@ Obrigado por subscrever à nossa newsletter. Por favor clique no link seguinte p
 {verif_url}
 
 [{shop_name}]({shop_url})
+
 Powered by [PrestaShop](https://www.prestashop-project.org/)

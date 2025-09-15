@@ -15,10 +15,9 @@ namespace ApiPlatform\OpenApi\Serializer;
 
 use ApiPlatform\OpenApi\Model\Paths;
 use ApiPlatform\OpenApi\OpenApi;
-use Symfony\Component\Serializer\Normalizer\AbstractNormalizer;
 use Symfony\Component\Serializer\Normalizer\AbstractObjectNormalizer;
+use Symfony\Component\Serializer\Normalizer\CacheableSupportsMethodInterface;
 use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
-use Symfony\Component\Serializer\Serializer;
 
 /**
  * Generates an OpenAPI v3 specification.
@@ -26,30 +25,33 @@ use Symfony\Component\Serializer\Serializer;
 final class OpenApiNormalizer implements NormalizerInterface, CacheableSupportsMethodInterface
 {
     public const FORMAT = 'json';
-    public const JSON_FORMAT = 'jsonopenapi';
-    public const YAML_FORMAT = 'yamlopenapi';
     private const EXTENSION_PROPERTIES_KEY = 'extensionProperties';
 
-    public function __construct(private readonly NormalizerInterface $decorated)
+    private $decorated;
+
+    public function __construct(NormalizerInterface $decorated)
     {
+        $this->decorated = $decorated;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function normalize(mixed $object, ?string $format = null, array $context = []): array
+    public function normalize($object, $format = null, array $context = []): array
     {
-        $pathsCallback = $this->getPathsCallBack();
+        $pathsCallback = static function ($innerObject) {
+            return $innerObject instanceof Paths ? $innerObject->getPaths() : [];
+        };
         $context[AbstractObjectNormalizer::PRESERVE_EMPTY_OBJECTS] = true;
         $context[AbstractObjectNormalizer::SKIP_NULL_VALUES] = true;
-        $context[AbstractNormalizer::CALLBACKS] = [
+        $context[AbstractObjectNormalizer::CALLBACKS] = [
             'paths' => $pathsCallback,
         ];
 
         return $this->recursiveClean($this->decorated->normalize($object, $format, $context));
     }
 
-    private function recursiveClean(array $data): array
+    private function recursiveClean($data): array
     {
         foreach ($data as $key => $value) {
             if (self::EXTENSION_PROPERTIES_KEY === $key) {
@@ -72,69 +74,18 @@ final class OpenApiNormalizer implements NormalizerInterface, CacheableSupportsM
     /**
      * {@inheritdoc}
      */
-    public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
+    public function supportsNormalization($data, $format = null, array $context = []): bool
     {
-        return (self::FORMAT === $format || self::JSON_FORMAT === $format || self::YAML_FORMAT === $format) && $data instanceof OpenApi;
+        return self::FORMAT === $format && $data instanceof OpenApi;
     }
 
-    public function getSupportedTypes($format): array
-    {
-        return (self::FORMAT === $format || self::JSON_FORMAT === $format || self::YAML_FORMAT === $format) ? [OpenApi::class => true] : [];
-    }
-
+    /**
+     * {@inheritdoc}
+     */
     public function hasCacheableSupportsMethod(): bool
     {
-        if (method_exists(Serializer::class, 'getSupportedTypes')) {
-            trigger_deprecation(
-                'api-platform/core',
-                '3.1',
-                'The "%s()" method is deprecated, use "getSupportedTypes()" instead.',
-                __METHOD__
-            );
-        }
-
         return true;
     }
-
-    private function getPathsCallBack(): \Closure
-    {
-        return static function ($decoratedObject): array {
-            if ($decoratedObject instanceof Paths) {
-                $paths = $decoratedObject->getPaths();
-
-                // sort paths by tags, then by path for each tag
-                uksort($paths, function ($keyA, $keyB) use ($paths) {
-                    $a = $paths[$keyA];
-                    $b = $paths[$keyB];
-
-                    $tagsA = [
-                        ...($a->getGet()?->getTags() ?? []),
-                        ...($a->getPost()?->getTags() ?? []),
-                        ...($a->getPatch()?->getTags() ?? []),
-                        ...($a->getPut()?->getTags() ?? []),
-                        ...($a->getDelete()?->getTags() ?? []),
-                    ];
-                    sort($tagsA);
-
-                    $tagsB = [
-                        ...($b->getGet()?->getTags() ?? []),
-                        ...($b->getPost()?->getTags() ?? []),
-                        ...($b->getPatch()?->getTags() ?? []),
-                        ...($b->getPut()?->getTags() ?? []),
-                        ...($b->getDelete()?->getTags() ?? []),
-                    ];
-                    sort($tagsB);
-
-                    return match (true) {
-                        current($tagsA) === current($tagsB) => $keyA <=> $keyB,
-                        default => current($tagsA) <=> current($tagsB),
-                    };
-                });
-
-                return $paths;
-            }
-
-            return [];
-        };
-    }
 }
+
+class_alias(OpenApiNormalizer::class, \ApiPlatform\Core\OpenApi\Serializer\OpenApiNormalizer::class);

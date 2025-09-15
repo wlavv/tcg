@@ -115,7 +115,7 @@ class VirtualProductUpdater
                 sprintf('File already exists for product #%d', $product->id),
                 VirtualProductFileConstraintException::ALREADY_HAS_A_FILE
             );
-        } catch (VirtualProductFileNotFoundException) {
+        } catch (VirtualProductFileNotFoundException $e) {
             // Expected behaviour, the product should have no virtual file yet
         }
 
@@ -151,7 +151,7 @@ class VirtualProductUpdater
 
         try {
             $virtualProductFile = $this->virtualProductFileRepository->findByProductId($productId);
-        } catch (VirtualProductFileNotFoundException) {
+        } catch (VirtualProductFileNotFoundException $e) {
             // No virtual file found, nothing to remove
             return;
         }

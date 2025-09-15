@@ -52,10 +52,10 @@ class Workflow implements WorkflowInterface
         WorkflowEvents::ANNOUNCE => self::DISABLE_ANNOUNCE_EVENT,
     ];
 
-    private Definition $definition;
-    private MarkingStoreInterface $markingStore;
-    private ?EventDispatcherInterface $dispatcher;
-    private string $name;
+    private $definition;
+    private $markingStore;
+    private $dispatcher;
+    private $name;
 
     /**
      * When `null` fire all events (the default behaviour).
@@ -65,9 +65,9 @@ class Workflow implements WorkflowInterface
      *
      * @var array|string[]|null
      */
-    private ?array $eventsToDispatch = null;
+    private $eventsToDispatch = null;
 
-    public function __construct(Definition $definition, ?MarkingStoreInterface $markingStore = null, ?EventDispatcherInterface $dispatcher = null, string $name = 'unnamed', ?array $eventsToDispatch = null)
+    public function __construct(Definition $definition, MarkingStoreInterface $markingStore = null, EventDispatcherInterface $dispatcher = null, string $name = 'unnamed', array $eventsToDispatch = null)
     {
         $this->definition = $definition;
         $this->markingStore = $markingStore ?? new MethodMarkingStore();
@@ -76,9 +76,16 @@ class Workflow implements WorkflowInterface
         $this->eventsToDispatch = $eventsToDispatch;
     }
 
-    public function getMarking(object $subject, array $context = []): Marking
+    /**
+     * {@inheritdoc}
+     */
+    public function getMarking(object $subject, array $context = [])
     {
         $marking = $this->markingStore->getMarking($subject);
+
+        if (!$marking instanceof Marking) {
+            throw new LogicException(sprintf('The value returned by the MarkingStore is not an instance of "%s" for workflow "%s".', Marking::class, $this->name));
+        }
 
         // check if the subject is already in the workflow
         if (!$marking->getPlaces()) {
@@ -115,7 +122,10 @@ class Workflow implements WorkflowInterface
         return $marking;
     }
 
-    public function can(object $subject, string $transitionName): bool
+    /**
+     * {@inheritdoc}
+     */
+    public function can(object $subject, string $transitionName)
     {
         $transitions = $this->definition->getTransitions();
         $marking = $this->getMarking($subject);
@@ -135,6 +145,9 @@ class Workflow implements WorkflowInterface
         return false;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function buildTransitionBlockerList(object $subject, string $transitionName): TransitionBlockerList
     {
         $transitions = $this->definition->getTransitions();
@@ -168,7 +181,10 @@ class Workflow implements WorkflowInterface
         return $transitionBlockerList;
     }
 
-    public function apply(object $subject, string $transitionName, array $context = []): Marking
+    /**
+     * {@inheritdoc}
+     */
+    public function apply(object $subject, string $transitionName, array $context = [])
     {
         $marking = $this->getMarking($subject, $context);
 
@@ -233,7 +249,10 @@ class Workflow implements WorkflowInterface
         return $marking;
     }
 
-    public function getEnabledTransitions(object $subject): array
+    /**
+     * {@inheritdoc}
+     */
+    public function getEnabledTransitions(object $subject)
     {
         $enabledTransitions = [];
         $marking = $this->getMarking($subject);
@@ -267,21 +286,33 @@ class Workflow implements WorkflowInterface
         return null;
     }
 
-    public function getName(): string
+    /**
+     * {@inheritdoc}
+     */
+    public function getName()
     {
         return $this->name;
     }
 
-    public function getDefinition(): Definition
+    /**
+     * {@inheritdoc}
+     */
+    public function getDefinition()
     {
         return $this->definition;
     }
 
-    public function getMarkingStore(): MarkingStoreInterface
+    /**
+     * {@inheritdoc}
+     */
+    public function getMarkingStore()
     {
         return $this->markingStore;
     }
 
+    /**
+     * {@inheritdoc}
+     */
     public function getMetadataStore(): MetadataStoreInterface
     {
         return $this->definition->getMetadataStore();

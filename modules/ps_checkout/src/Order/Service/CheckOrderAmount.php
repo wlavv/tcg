@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -36,8 +35,8 @@ class CheckOrderAmount
     const ORDER_TO_MUCH_PAID = 3;
 
     /**
-     * @param string|mixed $totalAmount
-     * @param string|mixed $totalAmountPaid
+     * @param string $totalAmount
+     * @param string $totalAmountPaid
      *
      * @return int
      *

@@ -13,16 +13,8 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Api\QueryParameterValidator\Validator;
 
-use ApiPlatform\ParameterValidator\Validator\CheckFilterDeprecationsTrait;
-use ApiPlatform\ParameterValidator\Validator\ValidatorInterface;
-
-/**
- * @deprecated use \ApiPlatform\ParameterValidator\Validator\Pattern instead
- */
 final class Pattern implements ValidatorInterface
 {
-    use CheckFilterDeprecationsTrait;
-
     /**
      * {@inheritdoc}
      */
@@ -33,16 +25,16 @@ final class Pattern implements ValidatorInterface
             return [];
         }
 
-        $this->checkFilterDeprecations($filterDescription);
-
-        $pattern = $filterDescription['openapi']['pattern'] ?? $filterDescription['swagger']['pattern'] ?? null;
+        $pattern = $filterDescription['swagger']['pattern'] ?? null;
 
         if (null !== $pattern && !preg_match($pattern, $value)) {
             return [
-                \sprintf('Query parameter "%s" must match pattern %s', $name, $pattern),
+                sprintf('Query parameter "%s" must match pattern %s', $name, $pattern),
             ];
         }
 
         return [];
     }
 }
+
+class_alias(Pattern::class, \ApiPlatform\Core\Filter\Validator\Pattern::class);

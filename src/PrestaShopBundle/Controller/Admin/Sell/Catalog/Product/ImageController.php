@@ -53,35 +53,29 @@ use PrestaShop\PrestaShop\Core\Image\Exception\CannotUnlinkImageException;
 use PrestaShop\PrestaShop\Core\Image\Uploader\Exception\MemoryLimitException;
 use PrestaShop\PrestaShop\Core\Image\Uploader\Exception\UploadedImageConstraintException;
 use PrestaShop\PrestaShop\Core\Image\Uploader\Exception\UploadedImageSizeException;
-use PrestaShopBundle\Controller\Admin\PrestaShopAdminController;
-use PrestaShopBundle\Security\Attribute\AdminSecurity;
-use Symfony\Component\DependencyInjection\Attribute\Autowire;
+use PrestaShopBundle\Controller\Admin\FrameworkBundleAdminController;
+use PrestaShopBundle\Entity\Shop;
+use PrestaShopBundle\Security\Annotation\AdminSecurity;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 
-class ImageController extends PrestaShopAdminController
+class ImageController extends FrameworkBundleAdminController
 {
-    public static function getSubscribedServices(): array
-    {
-        return array_merge(parent::getSubscribedServices(), [
-            ShopRepository::class => ShopRepository::class,
-        ]);
-    }
-
     /**
      * Retrieves images for all shops, but the cover (which is multi-shop compatable) is retrieved based on $shopId
+     *
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller'))", message="You do not have permission to update this.")
      *
      * @param int $productId
      * @param int $shopId
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller'))", message: 'You do not have permission to update this.')]
     public function getImagesForShopAction(int $productId, int $shopId): JsonResponse
     {
         /** @var ProductImage[] $images */
-        $images = $this->dispatchQuery(new GetProductImages(
+        $images = $this->getQueryBus()->handle(new GetProductImages(
             $productId,
             ShopConstraint::shop($shopId)
         ));
@@ -90,11 +84,12 @@ class ImageController extends PrestaShopAdminController
     }
 
     /**
+     * @AdminSecurity("is_granted('read', request.get('_legacy_controller')) || is_granted('update', request.get('_legacy_controller'))", message="You do not have permission to red or update this.")
+     *
      * @param int $productId
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('read', request.get('_legacy_controller')) || is_granted('update', request.get('_legacy_controller'))", message: 'You do not have permission to red or update this.')]
     public function productShopImagesAction(int $productId, Request $request): JsonResponse
     {
         if ($request->isMethod(Request::METHOD_POST)) {
@@ -107,7 +102,7 @@ class ImageController extends PrestaShopAdminController
                         $imageAssociation['shops']
                     ));
                 }
-                $this->dispatchQuery($command);
+                $this->getQueryBus()->handle($command);
             } catch (CoreException $e) {
                 return $this->json([
                     'status' => false,
@@ -120,23 +115,19 @@ class ImageController extends PrestaShopAdminController
     }
 
     /**
+     * @AdminSecurity("is_granted('update', request.get('_legacy_controller'))", message="You do not have permission to update this.")
+     *
      * @param Request $request
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('update', request.get('_legacy_controller'))", message: 'You do not have permission to update this.')]
-    public function addImageAction(
-        Request $request,
-        #[Autowire(service: 'prestashop.core.form.identifiable_object.builder.product_image_form_builder')]
-        FormBuilderInterface $productImageFormBuilder,
-        #[Autowire(service: 'prestashop.core.form.identifiable_object.product_image_form_handler')]
-        FormHandlerInterface $productImageFormHandler
-    ): JsonResponse {
-        $imageForm = $productImageFormBuilder->getForm();
+    public function addImageAction(Request $request): JsonResponse
+    {
+        $imageForm = $this->getProductImageFormBuilder()->getForm();
         $imageForm->handleRequest($request);
 
         try {
-            $result = $productImageFormHandler->handle($imageForm);
+            $result = $this->getProductImageFormHandler()->handle($imageForm);
 
             if (!$result->isSubmitted() || !$result->isValid()) {
                 return new JsonResponse([
@@ -159,27 +150,22 @@ class ImageController extends PrestaShopAdminController
     }
 
     /**
+     * @AdminSecurity("is_granted('update', request.get('_legacy_controller'))", message="You do not have permission to update this.")
+     *
      * @param Request $request
      * @param int $productImageId
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('update', request.get('_legacy_controller'))", message: 'You do not have permission to update this.')]
-    public function updateImageAction(
-        Request $request,
-        int $productImageId,
-        #[Autowire(service: 'prestashop.core.form.identifiable_object.builder.product_image_form_builder')]
-        FormBuilderInterface $productImageFormBuilder,
-        #[Autowire(service: 'prestashop.core.form.identifiable_object.product_image_form_handler')]
-        FormHandlerInterface $productImageFormHandler
-    ): JsonResponse {
-        $imageForm = $productImageFormBuilder->getFormFor($productImageId, [], [
+    public function updateImageAction(Request $request, int $productImageId): JsonResponse
+    {
+        $imageForm = $this->getProductImageFormBuilder()->getFormFor($productImageId, [], [
             'method' => $request->getMethod(),
         ]);
         $imageForm->handleRequest($request);
 
         try {
-            $result = $productImageFormHandler->handleFor($productImageId, $imageForm);
+            $result = $this->getProductImageFormHandler()->handleFor($productImageId, $imageForm);
 
             if (!$result->isSubmitted() || !$result->isValid()) {
                 return new JsonResponse([
@@ -197,15 +183,16 @@ class ImageController extends PrestaShopAdminController
     }
 
     /**
+     * @AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message="You do not have permission to update this.")
+     *
      * @param int $productImageId
      *
      * @return JsonResponse
      */
-    #[AdminSecurity("is_granted('delete', request.get('_legacy_controller'))", message: 'You do not have permission to update this.')]
     public function deleteImageAction(int $productImageId): JsonResponse
     {
         try {
-            $this->dispatchCommand(new DeleteProductImageCommand($productImageId));
+            $this->getCommandBus()->handle(new DeleteProductImageCommand($productImageId));
         } catch (Exception $e) {
             return new JsonResponse([
                 'error' => $this->getErrorMessageForException($e, $this->getErrorMessages($e)),
@@ -215,10 +202,26 @@ class ImageController extends PrestaShopAdminController
         return new JsonResponse(null, Response::HTTP_NO_CONTENT);
     }
 
+    /**
+     * @return FormBuilderInterface
+     */
+    private function getProductImageFormBuilder(): FormBuilderInterface
+    {
+        return $this->get('prestashop.core.form.identifiable_object.builder.product_image_form_builder');
+    }
+
+    /**
+     * @return FormHandlerInterface
+     */
+    private function getProductImageFormHandler(): FormHandlerInterface
+    {
+        return $this->get('prestashop.core.form.identifiable_object.product_image_form_handler');
+    }
+
     private function getProductShopImagesJsonResponse(int $productId): JsonResponse
     {
         /** @var ShopProductImagesCollection $shopImages */
-        $shopImages = $this->dispatchQuery(new GetShopProductImages($productId));
+        $shopImages = $this->getQueryBus()->handle(new GetShopProductImages($productId));
 
         return new JsonResponse($this->formatShopImages($shopImages));
     }
@@ -230,9 +233,9 @@ class ImageController extends PrestaShopAdminController
      */
     private function getProductImageJsonResponse(int $productImageId): JsonResponse
     {
-        $productImage = $this->dispatchQuery(new GetProductImage(
+        $productImage = $this->getQueryBus()->handle(new GetProductImage(
             $productImageId,
-            ShopConstraint::shop($this->getShopContext()->getId())
+            ShopConstraint::shop($this->getContextShopId())
         ));
 
         return $this->json($this->formatImage($productImage));
@@ -263,7 +266,8 @@ class ImageController extends PrestaShopAdminController
      */
     private function formatShopImages(ShopProductImagesCollection $shopImagesCollection): array
     {
-        $shopRepository = $this->container->get(ShopRepository::class);
+        /** @var ShopRepository $shopRepository */
+        $shopRepository = $this->get(ShopRepository::class);
         $formattedShopsImages = [];
         foreach ($shopImagesCollection as $shopProductImage) {
             $shopImages = [
@@ -299,47 +303,39 @@ class ImageController extends PrestaShopAdminController
             ProductConstraintException::class => [
                 ProductConstraintException::INVALID_ID => $this->trans(
                     'Invalid ID.',
-                    [],
                     'Admin.Notifications.Error'
                 ),
             ],
             ProductImageNotFoundException::class => $this->trans(
                 'The object cannot be loaded (or found).',
-                [],
                 'Admin.Notifications.Error'
             ),
             UploadedImageConstraintException::class => [
                 UploadedImageConstraintException::UNRECOGNIZED_FORMAT => $this->trans(
                     'Image format not recognized, allowed formats are: .gif, .jpg, .png',
-                    [],
                     'Admin.Notifications.Error'
                 ),
             ],
             MemoryLimitException::class => $this->trans(
                 'Due to memory limit restrictions, this image cannot be loaded. Please increase your memory_limit value via your server\'s configuration settings.',
-                [],
                 'Admin.Notifications.Error'
             ),
             CannotAddProductImageException::class => $this->trans(
                 'An error occurred while attempting to save.',
-                [],
                 'Admin.Notifications.Error'
             ),
             FileUploadException::class => [
                 UPLOAD_ERR_NO_FILE => $this->trans(
                     'No file was uploaded.',
-                    [],
                     'Admin.Notifications.Error'
                 ),
             ],
             CannotUnlinkImageException::class => $this->trans(
                 'Cannot delete file',
-                [],
                 'Admin.Notifications.Error'
             ),
             CannotRemoveCoverException::class => $this->trans(
                 'Cannot remove cover image.',
-                [],
                 'Admin.Notifications.Error'
             ),
         ];
@@ -347,8 +343,8 @@ class ImageController extends PrestaShopAdminController
         if ($e instanceof UploadedImageSizeException) {
             $messages[UploadedImageSizeException::class] = $this->trans(
                 'Max file size allowed is "%s" bytes.',
-                [$e->getAllowedSizeBytes()],
-                'Admin.Notifications.Error'
+                'Admin.Notifications.Error',
+                [$e->getAllowedSizeBytes()]
             );
         }
 

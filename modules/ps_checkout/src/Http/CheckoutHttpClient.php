@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -162,7 +161,7 @@ class CheckoutHttpClient extends PsrHttpClientAdapter implements CheckoutHttpCli
         return $this->sendRequest(new Request('DELETE', self::SUFFIX_VAULT . "/payment-token/$merchantId/$tokenId", $options));
     }
 
-    public function getUserIdToken($merchantId, ?PayPalCustomerId $payPalCustomerId = null, $options = [])
+    public function getUserIdToken($merchantId, PayPalCustomerId $payPalCustomerId = null, $options = [])
     {
         $payload = [
             'payer_id' => $merchantId,

@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -39,7 +38,7 @@ function upgrade_module_2_3_0($module)
     $savedGroupShopId = Shop::getContextShopGroupID();
     Shop::setContext(Shop::CONTEXT_ALL);
 
-    foreach (Shop::getShops(false, null, true) as $shopId) {
+    foreach (\Shop::getShops(false, null, true) as $shopId) {
         $result = $result && (bool) Configuration::updateValue(
             'PS_CHECKOUT_PAYPAL_BUTTON',
             json_encode([

@@ -15,8 +15,7 @@ namespace ApiPlatform\Doctrine\Orm\Metadata\Property;
 
 use ApiPlatform\Metadata\ApiProperty;
 use ApiPlatform\Metadata\Property\Factory\PropertyMetadataFactoryInterface;
-use Doctrine\ORM\Mapping\ClassMetadata;
-use Doctrine\ORM\Mapping\FieldMapping;
+use Doctrine\ORM\Mapping\ClassMetadataInfo;
 use Doctrine\Persistence\ManagerRegistry;
 
 /**
@@ -26,8 +25,13 @@ use Doctrine\Persistence\ManagerRegistry;
  */
 final class DoctrineOrmPropertyMetadataFactory implements PropertyMetadataFactoryInterface
 {
-    public function __construct(private readonly ManagerRegistry $managerRegistry, private readonly PropertyMetadataFactoryInterface $decorated)
+    private $decorated;
+    private $managerRegistry;
+
+    public function __construct(ManagerRegistry $managerRegistry, PropertyMetadataFactoryInterface $decorated)
     {
+        $this->managerRegistry = $managerRegistry;
+        $this->decorated = $decorated;
     }
 
     /**
@@ -56,7 +60,7 @@ final class DoctrineOrmPropertyMetadataFactory implements PropertyMetadataFactor
                     break;
                 }
 
-                if ($doctrineClassMetadata instanceof ClassMetadata) {
+                if ($doctrineClassMetadata instanceof ClassMetadataInfo) {
                     $writable = $doctrineClassMetadata->isIdentifierNatural();
                 } else {
                     $writable = false;
@@ -68,13 +72,14 @@ final class DoctrineOrmPropertyMetadataFactory implements PropertyMetadataFactor
             }
         }
 
-        if ($doctrineClassMetadata instanceof ClassMetadata && \in_array($property, $doctrineClassMetadata->getFieldNames(), true)) {
+        if (null === $propertyMetadata->isIdentifier()) {
+            $propertyMetadata = $propertyMetadata->withIdentifier(false);
+        }
+
+        if ($doctrineClassMetadata instanceof ClassMetadataInfo && \in_array($property, $doctrineClassMetadata->getFieldNames(), true)) {
+            /** @var mixed[] */
             $fieldMapping = $doctrineClassMetadata->getFieldMapping($property);
-            if (class_exists(FieldMapping::class) && $fieldMapping instanceof FieldMapping) {
-                $propertyMetadata = $propertyMetadata->withDefault($fieldMapping->default ?? $propertyMetadata->getDefault());
-            } else {
-                $propertyMetadata = $propertyMetadata->withDefault($fieldMapping['options']['default'] ?? $propertyMetadata->getDefault());
-            }
+            $propertyMetadata = $propertyMetadata->withDefault($fieldMapping['options']['default'] ?? $propertyMetadata->getDefault());
         }
 
         return $propertyMetadata;

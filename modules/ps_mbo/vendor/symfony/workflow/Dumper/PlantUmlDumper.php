@@ -51,9 +51,9 @@ class PlantUmlDumper implements DumperInterface
         ],
     ];
 
-    private string $transitionType = self::STATEMACHINE_TRANSITION;
+    private $transitionType = self::STATEMACHINE_TRANSITION;
 
-    public function __construct(string $transitionType)
+    public function __construct(string $transitionType = null)
     {
         if (!\in_array($transitionType, self::TRANSITION_TYPES, true)) {
             throw new \InvalidArgumentException("Transition type '$transitionType' does not exist.");
@@ -61,7 +61,7 @@ class PlantUmlDumper implements DumperInterface
         $this->transitionType = $transitionType;
     }
 
-    public function dump(Definition $definition, ?Marking $marking = null, array $options = []): string
+    public function dump(Definition $definition, Marking $marking = null, array $options = []): string
     {
         $options = array_replace_recursive(self::DEFAULT_OPTIONS, $options);
 
@@ -191,7 +191,7 @@ class PlantUmlDumper implements DumperInterface
         return '"'.str_replace('"', '', $string).'"';
     }
 
-    private function getState(string $place, Definition $definition, ?Marking $marking = null): string
+    private function getState(string $place, Definition $definition, Marking $marking = null): string
     {
         $workflowMetadata = $definition->getMetadataStore();
 
@@ -199,7 +199,7 @@ class PlantUmlDumper implements DumperInterface
 
         $output = "state $placeEscaped".
             (\in_array($place, $definition->getInitialPlaces(), true) ? ' '.self::INITIAL : '').
-            ($marking?->has($place) ? ' '.self::MARKED : '');
+            ($marking && $marking->has($place) ? ' '.self::MARKED : '');
 
         $backgroundColor = $workflowMetadata->getMetadata('bg_color', $place);
         if (null !== $backgroundColor) {
@@ -208,9 +208,7 @@ class PlantUmlDumper implements DumperInterface
 
         $description = $workflowMetadata->getMetadata('description', $place);
         if (null !== $description) {
-            foreach (array_filter(explode("\n", $description)) as $line) {
-                $output .= "\n".$placeEscaped.' : '.$line;
-            }
+            $output .= \PHP_EOL.$placeEscaped.' : '.str_replace("\n", ' ', $description);
         }
 
         return $output;
@@ -243,7 +241,7 @@ class PlantUmlDumper implements DumperInterface
     private function getTransitionColor(string $color): string
     {
         // PUML format requires that color in transition have to be prefixed with “#”.
-        if (!str_starts_with($color, '#')) {
+        if ('#' !== substr($color, 0, 1)) {
             $color = '#'.$color;
         }
 

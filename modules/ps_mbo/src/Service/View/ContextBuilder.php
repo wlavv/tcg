@@ -23,50 +23,85 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Service\View;
 
+use Configuration;
+use Context;
+use Country;
 use Doctrine\Common\Cache\CacheProvider;
+use Language;
 use PrestaShop\Module\Mbo\Accounts\Provider\AccountsDataProvider;
 use PrestaShop\Module\Mbo\Api\Security\AdminAuthenticationProvider;
 use PrestaShop\Module\Mbo\Helpers\Config;
 use PrestaShop\Module\Mbo\Helpers\UrlHelper;
 use PrestaShop\Module\Mbo\Module\Module;
 use PrestaShop\Module\Mbo\Module\Workflow\TransitionInterface;
-use PrestaShop\Module\Mbo\Tab\TabInterface;
+use PrestaShop\Module\Mbo\Tab\Tab;
+use PrestaShop\PrestaShop\Adapter\LegacyContext as ContextAdapter;
 use PrestaShop\PrestaShop\Adapter\Module\Module as CoreModule;
-use PrestaShop\PrestaShop\Core\Context\CountryContext;
-use PrestaShop\PrestaShop\Core\Context\CurrencyContext;
-use PrestaShop\PrestaShop\Core\Context\EmployeeContext;
-use PrestaShop\PrestaShop\Core\Context\LanguageContext;
 use PrestaShop\PrestaShop\Core\Module\ModuleRepository;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use Symfony\Component\Routing\Router;
+use Tools;
 
 class ContextBuilder
 {
     public const DEFAULT_CURRENCY_CODE = 'EUR';
 
+    /**
+     * @var ContextAdapter
+     */
+    private $contextAdapter;
+
+    /**
+     * @var ModuleRepository
+     */
+    private $moduleRepository;
+
+    /**
+     * @var Router
+     */
+    private $router;
+
+    /**
+     * @var CacheProvider
+     */
+    private $cacheProvider;
+
+    /**
+     * @var AdminAuthenticationProvider
+     */
+    private $adminAuthenticationProvider;
+
+    /**
+     * @var AccountsDataProvider
+     */
+    private $accountsDataProvider;
+
     public function __construct(
-        private readonly EmployeeContext $employeeContext,
-        private readonly CurrencyContext $currencyContext,
-        private readonly LanguageContext $languageContext,
-        private readonly CountryContext $countryContext,
-        private readonly ModuleRepository $moduleRepository,
-        private readonly Router $router,
-        private readonly CacheProvider $cacheProvider,
-        private readonly AdminAuthenticationProvider $adminAuthenticationProvider,
-        private readonly AccountsDataProvider $accountsDataProvider,
+        ContextAdapter $contextAdapter,
+        ModuleRepository $moduleRepository,
+        Router $router,
+        CacheProvider $cacheProvider,
+        AdminAuthenticationProvider $adminAuthenticationProvider,
+        AccountsDataProvider $accountsDataProvider
     ) {
+        $this->contextAdapter = $contextAdapter;
+        $this->moduleRepository = $moduleRepository;
+        $this->router = $router;
+        $this->cacheProvider = $cacheProvider;
+        $this->adminAuthenticationProvider = $adminAuthenticationProvider;
+        $this->accountsDataProvider = $accountsDataProvider;
     }
 
     public function getViewContext(): array
     {
         $context = $this->getCommonContextContent();
 
-        $context['prestaShop_controller_class_name'] = \Tools::getValue('controller');
+        $context['prestaShop_controller_class_name'] = Tools::getValue('controller');
 
         return $context;
     }
 
-    public function getRecommendedModulesContext(TabInterface $tab): array
+    public function getRecommendedModulesContext(Tab $tab): array
     {
         $context = $this->getCommonContextContent();
 
@@ -92,8 +127,8 @@ class ContextBuilder
             'user_id' => $this->accountsDataProvider->getAccountsUserId(),
             'shop_id' => $this->accountsDataProvider->getAccountsShopId(),
             'accounts_token' => $this->accountsDataProvider->getAccountsToken(),
-            'iso_lang' => $this->getLanguage(),
-            'iso_code' => $this->getCountry(),
+            'iso_lang' => $this->getLanguage()->getIsoCode(),
+            'iso_code' => $this->getCountry()->iso_code,
             'mbo_version' => \ps_mbo::VERSION,
             'ps_version' => _PS_VERSION_,
             'shop_url' => Config::getShopUrl(),
@@ -127,39 +162,37 @@ class ContextBuilder
 
     private function getCommonContextContent(): array
     {
-        $userId = null;
-        if ($this->employeeContext->getEmployee()) {
-            $userId = $this->employeeContext->getEmployee()->getId();
-        }
-
+        $context = $this->getContext();
+        $language = $this->getLanguage();
+        $country = $this->getCountry();
         $shopActivity = Config::getShopActivity();
 
-        $token = \Tools::getValue('_token');
+        $token = Tools::getValue('_token');
 
         if (false === $token) {
-            $token = \Tools::getValue('token');
+            $token = Tools::getValue('token');
         }
 
-        $mboResetUrl = UrlHelper::transformToAbsoluteUrl(
-            $this->router->generate('admin_module_manage_action', [
-                'action' => 'reset',
-                'module_name' => 'ps_mbo',
-            ])
-        );
+        $refreshUrl = Context::getContext()->link->getAdminLink('apiSecurityPsMbo');
 
         return [
             'currency' => $this->getCurrencyCode(),
-            'iso_lang' => $this->getLanguage(),
-            'iso_code' => $this->getCountry(),
+            'iso_lang' => $language->getIsoCode(),
+            'iso_code' => mb_strtolower($country->iso_code),
             'shop_version' => _PS_VERSION_,
             'shop_url' => Config::getShopUrl(),
             'shop_uuid' => Config::getShopMboUuid(),
             'mbo_token' => $this->adminAuthenticationProvider->getMboJWT(),
             'mbo_version' => \ps_mbo::VERSION,
-            'mbo_reset_url' => $mboResetUrl,
-            'user_id' => $userId,
+            'mbo_reset_url' => UrlHelper::transformToAbsoluteUrl(
+                $this->router->generate('admin_module_manage_action', [
+                    'action' => 'reset',
+                    'module_name' => 'ps_mbo',
+                ])
+            ),
+            'user_id' => $context->cookie->id_employee,
             'admin_token' => $token,
-            'refresh_url' => '',
+            'refresh_url' => $refreshUrl,
             'installed_modules' => $this->getInstalledModules(),
             'upgradable_modules' => $this->getUpgradableModules(),
             'accounts_user_id' => $this->accountsDataProvider->getAccountsUserId(),
@@ -173,52 +206,33 @@ class ContextBuilder
             'shop_creation_date' => defined('_PS_CREATION_DATE_') ? _PS_CREATION_DATE_ : null,
             'shop_business_sector_id' => $shopActivity['id'],
             'shop_business_sector' => $shopActivity['name'],
-
-            'actions_token' => UrlHelper::getQueryParameterValue($mboResetUrl, '_token'),
-            'actions_url' => [
-                'install' => $this->generateActionUrl('install'),
-                'uninstall' => $this->generateActionUrl('uninstall'),
-                'delete' => $this->generateActionUrl('delete'),
-                'enable' => $this->generateActionUrl('enable'),
-                'disable' => $this->generateActionUrl('disable'),
-                'reset' => $this->generateActionUrl('reset'),
-                'upgrade' => $this->generateActionUrl('upgrade'),
-            ],
         ];
     }
 
-    private function generateActionUrl(string $action): string
+    private function getContext(): Context
     {
-        $params = [
-            'action' => $action,
-            'module_name' => ':module',
-        ];
-
-        if (in_array($action, ['install', 'upgrade'])) {
-            $params['id'] = '_module_id_';
-            $params['source'] = '_download_url_';
-        }
-
-        return UrlHelper::transformToAbsoluteUrl($this->router->generate('admin_module_manage_action', $params));
+        return $this->contextAdapter->getContext();
     }
 
-    private function getLanguage(): string
+    private function getLanguage(): Language
     {
-        return $this->languageContext->getIsoCode();
+        return $this->getContext()->language ?? new Language((int) Configuration::get('PS_LANG_DEFAULT'));
     }
 
-    private function getCountry(): string
+    private function getCountry(): Country
     {
-        return mb_strtolower($this->countryContext->getIsoCode());
+        return $this->getContext()->country ?? new Country((int) Configuration::get('PS_COUNTRY_DEFAULT'));
     }
 
     private function getCurrencyCode(): string
     {
-        if (!in_array($this->currencyContext->getIsoCode(), ['EUR', 'USD', 'GBP'])) {
+        $currency = $this->getContext()->currency;
+
+        if (null === $currency || !in_array($currency->iso_code, ['EUR', 'USD', 'GBP'])) {
             return self::DEFAULT_CURRENCY_CODE;
         }
 
-        return $this->currencyContext->getIsoCode();
+        return $currency->iso_code;
     }
 
     /**
@@ -292,7 +306,7 @@ class ContextBuilder
                     $this->router->generate(
                         'admin_module_configure_action',
                         [
-                            'module_name' => $moduleName,
+                        'module_name' => $moduleName,
                         ],
                         UrlGeneratorInterface::ABSOLUTE_URL
                     )
@@ -303,9 +317,7 @@ class ContextBuilder
                 $moduleName,
                 $moduleStatus,
                 (string) $moduleVersion,
-                $moduleConfigUrl,
-                $installedModule->get('download_url'),
-            )
+                $moduleConfigUrl)
             )->toArray();
         }
 

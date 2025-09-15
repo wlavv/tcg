@@ -21,7 +21,10 @@ namespace ApiPlatform\Serializer;
  */
 trait CacheKeyTrait
 {
-    private function getCacheKey(?string $format, array $context): string|bool
+    /**
+     * @return string|bool
+     */
+    private function getCacheKey(?string $format, array $context)
     {
         foreach ($context[self::EXCLUDE_FROM_CACHE_KEY] ?? $this->defaultContext[self::EXCLUDE_FROM_CACHE_KEY] as $key) {
             unset($context[$key]);
@@ -31,13 +34,15 @@ trait CacheKeyTrait
         unset($context['cache_key']); // avoid artificially different keys
 
         try {
-            return hash('xxh128', $format.serialize([
+            return hash('md5', $format.serialize([
                 'context' => $context,
                 'ignored' => $context[self::IGNORED_ATTRIBUTES] ?? $this->defaultContext[self::IGNORED_ATTRIBUTES],
             ]));
-        } catch (\Exception) {
+        } catch (\Exception $e) {
             // The context cannot be serialized, skip the cache
             return false;
         }
     }
 }
+
+class_alias(CacheKeyTrait::class, \ApiPlatform\Core\Serializer\CacheKeyTrait::class);

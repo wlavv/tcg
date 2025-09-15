@@ -13,19 +13,18 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\EventListener;
 
+use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
-use ApiPlatform\State\Util\CorsTrait;
-use ApiPlatform\State\Util\OperationRequestInitiatorTrait;
-use ApiPlatform\Symfony\Util\RequestAttributesExtractor;
-use Psr\Link\LinkProviderInterface;
+use ApiPlatform\Util\CorsTrait;
+use ApiPlatform\Util\OperationRequestInitiatorTrait;
+use ApiPlatform\Util\RequestAttributesExtractor;
 use Symfony\Component\HttpKernel\Event\ResponseEvent;
 use Symfony\Component\Mercure\Discovery;
-use Symfony\Component\WebLink\HttpHeaderSerializer;
+use Symfony\Component\WebLink\GenericLinkProvider;
+use Symfony\Component\WebLink\Link;
 
 /**
  * Adds the HTTP Link header pointing to the Mercure hub for resources having their updates dispatched.
- *
- * @deprecated use ApiPlatform\Symfony\State\MercureLinkProcessor instead
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
@@ -34,12 +33,28 @@ final class AddLinkHeaderListener
     use CorsTrait;
     use OperationRequestInitiatorTrait;
 
-    public function __construct(
-        private readonly Discovery $discovery,
-        ?ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory = null,
-        private readonly HttpHeaderSerializer $serializer = new HttpHeaderSerializer(),
-    ) {
-        $this->resourceMetadataCollectionFactory = $resourceMetadataCollectionFactory;
+    /**
+     * @var ResourceMetadataCollectionFactoryInterface|ResourceMetadataFactoryInterface
+     */
+    private $resourceMetadataFactory;
+    private $discovery;
+
+    /**
+     * @param Discovery|string $discovery
+     * @param mixed            $resourceMetadataFactory
+     */
+    public function __construct($resourceMetadataFactory, $discovery)
+    {
+        $this->resourceMetadataFactory = $resourceMetadataFactory;
+        if ($resourceMetadataFactory && !$resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface) {
+            trigger_deprecation('api-platform/core', '2.7', sprintf('Use "%s" instead of "%s".', ResourceMetadataCollectionFactoryInterface::class, ResourceMetadataFactoryInterface::class));
+        }
+
+        if ($resourceMetadataFactory instanceof ResourceMetadataCollectionFactoryInterface) {
+            $this->resourceMetadataCollectionFactory = $resourceMetadataFactory;
+        }
+
+        $this->discovery = $discovery;
     }
 
     /**
@@ -48,34 +63,46 @@ final class AddLinkHeaderListener
     public function onKernelResponse(ResponseEvent $event): void
     {
         $request = $event->getRequest();
-        $operation = $this->initializeOperation($request);
-
-        // API Platform 3.2 has a MainController where everything is handled by processors/providers
-        if ('api_platform.symfony.main_controller' === $operation?->getController() || $this->isPreflightRequest($request) || $request->attributes->get('_api_platform_disable_listeners')) {
+        if ($this->isPreflightRequest($request)) {
             return;
         }
 
-        // Does the same as the web-link AddLinkHeaderListener as we want to use `_api_platform_links` not `_links`,
-        // note that the AddLinkHeaderProcessor is doing it with the MainController
-        $linkProvider = $event->getRequest()->attributes->get('_api_platform_links');
-        if ($operation && $linkProvider instanceof LinkProviderInterface && $links = $linkProvider->getLinks()) {
-            $event->getResponse()->headers->set('Link', $this->serializer->serialize($links), false);
-        }
+        $operation = $this->initializeOperation($request);
 
         if (
-            null === $request->attributes->get('_api_resource_class')
-            || !($attributes = RequestAttributesExtractor::extractAttributes($request))
+            null === ($resourceClass = $request->attributes->get('_api_resource_class')) ||
+            !($attributes = RequestAttributesExtractor::extractAttributes($request))
         ) {
             return;
         }
 
-        $mercure = $operation?->getMercure() ?? ($attributes['mercure'] ?? false);
+        $mercure = $operation ? $operation->getMercure() : ($attributes['mercure'] ?? false);
+        // TODO: remove in 3.0
+        if ($this->resourceMetadataFactory instanceof ResourceMetadataFactoryInterface) {
+            $mercure = $this->resourceMetadataFactory->create($resourceClass)->getAttribute('mercure', false);
+        }
 
         if (!$mercure) {
             return;
         }
 
+        if (!$this->discovery instanceof Discovery) {
+            $link = new Link('mercure', $this->discovery);
+            if (null === $linkProvider = $request->attributes->get('_links')) {
+                $request->attributes->set('_links', new GenericLinkProvider([$link]));
+
+                return;
+            }
+
+            $request->attributes->set('_links', $linkProvider->withLink($link));
+
+            return;
+        }
+
         $hub = \is_array($mercure) ? ($mercure['hub'] ?? null) : null;
+
         $this->discovery->addLink($request, $hub);
     }
 }
+
+class_alias(AddLinkHeaderListener::class, \ApiPlatform\Core\Mercure\EventListener\AddLinkHeaderListener::class);

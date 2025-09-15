@@ -27,7 +27,6 @@
 namespace PrestaShop\PrestaShop\Adapter\Backup;
 
 use PrestaShop\PrestaShop\Adapter\Entity\PrestaShopBackup;
-use PrestaShop\PrestaShop\Core\Backup\BackupInterface;
 use PrestaShop\PrestaShop\Core\Backup\Exception\BackupException;
 use PrestaShop\PrestaShop\Core\Backup\Exception\DirectoryIsNotWritableException;
 use PrestaShop\PrestaShop\Core\Backup\Manager\BackupCreatorInterface;
@@ -42,7 +41,7 @@ final class DatabaseBackupCreator implements BackupCreatorInterface
     /**
      * {@inheritdoc}
      */
-    public function createBackup(): BackupInterface
+    public function createBackup()
     {
         ini_set('max_execution_time', '0');
 

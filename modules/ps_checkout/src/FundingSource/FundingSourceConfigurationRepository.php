@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,6 +25,16 @@ use PrestaShop\Module\PrestashopCheckout\Context\PrestaShopContext;
 class FundingSourceConfigurationRepository
 {
     /**
+     * @var \Db
+     */
+    private $db;
+
+    /**
+     * @var PrestaShopContext
+     */
+    private $context;
+
+    /**
      * @var array In memory cache of funding sources
      */
     private $fundingSources;
@@ -33,8 +42,10 @@ class FundingSourceConfigurationRepository
     /**
      * @param PrestaShopContext $context
      */
-    public function __construct(private PrestaShopContext $context, private \Db $db)
+    public function __construct(PrestaShopContext $context)
     {
+        $this->db = \Db::getInstance();
+        $this->context = $context;
     }
 
     /**
@@ -69,7 +80,7 @@ class FundingSourceConfigurationRepository
     {
         $shopId = (int) ($shopId === null ? $this->context->getShopId() : $shopId);
 
-        if (isset($this->fundingSources[$shopId]) && !empty($this->fundingSources[$shopId])) {
+        if (isset($this->fundingSources[$shopId]) && null !== $this->fundingSources[$shopId]) {
             return $this->fundingSources[$shopId];
         }
 

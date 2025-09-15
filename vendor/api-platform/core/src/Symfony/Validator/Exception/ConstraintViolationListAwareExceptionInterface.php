@@ -13,13 +13,11 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Symfony\Validator\Exception;
 
-use ApiPlatform\Metadata\Exception\ExceptionInterface;
+use ApiPlatform\Exception\ExceptionInterface;
 use Symfony\Component\Validator\ConstraintViolationListInterface;
 
 /**
  * An exception which has a constraint violation list.
- *
- * @deprecated use ApiPlatform\Validator\Exception\ConstraintViolationListAwareExceptionInterface
  */
 interface ConstraintViolationListAwareExceptionInterface extends ExceptionInterface
 {

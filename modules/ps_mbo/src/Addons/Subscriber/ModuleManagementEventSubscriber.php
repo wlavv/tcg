@@ -29,6 +29,8 @@ use PrestaShop\Module\Mbo\Module\Module;
 use PrestaShop\Module\Mbo\Module\Repository;
 use PrestaShop\Module\Mbo\Service\View\ContextBuilder;
 use PrestaShop\Module\Mbo\Tab\TabCollectionProviderInterface;
+use PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer;
+use PrestaShop\PrestaShop\Core\Cache\Clearer\CacheClearerInterface;
 use PrestaShop\PrestaShop\Core\Module\ModuleInterface;
 use PrestaShopBundle\Event\ModuleManagementEvent;
 use Psr\Log\LoggerInterface;
@@ -71,7 +73,13 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
      */
     private $versionChangeApplyConfigCommandHandler;
 
-    private $shutdownClearCacheRegistered = false;
+    /**
+     * @var CacheClearerInterface
+     */
+    private $cacheClearer;
+
+    /** @var bool */
+    private $cleared = false;
 
     public function __construct(
         LoggerInterface $logger,
@@ -81,6 +89,7 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
         Client $distributionClient,
         AdminAuthenticationProvider $adminAuthenticationProvider,
         VersionChangeApplyConfigCommandHandler $versionChangeApplyConfigCommandHandler,
+        CacheClearerInterface $cacheClearer
     ) {
         $this->logger = $logger;
         $this->moduleRepository = $moduleRepository;
@@ -89,6 +98,7 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
         $this->distributionClient = $distributionClient;
         $this->adminAuthenticationProvider = $adminAuthenticationProvider;
         $this->versionChangeApplyConfigCommandHandler = $versionChangeApplyConfigCommandHandler;
+        $this->cacheClearer = $cacheClearer;
     }
 
     public static function getSubscribedEvents(): array
@@ -99,7 +109,7 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
                 ['onInstall'],
             ],
             ModuleManagementEvent::POST_INSTALL => [
-                ['clearCatalogCacheOnShutdown'],
+                ['clearCatalogCache'],
                 ['onPostInstall'],
             ],
             ModuleManagementEvent::UNINSTALL => [
@@ -107,18 +117,27 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
                 ['onUninstall'],
             ],
             ModuleManagementEvent::ENABLE => [
+                ['clearSfCache'],
                 ['clearCatalogCache'],
                 ['onEnable'],
             ],
             ModuleManagementEvent::DISABLE => [
+                ['clearSfCache'],
                 ['clearCatalogCache'],
                 ['onDisable'],
+            ],
+            ModuleManagementEvent::ENABLE_MOBILE => [
+                ['onEnableOnMobile'],
+            ],
+            ModuleManagementEvent::DISABLE_MOBILE => [
+                ['onDisableOnMobile'],
             ],
             ModuleManagementEvent::UPGRADE => [
                 ['clearCatalogCache'],
                 ['onUpgrade'],
             ],
             ModuleManagementEvent::RESET => [
+                ['clearSfCache'],
                 ['clearCatalogCache'],
                 ['onReset'],
             ],
@@ -132,16 +151,12 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
         $this->contextBuilder->clearCache();
     }
 
-    public function clearCatalogCacheOnShutdown(): void
+    public function clearSfCache(ModuleManagementEvent $event): void
     {
-        if ($this->shutdownClearCacheRegistered) {
-            return;
+        if (!$this->cleared) {
+            $this->cacheClearer->clear();
+            $this->cleared = true;
         }
-
-        $this->shutdownClearCacheRegistered = true;
-        register_shutdown_function(function () {
-            $this->clearCatalogCache();
-        });
     }
 
     public function onInstall(ModuleManagementEvent $event): void
@@ -152,6 +167,14 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
     public function onPostInstall(ModuleManagementEvent $event): void
     {
         $this->logEvent(ModuleManagementEvent::POST_INSTALL, $event);
+
+        $module = $event->getModule();
+        if (defined('PS_INSTALLATION_IN_PROGRESS') && 'ps_mbo' === $module->get('name')) {
+            // Update position of hook dashboardZoneTwo
+            /** @var \ps_mbo $psMbo */
+            $psMbo = $module->getInstance();
+            $psMbo->putMboDashboardZoneTwoAtLastPosition();
+        }
     }
 
     public function onUninstall(ModuleManagementEvent $event): void
@@ -169,12 +192,27 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
         $this->logEvent(ModuleManagementEvent::DISABLE, $event);
     }
 
+    public function onEnableOnMobile(ModuleManagementEvent $event): void
+    {
+        $this->logEvent(ModuleManagementEvent::ENABLE_MOBILE, $event);
+    }
+
+    public function onDisableOnMobile(ModuleManagementEvent $event): void
+    {
+        $this->logEvent(ModuleManagementEvent::DISABLE_MOBILE, $event);
+    }
+
     public function onUpgrade(ModuleManagementEvent $event): void
     {
         $this->logEvent(ModuleManagementEvent::UPGRADE, $event);
 
         $module = $event->getModule();
         if ('ps_mbo' === $module->get('name')) {
+            // Update shop config to transmit correct versions to Distribution API
+            /** @var \ps_mbo $psMbo */
+            $psMbo = $module->getInstance();
+            $psMbo->updateShop();
+
             // Apply config dur to PS and MBO version changes
             $this->applyConfigOnVersionChange($module);
         }
@@ -187,21 +225,12 @@ class ModuleManagementEventSubscriber implements EventSubscriberInterface
 
     protected function logEvent(string $eventName, ModuleManagementEvent $event): void
     {
-        try {
-            $data = $this->contextBuilder->getEventContext();
-        } catch (\Exception $e) {
-            // Do nothing, we don't want to block the module action
-            return;
-        }
+        $data = $this->contextBuilder->getEventContext();
         $data['event_name'] = $eventName;
         $data['module_name'] = $event->getModule()->get('name');
 
-        try {
-            $this->distributionClient->setBearer($this->adminAuthenticationProvider->getMboJWT());
-            $this->distributionClient->trackEvent($data);
-        } catch (\Exception $e) {
-            // Do nothing, we don't want to block the module action
-        }
+        $this->distributionClient->setBearer($this->adminAuthenticationProvider->getMboJWT());
+        $this->distributionClient->trackEvent($data);
     }
 
     private function applyConfigOnVersionChange(ModuleInterface $module)

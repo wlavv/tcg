@@ -26,7 +26,6 @@
 
 namespace PrestaShop\PrestaShop\Adapter\Employee;
 
-use InvalidArgumentException;
 use PrestaShop\PrestaShop\Core\Employee\Access\EmployeeFormAccessCheckerInterface;
 use PrestaShop\PrestaShop\Core\Employee\ContextEmployeeProviderInterface;
 use PrestaShop\PrestaShop\Core\Employee\EmployeeDataProviderInterface;
@@ -61,10 +60,10 @@ final class EmployeeFormAccessChecker implements EmployeeFormAccessCheckerInterf
     /**
      * {@inheritdoc}
      */
-    public function isRestrictedAccess(int $employeeId): bool
+    public function isRestrictedAccess($employeeId)
     {
         if (!is_int($employeeId)) {
-            throw new InvalidArgumentException(sprintf('Employee ID must be an integer, %s given', gettype($employeeId)));
+            throw new \InvalidArgumentException(sprintf('Employee ID must be an integer, %s given', gettype($employeeId)));
         }
 
         return $employeeId === $this->contextEmployeeProvider->getId();
@@ -73,7 +72,7 @@ final class EmployeeFormAccessChecker implements EmployeeFormAccessCheckerInterf
     /**
      * {@inheritdoc}
      */
-    public function canAccessEditFormFor(int $employeeId): bool
+    public function canAccessEditFormFor($employeeId)
     {
         // To access super admin edit form you must be a super admin.
         if ($this->employeeDataProvider->isSuperAdmin($employeeId)) {

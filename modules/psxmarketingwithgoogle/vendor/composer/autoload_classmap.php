@@ -177,6 +177,7 @@ return array(
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Exception\\ApiClientException' => $baseDir . '/classes/Exception/ApiClientException.php',
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Exception\\MktgWithGoogleInstallerException' => $baseDir . '/classes/Exception/MktgWithGoogleInstallerException.php',
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Factory\\ContextFactory' => $baseDir . '/classes/Factory/ContextFactory.php',
+    'PrestaShop\\Module\\PsxMarketingWithGoogle\\Factory\\ParametersFactory' => $baseDir . '/classes/Factory/ParametersFactory.php',
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\ErrorHandler' => $baseDir . '/classes/Handler/ErrorHandler.php',
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\ModuleFilteredRavenClient' => $baseDir . '/classes/Handler/ModuleFilteredRavenClient.php',
     'PrestaShop\\Module\\PsxMarketingWithGoogle\\Handler\\RemarketingHookHandler' => $baseDir . '/classes/Handler/RemarketingHookHandler.php',

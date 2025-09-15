@@ -67,17 +67,20 @@
     }
   }
   .thumbnail, .no-img {
-    border: 1px solid var(--#{$cdk}primary-400);
-    max-width: var(--#{$cdk}size-44);
+    border: $gray-light 1px solid;
+    max-width: 47px;
   }
   .no-img {
-    background: var(--#{$cdk}white);
-    width: var(--#{$cdk}size-44);
-    height: var(--#{$cdk}size-44);
+    background: white;
+    width: 47px;
+    height: 47px;
     display: inline-block;
     vertical-align: middle;
   }
   .desc {
     white-space: normal;
+  }
+  small {
+    color: $gray-medium;
   }
 </style>

@@ -39,7 +39,6 @@ use Symfony\Component\Form\FormEvents;
 use Symfony\Component\Validator\Constraints\Length;
 use Symfony\Component\Validator\Constraints\NotBlank;
 use Symfony\Component\Validator\Constraints\Regex;
-use Symfony\Contracts\Translation\TranslatorInterface;
 
 /**
  * Class MetaType is responsible for providing form fields for Shop parameters -> Traffic & Seo ->
@@ -70,12 +69,10 @@ class MetaType extends AbstractType
      */
     public function __construct(
         array $defaultPageChoices,
-        array $modulePageChoices,
-        TranslatorInterface $translator
+        array $modulePageChoices
     ) {
         $this->defaultPageChoices = $defaultPageChoices;
         $this->modulePageChoices = $modulePageChoices;
-        $this->translator = $translator;
     }
 
     /**
@@ -164,6 +161,29 @@ class MetaType extends AbstractType
                                 'Admin.Notifications.Error'
                             ),
                         ]),
+                    ],
+                    'required' => false,
+                ],
+            ])
+            ->add('meta_keywords', TranslatableType::class, [
+                'required' => false,
+                'options' => [
+                    'constraints' => [
+                        new Regex([
+                            'pattern' => '/^[^<>={}]*$/u',
+                            'message' => $this->trans(
+                                '%s is invalid.',
+                                [],
+                                'Admin.Notifications.Error'
+                            ),
+                        ]),
+                        new Length([
+                            'max' => self::META_DESCRIPTION_MAX_CHARS,
+                        ]),
+                    ],
+                    'attr' => [
+                        'class' => 'js-taggable-field',
+                        'placeholder' => $this->trans('Add tag', [], 'Admin.Actions'),
                     ],
                     'required' => false,
                 ],

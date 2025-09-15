@@ -27,7 +27,6 @@
 namespace PrestaShop\PrestaShop\Core\Import\File\DataRow;
 
 use ArrayIterator;
-use ReturnTypeWillChange;
 use Traversable;
 
 /**
@@ -61,7 +60,7 @@ final class DataRowCollection implements DataRowCollectionInterface
     /**
      * {@inheritdoc}
      */
-    #[ReturnTypeWillChange]
+    #[\ReturnTypeWillChange]
     public function offsetGet($offset)
     {
         if (!$this->offsetExists($offset)) {

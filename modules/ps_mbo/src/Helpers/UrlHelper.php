@@ -21,22 +21,16 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Helpers;
 
+use Validate;
+
 class UrlHelper
 {
     public static function transformToAbsoluteUrl(string $url): string
     {
-        if (\Validate::isAbsoluteUrl($url)) {
+        if (Validate::isAbsoluteUrl($url)) {
             return $url;
         }
 
         return rtrim(Config::getShopUrl(false), '/') . DIRECTORY_SEPARATOR . ltrim($url, '/');
-    }
-
-    public static function getQueryParameterValue(string $url, string $key): string
-    {
-        $parameters = [];
-        parse_str(parse_url($url, PHP_URL_QUERY), $parameters);
-
-        return $parameters[$key] ?? '';
     }
 }

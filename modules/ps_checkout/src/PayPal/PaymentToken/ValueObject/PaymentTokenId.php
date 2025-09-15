@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,6 +20,8 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\ValueObject;
 
+use InvalidArgumentException;
+
 class PaymentTokenId
 {
     /**
@@ -31,7 +32,7 @@ class PaymentTokenId
     /**
      * @param string $id
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     public function __construct($id)
     {
@@ -48,26 +49,26 @@ class PaymentTokenId
     }
 
     /**
-     * @param string|mixed $id
+     * @param string $id
      *
      * @return void
      *
-     * @throws \InvalidArgumentException
+     * @throws InvalidArgumentException
      */
     private function assertIsValid($id)
     {
         if (!is_string($id)) {
-            throw new \InvalidArgumentException('PayPal Vault ID must be a string.');
+            throw new InvalidArgumentException('PayPal Vault ID must be a string.');
         }
 
         $length = strlen($id);
 
         if ($length < 1 || $length > 36) {
-            throw new \InvalidArgumentException('PayPal Vault ID must be between 1 and 36 characters long.');
+            throw new InvalidArgumentException('PayPal Vault ID must be between 1 and 36 characters long.');
         }
 
         if (preg_match('/^[0-9a-zA-Z_-]+$/', $id) !== 1) {
-            throw new \InvalidArgumentException('PayPal Vault ID must be alphanumeric.');
+            throw new InvalidArgumentException('PayPal Vault ID must be alphanumeric.');
         }
     }
 }

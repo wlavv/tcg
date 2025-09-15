@@ -36,7 +36,7 @@ use PrestaShop\PrestaShop\Core\Domain\Store\ValueObject\StoreId;
 class ToggleStoreStatusCommand
 {
     /**
-     * @var StoreId
+     * @var storeId
      */
     private $storeId;
 

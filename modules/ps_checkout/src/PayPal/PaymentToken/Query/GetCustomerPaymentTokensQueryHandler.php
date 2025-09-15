@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,12 +20,22 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Query;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Repository\PaymentTokenRepository;
 
 class GetCustomerPaymentTokensQueryHandler
 {
-    public function __construct(private PaymentTokenRepository $paymentTokenRepository)
+    /**
+     * @var PaymentTokenRepository
+     */
+    private $paymentTokenRepository;
+
+    /**
+     * @param PaymentTokenRepository $paymentTokenRepository
+     */
+    public function __construct(PaymentTokenRepository $paymentTokenRepository)
     {
+        $this->paymentTokenRepository = $paymentTokenRepository;
     }
 
     /**
@@ -34,10 +43,11 @@ class GetCustomerPaymentTokensQueryHandler
      *
      * @return GetCustomerPaymentTokensQueryResult
      *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function __invoke(GetCustomerPaymentTokensQuery $query)
+    public function handle(GetCustomerPaymentTokensQuery $query)
     {
+//        $paymentTokens = $this->paymentTokenRepository->findByPrestaShopCustomerId($query->getCustomerId()->getValue(), $query->getPageSize(), $query->getPageNumber());
         $paymentTokens = $this->paymentTokenRepository->findByPrestaShopCustomerId($query->getCustomerId()->getValue());
 
         if ($query->isTotalCountRequired()) {

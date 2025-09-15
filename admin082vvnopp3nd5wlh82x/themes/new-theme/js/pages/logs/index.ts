@@ -23,13 +23,24 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-$(() => {
-  const grid = new window.prestashop.component.Grid('logs');
+import Grid from '@components/grid/grid';
+import ReloadListActionExtension from '@components/grid/extension/reload-list-extension';
+import ExportToSqlManagerExtension from '@components/grid/extension/export-to-sql-manager-extension';
+import FiltersResetExtension from '@components/grid/extension/filters-reset-extension';
+import SortingExtension from '@components/grid/extension/sorting-extension';
+import SubmitGridActionExtension from '@components/grid/extension/submit-grid-action-extension';
+import FiltersSubmitButtonEnablerExtension
+  from '@components/grid/extension/filters-submit-button-enabler-extension';
 
-  grid.addExtension(new window.prestashop.component.GridExtensions.ReloadListExtension());
-  grid.addExtension(new window.prestashop.component.GridExtensions.ExportToSqlManagerExtension());
-  grid.addExtension(new window.prestashop.component.GridExtensions.FiltersResetExtension());
-  grid.addExtension(new window.prestashop.component.GridExtensions.SortingExtension());
-  grid.addExtension(new window.prestashop.component.GridExtensions.SubmitGridActionExtension());
-  grid.addExtension(new window.prestashop.component.GridExtensions.FiltersSubmitButtonEnablerExtension());
+const {$} = window;
+
+$(() => {
+  const grid = new Grid('logs');
+
+  grid.addExtension(new ReloadListActionExtension());
+  grid.addExtension(new ExportToSqlManagerExtension());
+  grid.addExtension(new FiltersResetExtension());
+  grid.addExtension(new SortingExtension());
+  grid.addExtension(new SubmitGridActionExtension());
+  grid.addExtension(new FiltersSubmitButtonEnablerExtension());
 });

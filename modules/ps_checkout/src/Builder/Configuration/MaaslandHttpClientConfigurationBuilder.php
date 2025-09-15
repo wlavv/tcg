@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -32,21 +31,64 @@ use PrestaShop\Module\PrestashopCheckout\Logger\LoggerConfiguration;
 use PrestaShop\Module\PrestashopCheckout\Repository\PsAccountRepository;
 use PrestaShop\Module\PrestashopCheckout\Routing\Router;
 use PrestaShop\Module\PrestashopCheckout\ShopContext;
+use Ps_checkout;
 use Psr\Log\LoggerInterface;
 
 class MaaslandHttpClientConfigurationBuilder implements HttpClientConfigurationBuilderInterface
 {
     const TIMEOUT = 10;
 
+    /**
+     * @var Env
+     */
+    private $paymentEnv;
+
+    /**
+     * @var Router
+     */
+    private $router;
+
+    /**
+     * @var ShopContext
+     */
+    private $shopContext;
+
+    /**
+     * @var PsAccountRepository
+     */
+    private $psAccountRepository;
+
+    /**
+     * @var PrestaShopContext
+     */
+    private $prestaShopContext;
+
+    /**
+     * @var LoggerConfiguration
+     */
+    private $loggerConfiguration;
+
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
     public function __construct(
-        private Env $paymentEnv,
-        private Router $router,
-        private ShopContext $shopContext,
-        private PsAccountRepository $psAccountRepository,
-        private PrestaShopContext $prestaShopContext,
-        private LoggerConfiguration $loggerConfiguration,
-        private LoggerInterface $psCheckoutLogger,
+        Env $paymentEnv,
+        Router $router,
+        ShopContext $shopContext,
+        PsAccountRepository $psAccountRepository,
+        PrestaShopContext $prestaShopContext,
+        LoggerConfiguration $loggerConfiguration,
+        LoggerInterface $logger
     ) {
+        $this->paymentEnv = $paymentEnv;
+        $this->router = $router;
+        $this->shopContext = $shopContext;
+        $this->psAccountRepository = $psAccountRepository;
+        $this->prestaShopContext = $prestaShopContext;
+        $this->loggerConfiguration = $loggerConfiguration;
+        $this->logger = $logger;
     }
 
     /**
@@ -65,7 +107,7 @@ class MaaslandHttpClientConfigurationBuilder implements HttpClientConfigurationB
                 'Shop-Id' => $this->psAccountRepository->getShopUuid(),  // Shop UUID we get from PsAccounts
                 'Hook-Url' => $this->router->getDispatchWebhookLink($this->prestaShopContext->getShopId()),
                 'Bn-Code' => $this->shopContext->getBnCode(),
-                'Module-Version' => \Ps_checkout::VERSION, // version of the module
+                'Module-Version' => Ps_checkout::VERSION, // version of the module
                 'Prestashop-Version' => _PS_VERSION_, // prestashop version
             ],
         ];
@@ -77,8 +119,7 @@ class MaaslandHttpClientConfigurationBuilder implements HttpClientConfigurationB
             && class_exists(LogMiddleware::class)
         ) {
             $handlerStack = HandlerStack::create();
-            $logMiddleware = new LogMiddleware($this->psCheckoutLogger);
-            $handlerStack->push($logMiddleware);
+            $handlerStack->push(new LogMiddleware($this->logger));
             $configuration['handler'] = $handlerStack;
         } elseif (
             $this->loggerConfiguration->isHttpEnabled()
@@ -88,11 +129,10 @@ class MaaslandHttpClientConfigurationBuilder implements HttpClientConfigurationB
             && class_exists(Formatter::class)
         ) {
             $emitter = new Emitter();
-            $logSubscriber = new LogSubscriber(
-                $this->psCheckoutLogger,
+            $emitter->attach(new LogSubscriber(
+                $this->logger,
                 Formatter::DEBUG
-            );
-            $emitter->attach($logSubscriber);
+            ));
 
             $configuration['emitter'] = $emitter;
         }

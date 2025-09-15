@@ -25,22 +25,26 @@ use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Exception\PayPalOrderExcep
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForOrderConfirmationQuery;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForOrderConfirmationQueryResult;
 use PrestaShop\Module\PrestashopCheckout\PaypalOrder;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
+use Psr\SimpleCache\CacheInterface;
 
 class GetPayPalOrderForOrderConfirmationQueryHandler
 {
-    public function __construct(private ChainAdapter $orderPayPalCache)
+    /**
+     * @var CacheInterface
+     */
+    private $orderPayPalCache;
+
+    public function __construct(CacheInterface $orderPayPalCache)
     {
+        $this->orderPayPalCache = $orderPayPalCache;
     }
 
-    public function __invoke(GetPayPalOrderForOrderConfirmationQuery $query)
+    public function handle(GetPayPalOrderForOrderConfirmationQuery $query)
     {
         /** @var array{id: string, status: string} $order */
-        $order = $this->orderPayPalCache->get($query->getOrderPayPalId()->getValue(), function () use ($query) {
-            return (new PaypalOrder($query->getOrderPayPalId()->getValue()))->getOrder();
-        });
+        $order = $this->orderPayPalCache->get($query->getOrderPayPalId()->getValue());
 
-        if ($order['status'] === 'PENDING' || $order['status'] === 'COMPLETED') {
+        if (!empty($order) && ($order['status'] === 'PENDING' || $order['status'] === 'COMPLETED')) {
             return new GetPayPalOrderForOrderConfirmationQueryResult($order);
         }
 

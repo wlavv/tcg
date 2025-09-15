@@ -23,11 +23,19 @@ use PHPUnit\Framework\Constraint\Constraint;
  */
 final class MatchesJsonSchema extends Constraint
 {
-    private object|array $schema;
+    /**
+     * @var object|array
+     */
+    private $schema;
+    private $checkMode;
 
-    public function __construct(object|array|string $schema, private readonly ?int $checkMode = null)
+    /**
+     * @param object|array|string $schema
+     */
+    public function __construct($schema, ?int $checkMode = null)
     {
-        $this->schema = \is_string($schema) ? json_decode($schema, null, 512, \JSON_THROW_ON_ERROR) : $schema;
+        $this->schema = \is_string($schema) ? json_decode($schema) : $schema;
+        $this->checkMode = $checkMode;
     }
 
     /**
@@ -41,7 +49,7 @@ final class MatchesJsonSchema extends Constraint
     /**
      * {@inheritdoc}
      */
-    protected function matches(mixed $other): bool
+    protected function matches($other): bool
     {
         if (!class_exists(Validator::class)) {
             throw new \LogicException('The "justinrainbow/json-schema" library must be installed to use "assertMatchesJsonSchema()". Try running "composer require --dev justinrainbow/json-schema".');
@@ -58,7 +66,7 @@ final class MatchesJsonSchema extends Constraint
     /**
      * {@inheritdoc}
      */
-    protected function additionalFailureDescription(mixed $other): string
+    protected function additionalFailureDescription($other): string
     {
         $other = $this->normalizeJson($other);
 
@@ -79,8 +87,10 @@ final class MatchesJsonSchema extends Constraint
      *
      * Specifically, we should ensure that:
      * 1. a JSON object is represented as a PHP object, not as an associative array.
+     *
+     * @param mixed $document
      */
-    private function normalizeJson(mixed $document): object|array
+    private function normalizeJson($document)
     {
         if (\is_scalar($document) || \is_object($document)) {
             return $document;
@@ -90,11 +100,11 @@ final class MatchesJsonSchema extends Constraint
             throw new \InvalidArgumentException('Document must be scalar, array or object.');
         }
 
-        $document = json_encode($document, \JSON_THROW_ON_ERROR);
+        $document = json_encode($document);
         if (!\is_string($document)) {
             throw new \UnexpectedValueException('JSON encode failed.');
         }
-        $document = json_decode($document, null, 512, \JSON_THROW_ON_ERROR);
+        $document = json_decode($document);
         if (!\is_array($document) && !\is_object($document)) {
             throw new \UnexpectedValueException('JSON decode failed.');
         }

@@ -30,12 +30,7 @@ class UploadControllerCore extends GetFileController
 {
     private $filename;
 
-    /**
-     * Initialize the controller.
-     *
-     * @see FrontController::init()
-     */
-    public function init(): void
+    public function init()
     {
         FrontController::init();
         if (Tools::getValue('file') !== null) {
@@ -73,7 +68,7 @@ class UploadControllerCore extends GetFileController
         return (bool) $isCustomization;
     }
 
-    public function postProcess(): void
+    public function postProcess()
     {
         $this->sendFile($this->getPath(), $this->filename, false);
     }

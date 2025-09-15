@@ -25,10 +25,7 @@
 
 <template>
   <div class="ps-checkboxes-dropdown">
-    <div
-      class="dropdown"
-      :data-role="`filter-by-${label.toLowerCase()}-block`"
-    >
+    <div class="dropdown">
       <button
         :class="[
           'btn',
@@ -41,7 +38,7 @@
         data-toggle="dropdown"
         aria-haspopup="true"
         aria-expanded="false"
-        :data-role="`filter-by-${label.toLowerCase()}-btn`"
+        :data-role="`filter-by-${label.toLowerCase()}`"
       >
         {{ label }} {{ nbFiles }}
       </button>
@@ -130,21 +127,21 @@
 @import "~@scss/config/_bootstrap.scss";
 
 .ps-checkboxes-dropdown {
-  margin: 0 var(--#{$cdk}size-6);
+  margin: 0 0.35rem;
 
   @include media-breakpoint-down(xs) {
-    margin-bottom: var(--#{$cdk}size-8);
+    margin-bottom: .5rem;
   }
 
   .dropdown-item {
-    padding: var(--#{$cdk}size-8) var(--#{$cdk}size-16) var(--#{$cdk}size-8) var(--#{$cdk}size-8);
+    padding: 0.438rem 1rem 0.438rem 0.938rem;
     line-height: normal;
     color: inherit;
     border-bottom: 0;
 
     .md-checkbox-container {
       position: relative;
-      padding-left: var(--#{$cdk}size-28);
+      padding-left: 28px;
     }
   }
 }

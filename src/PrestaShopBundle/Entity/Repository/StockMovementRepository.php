@@ -26,7 +26,7 @@
 
 namespace PrestaShopBundle\Entity\Repository;
 
-use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Driver\Connection;
 use Doctrine\ORM\EntityManager;
 use PDO;
 use PrestaShop\PrestaShop\Adapter\ImageManager;
@@ -129,14 +129,6 @@ class StockMovementRepository extends StockManagementRepository
                   CONCAT(p.reference, " ", pa.reference)
               )                                           AS product_reference,
               pl.name                                     AS product_name,
-              p.ean13                                     AS product_ean13,
-              p.isbn                                      AS product_isbn,
-              p.upc                                       AS product_upc,
-              p.mpn                                       AS product_mpn,
-              pa.ean13                                    AS combination_ean13,
-              pa.isbn                                     AS combination_isbn,
-              pa.upc                                      AS combination_upc,
-              pa.mpn                                      AS combination_mpn,
               p.id_supplier                               AS supplier_id,
               COALESCE(s.name, "N/A")                     AS supplier_name,
               COALESCE(ic.id_image, 0)                    AS product_cover_id,
@@ -253,10 +245,10 @@ class StockMovementRepository extends StockManagementRepository
 
         $statement = $this->connection->prepare($query);
         $statement->bindValue('shop_id', $this->getContextualShopId(), PDO::PARAM_INT);
-        $result = $statement->executeQuery();
+        $statement->execute();
 
-        $rows = $result->fetchAllAssociative();
-        $result->free();
+        $rows = $statement->fetchAll();
+        $statement->closeCursor();
         $employees = $this->castNumericToInt($rows);
 
         return $employees;
@@ -297,10 +289,10 @@ class StockMovementRepository extends StockManagementRepository
         $statement = $this->connection->prepare($query);
         $statement->bindValue('language_id', $this->getCurrentLanguageId(), PDO::PARAM_INT);
         $statement->bindValue('shop_id', $this->getContextualShopId(), PDO::PARAM_INT);
-        $result = $statement->executeQuery();
+        $statement->execute();
 
-        $rows = $result->fetchAllAssociative();
-        $result->free();
+        $rows = $statement->fetchAll();
+        $statement->closeCursor();
 
         if ($grouped) {
             $types = $this->castIdsToArray($rows);

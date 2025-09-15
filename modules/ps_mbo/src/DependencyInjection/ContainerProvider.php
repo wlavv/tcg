@@ -51,7 +51,7 @@ class ContainerProvider
     public function __construct(
         string $moduleName,
         string $moduleLocalPath,
-        CacheDirectoryProvider $cacheDirectory,
+        CacheDirectoryProvider $cacheDirectory
     ) {
         $this->moduleName = $moduleName;
         $this->moduleLocalPath = $moduleLocalPath;
@@ -88,9 +88,10 @@ class ContainerProvider
             new XmlFileLoader($containerBuilder, $fileLocator),
         ]));
 
-        $loader->load('addons.yml');
+        $loader->load('http_clients.yml');
         $loader->load('distribution.yml');
         $loader->load('accounts.yml');
+        $loader->load('eventbus.yml');
         $loader->load('handler.yml');
         $loader->load('api/distribution.yml');
 

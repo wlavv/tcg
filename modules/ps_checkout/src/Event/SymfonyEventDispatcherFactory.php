@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -23,26 +22,48 @@ namespace PrestaShop\Module\PrestashopCheckout\Event;
 
 use PrestaShop\Module\PrestashopCheckout\Logger\LoggerConfiguration;
 use Psr\Log\LoggerInterface;
+use Symfony\Component\EventDispatcher\Debug\TraceableEventDispatcher as SymfonyTraceableEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcher as SymfonyEventDispatcher;
 use Symfony\Component\EventDispatcher\EventDispatcherInterface as SymfonyEventDispatcherInterface;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface as SymfonyEventSubscriberInterface;
+use Symfony\Component\Stopwatch\Stopwatch as SymfonyStopwatch;
 
 class SymfonyEventDispatcherFactory
 {
-    public function __construct(
-        private LoggerInterface $psCheckoutLogger,
-        private LoggerConfiguration $configuration,
-    ) {
+    /**
+     * @var LoggerInterface
+     */
+    private $logger;
+
+    /**
+     * @var LoggerConfiguration
+     */
+    private $configuration;
+
+    /**
+     * @param LoggerInterface $logger
+     * @param LoggerConfiguration $configuration
+     */
+    public function __construct(LoggerInterface $logger, LoggerConfiguration $configuration)
+    {
+        $this->logger = $logger;
+        $this->configuration = $configuration;
     }
 
     /**
      * @param SymfonyEventSubscriberInterface[] $eventSubscribers
      *
-     * @return SymfonyEventDispatcherInterface|SymfonyEventDispatcher
+     * @return SymfonyEventDispatcherInterface
      */
-    public function create(array $eventSubscribers): SymfonyEventDispatcherInterface|SymfonyEventDispatcher
+    public function create(array $eventSubscribers)
     {
-        $eventDispatcher = new SymfonyEventDispatcher();
+        $eventDispatcher = LoggerConfiguration::LEVEL_DEBUG === $this->configuration->getLevel()
+            ? new SymfonyTraceableEventDispatcher(
+                new SymfonyEventDispatcher(),
+                new SymfonyStopwatch(),
+                $this->logger
+            )
+            : new SymfonyEventDispatcher();
 
         foreach ($eventSubscribers as $eventSubscriber) {
             $eventDispatcher->addSubscriber($eventSubscriber);

@@ -32,7 +32,7 @@
   <meta charset="utf-8">
 
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
   <link rel="icon" type="image/x-icon" href="{$img_dir}favicon.ico" />
   <link rel="apple-touch-icon" href="{$img_dir}app_icon.png" />
 
@@ -78,6 +78,7 @@
 		var default_language = '{$default_language|intval}';
 		var admin_notification_get_link = adminNotificationGetLink = '{$link->getAdminLink("AdminCommon")|addslashes}';
 		var admin_notification_push_link = adminNotificationPushLink ='{$link->getAdminLink("AdminCommon", true, ['route' => 'admin_common_notifications_ack'])|addslashes}';
+		var tab_modules_list = '{if isset($tab_modules_list) && $tab_modules_list}{$tab_modules_list|addslashes}{/if}';
 		var update_success_msg = '{l|escape s='Successful update' js=1 d='Admin.Notifications.Success'}';
 		var search_product_msg = '{l|escape s='Search for a product' js=1 d='Admin.Orderscustomers.Feature'}';
 	</script>
@@ -125,7 +126,7 @@
 
       {* Quick access *}
       <div id="header_quick" class="component">
-        <div class="dropdown" id="quick-access-container">
+        <div class="dropdown">
           <button
             id="quick_select"
             class="btn btn-link dropdown-toggle"
@@ -135,10 +136,9 @@
             {if !empty($quick_access)}
               {foreach $quick_access as $quick}
                 <li class="quick-row-link{if $link->matchQuickLink({$quick.link})}{assign "matchQuickLink" $quick.id_quick_access} active{/if}">
-                  <a {if isset($quick.class)}class="{$quick.class}"{/if}
-                     href="{$quick.link|escape:'html':'UTF-8'}" {if $quick.new_window}target="_blank"{/if}
-                     data-item="{$quick.name}"
-                  >{$quick.name}</a>
+                  <a {if isset($quick.class)}class="{$quick.class}"{/if} href="{$quick.link|escape:'html':'UTF-8'}" {if $quick.new_window}target="_blank"{/if}>
+                      {$quick.name}
+                  </a>
                 </li>
               {/foreach}
             {/if}
@@ -239,7 +239,7 @@
 
       {if isset($maintenance_mode) && $maintenance_mode == true}
         {capture name="title"}
-          <p class="text-left">
+          <p class="text-left text-nowrap">
             <strong>{l s='Your store is in maintenance mode.' d='Admin.Navigation.Notification'}</strong>
           </p>
           <p class="text-left">
@@ -262,7 +262,9 @@
              data-html="true"
              title="{$smarty.capture.title|htmlspecialchars}"
           >
-            <i class="material-icons">build</i>
+            <i class="material-icons"
+               style="{if isset($maintenance_allow_admins)}color: #72c279;{/if}"
+            >build</i>
             <span>{l|escape s='Maintenance mode' d='Admin.Navigation.Header'}</span>
           </a>
         </div>
@@ -280,6 +282,7 @@
             )}
               <ul id="header_shop" class="shop-state">
                 <li class="dropdown">
+                  <i class="material-icons">visibility</i>
                   <span>{$shop_list}</span>
                 </li>
               </ul>

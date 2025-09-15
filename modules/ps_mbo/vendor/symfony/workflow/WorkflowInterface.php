@@ -16,8 +16,6 @@ use Symfony\Component\Workflow\MarkingStore\MarkingStoreInterface;
 use Symfony\Component\Workflow\Metadata\MetadataStoreInterface;
 
 /**
- * Describes a workflow instance.
- *
  * @author Amrouche Hamza <hamza.simperfit@gmail.com>
  */
 interface WorkflowInterface
@@ -25,14 +23,18 @@ interface WorkflowInterface
     /**
      * Returns the object's Marking.
      *
+     * @return Marking
+     *
      * @throws LogicException
      */
-    public function getMarking(object $subject): Marking;
+    public function getMarking(object $subject);
 
     /**
      * Returns true if the transition is enabled.
+     *
+     * @return bool
      */
-    public function can(object $subject, string $transitionName): bool;
+    public function can(object $subject, string $transitionName);
 
     /**
      * Builds a TransitionBlockerList to know why a transition is blocked.
@@ -42,22 +44,33 @@ interface WorkflowInterface
     /**
      * Fire a transition.
      *
+     * @return Marking
+     *
      * @throws LogicException If the transition is not applicable
      */
-    public function apply(object $subject, string $transitionName, array $context = []): Marking;
+    public function apply(object $subject, string $transitionName, array $context = []);
 
     /**
      * Returns all enabled transitions.
      *
      * @return Transition[]
      */
-    public function getEnabledTransitions(object $subject): array;
+    public function getEnabledTransitions(object $subject);
 
-    public function getName(): string;
+    /**
+     * @return string
+     */
+    public function getName();
 
-    public function getDefinition(): Definition;
+    /**
+     * @return Definition
+     */
+    public function getDefinition();
 
-    public function getMarkingStore(): MarkingStoreInterface;
+    /**
+     * @return MarkingStoreInterface
+     */
+    public function getMarkingStore();
 
     public function getMetadataStore(): MetadataStoreInterface;
 }

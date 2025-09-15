@@ -23,24 +23,22 @@
  * @copyright Since 2007 PrestaShop SA and Contributors
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
-use PrestaShop\PrestaShop\Adapter\Presenter\Supplier\SupplierPresenter;
 use PrestaShop\PrestaShop\Adapter\Supplier\SupplierProductSearchProvider;
 use PrestaShop\PrestaShop\Core\Product\Search\ProductSearchQuery;
 use PrestaShop\PrestaShop\Core\Product\Search\SortOrder;
 
 class SupplierControllerCore extends ProductListingFrontController
 {
-    /** @var string */
+    /**
+     * @var string
+     */
     public $php_self = 'supplier';
 
     /** @var Supplier|null */
     protected $supplier;
     protected $label;
 
-    /** @var SupplierPresenter */
-    protected $supplierPresenter;
-
-    public function canonicalRedirection(string $canonicalURL = ''): void
+    public function canonicalRedirection($canonicalURL = '')
     {
         if (Validate::isLoadedObject($this->supplier)) {
             parent::canonicalRedirection($this->context->link->getSupplierLink($this->supplier));
@@ -49,11 +47,6 @@ class SupplierControllerCore extends ProductListingFrontController
         }
     }
 
-    /**
-     * Returns canonical URL for current supplier or a supplier list
-     *
-     * @return string
-     */
     public function getCanonicalURL(): string
     {
         if (Validate::isLoadedObject($this->supplier)) {
@@ -68,7 +61,7 @@ class SupplierControllerCore extends ProductListingFrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         if ($id_supplier = (int) Tools::getValue('id_supplier')) {
             $this->supplier = new Supplier($id_supplier, $this->context->language->id);
@@ -81,9 +74,6 @@ class SupplierControllerCore extends ProductListingFrontController
             }
         }
 
-        // Initialize presenter, we will use it for all cases
-        $this->supplierPresenter = new SupplierPresenter($this->context->link);
-
         parent::init();
     }
 
@@ -92,7 +82,7 @@ class SupplierControllerCore extends ProductListingFrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         if (Configuration::get('PS_DISPLAY_SUPPLIERS')) {
             parent::initContent();
@@ -126,12 +116,9 @@ class SupplierControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Gets the product search query for the controller. This is a set of information that
-     * a filtering module or the default provider will use to fetch our products.
-     *
      * @return ProductSearchQuery
      */
-    protected function getProductSearchQuery(): ProductSearchQuery
+    protected function getProductSearchQuery()
     {
         $query = new ProductSearchQuery();
         $query
@@ -143,11 +130,9 @@ class SupplierControllerCore extends ProductListingFrontController
     }
 
     /**
-     * Default product search provider used if no filtering module stood up for the job
-     *
      * @return SupplierProductSearchProvider
      */
-    protected function getDefaultProductSearchProvider(): SupplierProductSearchProvider
+    protected function getDefaultProductSearchProvider()
     {
         return new SupplierProductSearchProvider(
             $this->getTranslator(),
@@ -158,12 +143,9 @@ class SupplierControllerCore extends ProductListingFrontController
     /**
      * Assign template vars if displaying one supplier.
      */
-    protected function assignSupplier(): void
+    protected function assignSupplier()
     {
-        $supplierVar = $this->supplierPresenter->present(
-            $this->supplier,
-            $this->context->language
-        );
+        $supplierVar = $this->objectPresenter->present($this->supplier);
 
         // Chained hook call - if multiple modules are hooked here, they will receive the result of the previous one as a parameter
         $filteredSupplier = Hook::exec(
@@ -188,7 +170,7 @@ class SupplierControllerCore extends ProductListingFrontController
     /**
      * Assign template vars if displaying the supplier list.
      */
-    protected function assignAll(): void
+    protected function assignAll()
     {
         $suppliersVar = $this->getTemplateVarSuppliers();
 
@@ -212,34 +194,39 @@ class SupplierControllerCore extends ProductListingFrontController
         }
 
         $this->context->smarty->assign([
-            'suppliers' => $suppliersVar,
+            'brands' => $suppliersVar,
         ]);
     }
 
-    public function getTemplateVarSuppliers(): array
+    public function getTemplateVarSuppliers()
     {
         $suppliers = Supplier::getSuppliers(true, $this->context->language->id, true);
+        $suppliers_for_display = [];
 
-        foreach ($suppliers as &$supplier) {
-            $supplier = $this->supplierPresenter->present(
-                $supplier,
-                $this->context->language
-            );
+        foreach ($suppliers as $supplier) {
+            $suppliers_for_display[$supplier['id_supplier']] = $supplier;
+            $suppliers_for_display[$supplier['id_supplier']]['text'] = $supplier['description'];
+            $suppliers_for_display[$supplier['id_supplier']]['image'] = $this->context->link->getSupplierImageLink($supplier['id_supplier'], 'small_default');
+            $suppliers_for_display[$supplier['id_supplier']]['url'] = $this->context->link->getSupplierLink($supplier['id_supplier']);
+            $suppliers_for_display[$supplier['id_supplier']]['nb_products'] = $supplier['nb_products'] > 1
+                ? $this->trans('%number% products', ['%number%' => $supplier['nb_products']], 'Shop.Theme.Catalog')
+                : $this->trans('%number% product', ['%number%' => $supplier['nb_products']], 'Shop.Theme.Catalog');
         }
 
-        return $suppliers;
+        return $suppliers_for_display;
     }
 
-    public function getListingLabel(): string
+    public function getListingLabel()
     {
         return $this->label;
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumb = parent::getBreadcrumbLinks();
+
         $breadcrumb['links'][] = [
-            'title' => $this->trans('Suppliers', [], 'Shop.Theme.Catalog'),
+            'title' => $this->trans('All suppliers', [], 'Shop.Theme.Catalog'),
             'url' => $this->context->link->getPageLink('supplier'),
         ];
 
@@ -253,13 +240,7 @@ class SupplierControllerCore extends ProductListingFrontController
         return $breadcrumb;
     }
 
-    /**
-     * Initializes a set of commonly used variables related to the current page, available for use
-     * in the template. @see FrontController::assignGeneralPurposeVariables for more information.
-     *
-     * @return array
-     */
-    public function getTemplateVarPage(): array
+    public function getTemplateVarPage()
     {
         $page = parent::getTemplateVarPage();
 
@@ -274,7 +255,7 @@ class SupplierControllerCore extends ProductListingFrontController
     /**
      * @return Supplier
      */
-    public function getSupplier(): Supplier
+    public function getSupplier()
     {
         return $this->supplier;
     }

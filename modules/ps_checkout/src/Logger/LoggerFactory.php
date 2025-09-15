@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -79,7 +78,7 @@ class LoggerFactory
     }
 
     /**
-     * @param string|mixed $name
+     * @param string $name
      *
      * @throws PsCheckoutException
      */

@@ -80,7 +80,6 @@ class CustomerThreadCore extends ObjectModel
                 'type' => self::TYPE_STRING,
                 'validate' => 'isGenericName',
                 'required' => true,
-                'size' => 12,
             ],
             'status' => [
                 'type' => self::TYPE_STRING,

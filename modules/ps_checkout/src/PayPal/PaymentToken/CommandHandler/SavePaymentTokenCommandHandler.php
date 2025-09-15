@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -21,20 +20,25 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\CommandHandler;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Command\SavePaymentTokenCommand;
 use PrestaShop\Module\PrestashopCheckout\PayPal\PaymentToken\Entity\PaymentToken;
 use PrestaShop\Module\PrestashopCheckout\Repository\PaymentTokenRepository;
 
 class SavePaymentTokenCommandHandler
 {
-    public function __construct(private PaymentTokenRepository $paymentTokenRepository)
+    /** @var PaymentTokenRepository */
+    private $paymentTokenRepository;
+
+    public function __construct(PaymentTokenRepository $paymentTokenRepository)
     {
+        $this->paymentTokenRepository = $paymentTokenRepository;
     }
 
     /**
-     * @throws \Exception
+     * @throws Exception
      */
-    public function __invoke(SavePaymentTokenCommand $command)
+    public function handle(SavePaymentTokenCommand $command)
     {
         $token = new PaymentToken(
             $command->getPaymentTokenId()->getValue(),

@@ -13,6 +13,8 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Elasticsearch\Exception;
 
+use ApiPlatform\Exception\ExceptionInterface;
+
 /**
  * Non unique identifier exception.
  *
@@ -23,3 +25,5 @@ namespace ApiPlatform\Elasticsearch\Exception;
 final class NonUniqueIdentifierException extends \Exception implements ExceptionInterface
 {
 }
+
+class_alias(NonUniqueIdentifierException::class, \ApiPlatform\Core\Bridge\Elasticsearch\Exception\NonUniqueIdentifierException::class);

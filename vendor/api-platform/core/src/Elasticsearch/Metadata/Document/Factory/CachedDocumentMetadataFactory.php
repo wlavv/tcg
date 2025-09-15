@@ -21,17 +21,22 @@ use Psr\Cache\CacheItemPoolInterface;
 /**
  * Caches document metadata.
  *
- * @deprecated
+ * @experimental
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
 final class CachedDocumentMetadataFactory implements DocumentMetadataFactoryInterface
 {
     private const CACHE_KEY_PREFIX = 'index_metadata';
-    private array $localCache = [];
 
-    public function __construct(private readonly CacheItemPoolInterface $cacheItemPool, private readonly DocumentMetadataFactoryInterface $decorated)
+    private $cacheItemPool;
+    private $decorated;
+    private $localCache = [];
+
+    public function __construct(CacheItemPoolInterface $cacheItemPool, DocumentMetadataFactoryInterface $decorated)
     {
+        $this->cacheItemPool = $cacheItemPool;
+        $this->decorated = $decorated;
     }
 
     /**
@@ -45,7 +50,7 @@ final class CachedDocumentMetadataFactory implements DocumentMetadataFactoryInte
 
         try {
             $cacheItem = $this->cacheItemPool->getItem(self::CACHE_KEY_PREFIX.md5($resourceClass));
-        } catch (CacheException) {
+        } catch (CacheException $e) {
             return $this->handleNotFound($this->localCache[$resourceClass] = $this->decorated->create($resourceClass), $resourceClass);
         }
 
@@ -67,9 +72,11 @@ final class CachedDocumentMetadataFactory implements DocumentMetadataFactoryInte
     private function handleNotFound(DocumentMetadata $documentMetadata, string $resourceClass): DocumentMetadata
     {
         if (null === $documentMetadata->getIndex()) {
-            throw new IndexNotFoundException(\sprintf('No index associated with the "%s" resource class.', $resourceClass));
+            throw new IndexNotFoundException(sprintf('No index associated with the "%s" resource class.', $resourceClass));
         }
 
         return $documentMetadata;
     }
 }
+
+class_alias(CachedDocumentMetadataFactory::class, \ApiPlatform\Core\Bridge\Elasticsearch\Metadata\Document\Factory\CachedDocumentMetadataFactory::class);

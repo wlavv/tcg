@@ -80,22 +80,22 @@
 
 {block name=script}
 
-	$(function() {
+	$(document).ready(function() {
 
-		$('.addPattern').on('click', function() {
+		$('.addPattern').click(function() {
 			addFieldsToCursorPosition($(this).attr("id"))
 			lastLayoutModified = $("#ordered_fields").val();
 		});
 
-		$('#ordered_fields').on('keyup', function() {
+		$('#ordered_fields').keyup(function() {
 			lastLayoutModified = $(this).val();
 		});
 
-		$('#need_zip_code_on, #need_zip_code_off').on('change', function() {
+		$('#need_zip_code_on, #need_zip_code_off').change(function() {
 			disableZipFormat();
 		});
 
-		$('#iso_code').on('change', function() {
+		$('#iso_code').change(function() {
 			disableTAASC();
 		});
 		disableTAASC();
@@ -110,7 +110,7 @@
 		$("#ordered_fields").val(unescape(defaultLayout.replace(/\+/g, " ")));
 	}
 
-	$('#custom-address-fields a').on('click', function (e) {
+	$('#custom-address-fields a').click(function (e) {
   		e.preventDefault();
   		$(this).tab('show')
 	})

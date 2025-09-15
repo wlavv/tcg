@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -26,13 +25,14 @@ use PrestaShop\Module\PrestashopCheckout\Repository\PayPalCustomerRepository;
 
 class SavePayPalCustomerCommandHandler
 {
-    public function __construct(private PayPalCustomerRepository $payPalCustomerRepository)
-    {
-    }
+    /**
+     * @var PayPalCustomerRepository
+     */
+    private $payPalCustomerRepository;
 
-    public function __invoke(SavePayPalCustomerCommand $command)
+    public function __construct(PayPalCustomerRepository $payPalCustomerRepository)
     {
-        $this->handle($command);
+        $this->payPalCustomerRepository = $payPalCustomerRepository;
     }
 
     public function handle(SavePayPalCustomerCommand $command)

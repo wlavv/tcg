@@ -11,9 +11,7 @@ services:
 
   prestashop.adapter.tools:
     alias: PrestaShop\PrestaShop\Adapter\Tools
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 8.1
+    deprecated: ~
 
   PrestaShop\PrestaShop\Adapter\LegacyContext:
     arguments:
@@ -26,9 +24,7 @@ services:
   prestashop.adapter.environment:
     class: PrestaShop\PrestaShop\Adapter\Environment
     arguments:
-      $isDebug: '%kernel.debug%'
-      $name: '%kernel.environment%'
-      $appId: '%kernel.app_id%'
+      - !php/const _PS_MODE_DEV_
 
   prestashop.adapter.validate:
     class: PrestaShop\PrestaShop\Adapter\Validate
@@ -39,5 +35,3 @@ services:
 
   prestashop.adapter.context_state_manager:
     alias: PrestaShop\PrestaShop\Adapter\ContextStateManager
-
-  PrestaShop\PrestaShop\Adapter\Employee\EmployeeRepository: ~

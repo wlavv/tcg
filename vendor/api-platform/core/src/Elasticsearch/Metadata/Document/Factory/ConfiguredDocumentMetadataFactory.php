@@ -19,14 +19,19 @@ use ApiPlatform\Elasticsearch\Metadata\Document\DocumentMetadata;
 /**
  * Creates document's metadata using the mapping configuration.
  *
- * @deprecated
+ * @experimental
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
 final class ConfiguredDocumentMetadataFactory implements DocumentMetadataFactoryInterface
 {
-    public function __construct(private readonly array $mapping, private readonly ?DocumentMetadataFactoryInterface $decorated = null)
+    private $mapping;
+    private $decorated;
+
+    public function __construct(array $mapping, ?DocumentMetadataFactoryInterface $decorated = null)
     {
+        $this->mapping = $mapping;
+        $this->decorated = $decorated;
     }
 
     /**
@@ -39,7 +44,7 @@ final class ConfiguredDocumentMetadataFactory implements DocumentMetadataFactory
         if ($this->decorated) {
             try {
                 $documentMetadata = $this->decorated->create($resourceClass);
-            } catch (IndexNotFoundException) {
+            } catch (IndexNotFoundException $e) {
             }
         }
 
@@ -48,10 +53,10 @@ final class ConfiguredDocumentMetadataFactory implements DocumentMetadataFactory
                 return $documentMetadata;
             }
 
-            throw new IndexNotFoundException(\sprintf('No index associated with the "%s" resource class.', $resourceClass));
+            throw new IndexNotFoundException(sprintf('No index associated with the "%s" resource class.', $resourceClass));
         }
 
-        $documentMetadata ??= new DocumentMetadata();
+        $documentMetadata = $documentMetadata ?? new DocumentMetadata();
 
         if (isset($index['index'])) {
             $documentMetadata = $documentMetadata->withIndex($index['index']);
@@ -64,3 +69,5 @@ final class ConfiguredDocumentMetadataFactory implements DocumentMetadataFactory
         return $documentMetadata;
     }
 }
+
+class_alias(ConfiguredDocumentMetadataFactory::class, \ApiPlatform\Core\Bridge\Elasticsearch\Metadata\Document\Factory\ConfiguredDocumentMetadataFactory::class);

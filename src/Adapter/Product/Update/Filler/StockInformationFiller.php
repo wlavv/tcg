@@ -27,7 +27,6 @@ declare(strict_types=1);
 
 namespace PrestaShop\PrestaShop\Adapter\Product\Update\Filler;
 
-use PrestaShop\PrestaShop\Adapter\Domain\LocalizedObjectModelTrait;
 use PrestaShop\PrestaShop\Core\Domain\Product\Command\UpdateProductCommand;
 use PrestaShop\PrestaShop\Core\Domain\Product\Stock\Command\UpdateProductStockAvailableCommand;
 use PrestaShop\PrestaShop\Core\Util\DateTime\DateTime;
@@ -39,8 +38,6 @@ use Product;
  */
 class StockInformationFiller implements ProductFillerInterface
 {
-    use LocalizedObjectModelTrait;
-
     /**
      * @param Product $product
      * @param UpdateProductCommand $command
@@ -55,12 +52,14 @@ class StockInformationFiller implements ProductFillerInterface
 
         $localizedLaterLabels = $command->getLocalizedAvailableLaterLabels();
         if (null !== $localizedLaterLabels) {
-            $this->fillLocalizedValues($product, 'available_later', $localizedLaterLabels, $updatableProperties);
+            $product->available_later = $localizedLaterLabels;
+            $updatableProperties['available_later'] = array_keys($localizedLaterLabels);
         }
 
         $localizedNowLabels = $command->getLocalizedAvailableNowLabels();
         if (null !== $localizedNowLabels) {
-            $this->fillLocalizedValues($product, 'available_now', $localizedNowLabels, $updatableProperties);
+            $product->available_now = $localizedNowLabels;
+            $updatableProperties['available_now'] = array_keys($localizedNowLabels);
         }
 
         $lowStockThreshold = $command->getLowStockThreshold();

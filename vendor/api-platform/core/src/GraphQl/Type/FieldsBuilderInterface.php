@@ -19,8 +19,6 @@ use ApiPlatform\Metadata\GraphQl\Operation;
  * Interface implemented to build GraphQL fields.
  *
  * @author Alan Poulain <contact@alanpoulain.eu>
- *
- * @deprecated Since API Platform 3.1. Use @see FieldsBuilderEnumInterface instead.
  */
 interface FieldsBuilderInterface
 {

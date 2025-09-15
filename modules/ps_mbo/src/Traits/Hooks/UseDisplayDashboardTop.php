@@ -23,9 +23,14 @@ declare(strict_types=1);
 
 namespace PrestaShop\Module\Mbo\Traits\Hooks;
 
+use Exception;
+use Hook;
 use PrestaShop\Module\Mbo\Exception\ExpectedServiceNotFoundException;
 use PrestaShop\Module\Mbo\Helpers\ErrorHelper;
 use PrestaShop\Module\Mbo\Tab\TabInterface;
+use PrestaShopDatabaseException;
+use PrestaShopException;
+use Symfony\Bundle\FrameworkBundle\Routing\Router;
 use Symfony\Component\Routing\Generator\UrlGeneratorInterface;
 use ToolsCore as Tools;
 
@@ -65,7 +70,7 @@ trait UseDisplayDashboardTop
     /**
      * @return void
      *
-     * @throws \Exception
+     * @throws Exception
      */
     public function bootUseDisplayDashboardTop(): void
     {
@@ -80,9 +85,9 @@ trait UseDisplayDashboardTop
      *
      * @return string
      *
-     * @throws \Exception
+     * @throws Exception
      */
-    public function hookDisplayDashboardTop($params): string
+    public function hookDisplayDashboardTop(): string
     {
         // Check if this page has already been processed by the hook to avoid duplicate content
         if ($this->alreadyProcessedPage) {
@@ -91,29 +96,39 @@ trait UseDisplayDashboardTop
         $this->alreadyProcessedPage = true;
 
         $values = Tools::getAllValues();
+        $moduleCacheDir = sprintf('%s/var/modules/ps_mbo/', rtrim(_PS_ROOT_DIR_, '/'));
+        $createApiUserLockFile = $moduleCacheDir . 'createApiUser.lock';
 
-        // Check if we are on a configuration page and if the module needs to have a push on this page
-        $shouldDisplayMessageInConfigPage = isset($params['route'])
-            && $params['route'] === 'admin_module_configure_action'
-            && isset($params['request'])
-            && in_array($params['request']->get('module_name'), self::$MODULES_WITH_CONFIGURATION_PUSH);
+        if (
+            isset($values['controller']) &&
+            ($values['controller'] === 'AdminPsMboModule') &&
+            file_exists($createApiUserLockFile)
+        ) {
+            return $this->displayFailedApiUser();
+        }
+
+        //Check if we are on configuration page & if the module needs to have a push on this page
+        $shouldDisplayMessageInConfigPage = isset($values['controller'])
+            && ($values['controller'] === self::$ADMIN_MODULES_CONTROLLER)
+            && isset($values['configure'])
+            && in_array($values['configure'], self::$MODULES_WITH_CONFIGURATION_PUSH);
 
         return $shouldDisplayMessageInConfigPage
-            ? $this->displayPushOnConfigurationPage($params['request']->get('module_name'))
-            : $this->displayRecommendedModules($values['controller'] ?? '', $params);
+            ? $this->displayPushOnConfigurationPage($values['configure'])
+            : $this->displayRecommendedModules($values['controller'] ?? '');
     }
 
     /**
-     * @throws \PrestaShopDatabaseException
-     * @throws \PrestaShopException
+     * @throws PrestaShopDatabaseException
+     * @throws PrestaShopException
      */
     public function useDisplayDashboardTopExtraOperations(): void
     {
         $hookName = 'actionMboRecommendedModules';
 
-        $id_hook = \Hook::getIdByName($hookName, false);
+        $id_hook = Hook::getIdByName($hookName, false);
         if (!$id_hook) {
-            $new_hook = new \Hook();
+            $new_hook = new Hook();
             $new_hook->name = pSQL($hookName);
             $new_hook->title = '';
             $new_hook->position = true;
@@ -180,26 +195,53 @@ trait UseDisplayDashboardTop
         return $this->fetch('module:ps_mbo/views/templates/hook/push-configuration.tpl');
     }
 
+    private function displayFailedApiUser(): string
+    {
+        try {
+            /** @var \Twig\Environment $twig */
+            $twig = $this->get('twig');
+
+            /** @var Router $router*/
+            $router = $this->get('router');
+
+            if (null === $twig || null === $router) {
+                throw new ExpectedServiceNotFoundException(
+                    'Some services not found in UseDisplayDashboardTop'
+                );
+            }
+
+            return $twig->render(
+                '@Modules/ps_mbo/views/templates/hook/twig/failed-api-user.html.twig', [
+                    'module_manager_link' => $router->generate('admin_module_manage'),
+                ]
+            );
+        } catch (Exception $e) {
+            ErrorHelper::reportError($e);
+
+            return '';
+        }
+    }
+
     /**
      * Compute & include data with recommended modules when needed
      *
-     * @throws \Exception
+     * @throws Exception
      */
-    protected function displayRecommendedModules(string $controller, array $hookParams): string
+    protected function displayRecommendedModules(string $controller): string
     {
         $recommendedModulesDisplayed = true;
 
         // Ask to modules if recommended modules should be displayed in this context
-        \Hook::exec('actionMboRecommendedModules', [
+        Hook::exec('actionMboRecommendedModules', [
             'recommendedModulesDisplayed' => &$recommendedModulesDisplayed,
             'controller' => $controller,
         ]);
+
 
         $afterContentType = TabInterface::RECOMMENDED_AFTER_CONTENT_TYPE;
         $recommendedButtonType = TabInterface::RECOMMENDED_BUTTON_TYPE;
 
         // We want to "hide" recommended modules from this controller
-        // @phpstan-ignore-next-line
         if (!$recommendedModulesDisplayed) {
             // If we are trying to display as button, hide the button
             if (
@@ -215,6 +257,7 @@ trait UseDisplayDashboardTop
                     $this->controllersWithRecommendedModules[$afterContentType]
                 )
             ) {
+
                 // We are trying to display after content, so move them to button adn remove from after content
                 foreach ($this->controllersWithRecommendedModules[$afterContentType] as $k => $afterContentController) {
                     if ($afterContentController === $controller) {
@@ -234,10 +277,12 @@ trait UseDisplayDashboardTop
         }
 
         try {
-            /** @var UrlGeneratorInterface|null $router */
-            $router = $this->get('prestashop.router');
+            /** @var UrlGeneratorInterface $router */
+            $router = $this->get('router');
             if (null === $router) {
-                throw new ExpectedServiceNotFoundException('Some services not found in UseDisplayDashboardTop');
+                throw new ExpectedServiceNotFoundException(
+                    'Some services not found in UseDisplayDashboardTop'
+                );
             }
 
             $recommendedModulesUrl = $router->generate(
@@ -247,17 +292,16 @@ trait UseDisplayDashboardTop
                     'recommendation_format' => $shouldAttachRecommendedModulesButton ? 'modal' : 'card',
                 ]
             );
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             // Avoid fatal errors on ServiceNotFoundException
             ErrorHelper::reportError($exception);
-
             return '';
         }
 
         $this->smarty->assign([
             'shouldAttachRecommendedModulesAfterContent' => $shouldAttachRecommendedModulesAfterContent,
             'shouldAttachRecommendedModulesButton' => $shouldAttachRecommendedModulesButton,
-            'shouldUseLegacyTheme' => $this->isAdminLegacyContext() || $hookParams['route'] === 'admin_legacy_controller_route',
+            'shouldUseLegacyTheme' => $this->isAdminLegacyContext(),
             'recommendedModulesCloseTranslated' => $this->trans('Close', [], 'Admin.Actions'),
             'recommendedModulesUrl' => $recommendedModulesUrl,
             'recommendedModulesTitleTranslated' => $this->getRecommendedModulesButtonTitle($controller),
@@ -291,16 +335,17 @@ trait UseDisplayDashboardTop
      *
      * @return void
      *
-     * @see UseActionAdminControllerSetMedia
+     * @see \PrestaShop\Module\Mbo\Traits\Hooks\UseActionAdminControllerSetMedia
      */
-    protected function loadMediaForDashboardTop($hookParams): void
+    protected function loadMediaForDashboardTop(): void
     {
+        // has to be loaded in header to prevent flash of content
+        $this->context->controller->addJs($this->getPathUri() . 'views/js/recommended-modules.js?v=' . $this->version);
+
         if (
             $this->shouldAttachRecommendedModules(TabInterface::RECOMMENDED_BUTTON_TYPE)
             || $this->shouldAttachRecommendedModules(TabInterface::RECOMMENDED_AFTER_CONTENT_TYPE)
         ) {
-            // has to be loaded in header to prevent flash of content
-            $this->context->controller->addJs($this->getPathUri() . 'views/js/recommended-modules.js?v=' . $this->version);
             $this->context->controller->addCSS($this->getPathUri() . 'views/css/recommended-modules.css');
         }
     }

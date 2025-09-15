@@ -10,8 +10,7 @@ services:
       - "%kernel.cache_dir%/doctrine"
 
   doctrine.cache.provider:
-    class: Doctrine\Common\Cache\Psr6\DoctrineProvider
-    factory: [ Doctrine\Common\Cache\Psr6\DoctrineProvider, wrap ]
+    class: Symfony\Component\Cache\DoctrineProvider
     arguments:
       - "@doctrine.cache.adapter"
 
@@ -22,8 +21,9 @@ services:
     tags:
       - { name: kernel.cache_warmer }
 
-  PrestaShopBundle\Cache\TranslationCacheClearer:
-    autowire: true
-    autoconfigure: true
+  prestashop.cache.refresh:
+    class: PrestaShopBundle\Service\Cache\Refresh
     arguments:
-      $legacyCacheDir: '%prestashop.legacy_cache_dir%'
+      - "@kernel"
+    calls:
+      - [ addCacheClear, [ ] ]

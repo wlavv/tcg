@@ -136,8 +136,8 @@
 {/if}
 <script type="text/javascript">
 	var timer;
-		$(function(){
-			$('select[name=id_employee_forward]').on('change', function(){
+		$(document).ready(function(){
+			$('select[name=id_employee_forward]').change(function(){
 				if ($(this).val() >= 0)
 					$('#message_forward').show(400);
 				else
@@ -147,7 +147,7 @@
 				else
 					$('#message_forward_email').hide(200);
 			});
-			$('textarea[name=message_forward]').on('click', function(){
+			$('textarea[name=message_forward]').click(function(){
 				if($(this).val() == '{l s='You can add a comment here.'}')
 				{
 					$(this).val('');

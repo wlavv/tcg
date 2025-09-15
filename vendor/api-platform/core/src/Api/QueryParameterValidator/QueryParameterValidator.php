@@ -13,13 +13,56 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Api\QueryParameterValidator;
 
-use ApiPlatform\ParameterValidator\ParameterValidator as NewQueryParameterValidator;
+use ApiPlatform\Api\FilterLocatorTrait;
+use ApiPlatform\Exception\FilterValidationException;
+use Psr\Container\ContainerInterface;
 
 /**
  * Validates query parameters depending on filter description.
  *
- * @deprecated use ApiPlatform\QueryParameterValidator\QueryParameterValidator instead
+ * @author Julien Deniau <julien.deniau@gmail.com>
  */
-class QueryParameterValidator extends NewQueryParameterValidator
+class QueryParameterValidator
 {
+    use FilterLocatorTrait;
+
+    private $validators;
+
+    public function __construct(ContainerInterface $filterLocator)
+    {
+        $this->setFilterLocator($filterLocator);
+
+        $this->validators = [
+            new Validator\ArrayItems(),
+            new Validator\Bounds(),
+            new Validator\Enum(),
+            new Validator\Length(),
+            new Validator\MultipleOf(),
+            new Validator\Pattern(),
+            new Validator\Required(),
+        ];
+    }
+
+    public function validateFilters(string $resourceClass, array $resourceFilters, array $queryParameters): void
+    {
+        $errorList = [];
+
+        foreach ($resourceFilters as $filterId) {
+            if (!$filter = $this->getFilter($filterId)) {
+                continue;
+            }
+
+            foreach ($filter->getDescription($resourceClass) as $name => $data) {
+                foreach ($this->validators as $validator) {
+                    $errorList = array_merge($errorList, $validator->validate($name, $data, $queryParameters));
+                }
+            }
+        }
+
+        if ($errorList) {
+            throw new FilterValidationException($errorList);
+        }
+    }
 }
+
+class_alias(QueryParameterValidator::class, \ApiPlatform\Core\Filter\QueryParameterValidator::class);

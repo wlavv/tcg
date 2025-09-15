@@ -13,21 +13,20 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Doctrine\Orm;
 
-use ApiPlatform\Doctrine\Orm\Extension\DoctrinePaginatorFactory;
-use ApiPlatform\State\Pagination\HasNextPagePaginatorInterface;
 use ApiPlatform\State\Pagination\PaginatorInterface;
 use Doctrine\ORM\Query;
-use Doctrine\ORM\Tools\Pagination\Paginator as DoctrinePaginator;
 
 /**
  * Decorates the Doctrine ORM paginator.
  *
  * @author Kévin Dunglas <dunglas@gmail.com>
  */
-final class Paginator extends AbstractPaginator implements PaginatorInterface, QueryAwareInterface, HasNextPagePaginatorInterface
+final class Paginator extends AbstractPaginator implements PaginatorInterface, QueryAwareInterface
 {
-    private ?int $totalItems = null;
-    private ?DoctrinePaginatorFactory $doctrinePaginatorFactory = null;
+    /**
+     * @var int|null
+     */
+    private $totalItems;
 
     /**
      * {@inheritdoc}
@@ -56,40 +55,6 @@ final class Paginator extends AbstractPaginator implements PaginatorInterface, Q
     {
         return $this->paginator->getQuery();
     }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function hasNextPage(): bool
-    {
-        if (isset($this->totalItems)) {
-            return $this->totalItems > ($this->firstResult + $this->maxResults);
-        }
-
-        $cloneQuery = clone $this->paginator->getQuery();
-
-        $cloneQuery->setParameters(clone $this->paginator->getQuery()->getParameters());
-        $cloneQuery->setCacheable(false);
-
-        foreach ($this->paginator->getQuery()->getHints() as $name => $value) {
-            $cloneQuery->setHint($name, $value);
-        }
-
-        $cloneQuery
-            ->setFirstResult($this->paginator->getQuery()->getFirstResult() + $this->paginator->getQuery()->getMaxResults())
-            ->setMaxResults(1);
-
-        if (null !== $this->doctrinePaginatorFactory) {
-            $fakePaginator = $this->doctrinePaginatorFactory->getPaginator($cloneQuery, $this->paginator->getFetchJoinCollection());
-        } else {
-            $fakePaginator = new DoctrinePaginator($cloneQuery, $this->paginator->getFetchJoinCollection());
-        }
-
-        return iterator_count($fakePaginator->getIterator()) > 0;
-    }
-
-    public function setDoctrinePaginatorFactory(?DoctrinePaginatorFactory $doctrinePaginatorFactory = null): void
-    {
-        $this->doctrinePaginatorFactory = $doctrinePaginatorFactory;
-    }
 }
+
+class_alias(Paginator::class, \ApiPlatform\Core\Bridge\Doctrine\Orm\Paginator::class);

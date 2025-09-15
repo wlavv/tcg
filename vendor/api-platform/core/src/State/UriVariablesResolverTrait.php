@@ -13,15 +13,17 @@ declare(strict_types=1);
 
 namespace ApiPlatform\State;
 
-use ApiPlatform\Api\UriVariablesConverterInterface as LegacyUriVariablesConverterInterface;
-use ApiPlatform\Metadata\Exception\InvalidIdentifierException;
+use ApiPlatform\Api\UriVariablesConverterInterface;
+use ApiPlatform\Core\Identifier\CompositeIdentifierParser;
+use ApiPlatform\Core\Identifier\ContextAwareIdentifierConverterInterface;
+use ApiPlatform\Core\Identifier\IdentifierConverterInterface;
+use ApiPlatform\Exception\InvalidIdentifierException;
 use ApiPlatform\Metadata\HttpOperation;
-use ApiPlatform\Metadata\UriVariablesConverterInterface;
-use ApiPlatform\Metadata\Util\CompositeIdentifierParser;
 
 trait UriVariablesResolverTrait
 {
-    private LegacyUriVariablesConverterInterface|UriVariablesConverterInterface|null $uriVariablesConverter = null;
+    /** @var ContextAwareIdentifierConverterInterface|IdentifierConverterInterface|UriVariablesConverterInterface|null */
+    private $uriVariablesConverter = null;
 
     /**
      * Resolves an operation's UriVariables to their identifiers values.
@@ -34,11 +36,10 @@ trait UriVariablesResolverTrait
             return $identifiers;
         }
 
-        $uriVariablesMap = [];
         foreach ($operation->getUriVariables() ?? [] as $parameterName => $uriVariableDefinition) {
             if (!isset($parameters[$parameterName])) {
                 if (!isset($parameters['id'])) {
-                    throw new InvalidIdentifierException(\sprintf('Parameter "%s" not found, check the identifiers configuration.', $parameterName));
+                    throw new InvalidIdentifierException(sprintf('Parameter "%s" not found, check the identifiers configuration.', $parameterName));
                 }
 
                 $parameterName = 'id';
@@ -48,24 +49,22 @@ trait UriVariablesResolverTrait
                 $currentIdentifiers = CompositeIdentifierParser::parse($parameters[$parameterName]);
 
                 if (($foundNumIdentifiers = \count($currentIdentifiers)) !== $numIdentifiers) {
-                    throw new InvalidIdentifierException(\sprintf('We expected "%s" identifiers and got "%s".', $numIdentifiers, $foundNumIdentifiers));
+                    throw new InvalidIdentifierException(sprintf('We expected "%s" identifiers and got "%s".', $numIdentifiers, $foundNumIdentifiers));
                 }
 
                 foreach ($currentIdentifiers as $key => $value) {
                     $identifiers[$key] = $value;
-                    $uriVariablesMap[$key] = $uriVariableDefinition;
                 }
 
                 continue;
             }
 
             $identifiers[$parameterName] = $parameters[$parameterName];
-            $uriVariablesMap[$parameterName] = $uriVariableDefinition;
         }
 
         if ($this->uriVariablesConverter) {
-            $context = ['operation' => $operation, 'uri_variables_map' => $uriVariablesMap];
-            $identifiers = $this->uriVariablesConverter->convert($identifiers, $operation->getClass() ?? $resourceClass, $context);
+            $context = ['operation' => $operation];
+            $identifiers = $this->uriVariablesConverter instanceof IdentifierConverterInterface ? $this->uriVariablesConverter->convert($identifiers, $operation->getClass() ?? $resourceClass) : $this->uriVariablesConverter->convert($identifiers, $operation->getClass() ?? $resourceClass, $context);
         }
 
         return $identifiers;

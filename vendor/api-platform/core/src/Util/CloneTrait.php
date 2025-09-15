@@ -22,7 +22,7 @@ namespace ApiPlatform\Util;
  */
 trait CloneTrait
 {
-    public function clone(mixed $data): mixed
+    public function clone($data)
     {
         if (!\is_object($data)) {
             return $data;
@@ -30,8 +30,10 @@ trait CloneTrait
 
         try {
             return (new \ReflectionClass($data))->isCloneable() ? clone $data : null;
-        } catch (\ReflectionException) {
+        } catch (\ReflectionException $reflectionException) {
             return null;
         }
     }
 }
+
+class_alias(CloneTrait::class, \ApiPlatform\Core\Util\CloneTrait::class);

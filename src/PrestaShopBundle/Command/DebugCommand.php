@@ -87,7 +87,7 @@ class DebugCommand extends Command
      *
      * @return int
      */
-    protected function execute(InputInterface $input, OutputInterface $output): int
+    protected function execute(InputInterface $input, OutputInterface $output)
     {
         $this->io = new SymfonyStyle($input, $output);
 

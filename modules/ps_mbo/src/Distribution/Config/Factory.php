@@ -25,14 +25,13 @@ use Db;
 use Doctrine\DBAL\Query\QueryException;
 use PrestaShop\Module\Mbo\Distribution\Config\Exception\CannotSaveConfigException;
 use PrestaShop\Module\Mbo\Distribution\Config\Exception\InvalidConfigException;
+use PrestaShopDatabaseException;
 
 final class Factory
 {
-    private \Db $db;
-
     public function __construct()
     {
-        $this->db = \Db::getInstance();
+        $this->db = Db::getInstance();
     }
 
     /**
@@ -44,7 +43,7 @@ final class Factory
      * @throws QueryException
      * @throws InvalidConfigException
      * @throws CannotSaveConfigException
-     * @throws \PrestaShopDatabaseException
+     * @throws PrestaShopDatabaseException
      */
     public function buildAndSave(array $config)
     {
@@ -79,10 +78,10 @@ final class Factory
 
         foreach ($config as $singleConfig) {
             if (
-                !isset($singleConfig['config_key'])
-                || !isset($singleConfig['config_value'])
-                || !isset($singleConfig['ps_version'])
-                || !isset($singleConfig['mbo_version'])
+                !isset($singleConfig['config_key']) ||
+                !isset($singleConfig['config_value']) ||
+                !isset($singleConfig['ps_version']) ||
+                !isset($singleConfig['mbo_version'])
             ) {
                 return false;
             }
@@ -117,14 +116,14 @@ final class Factory
     }
 
     /**
-     * @throws \PrestaShopDatabaseException
+     * @throws PrestaShopDatabaseException
      * @throws InvalidConfigException
      */
     public function getCollectionFromDB(): array
     {
         $collection = [];
 
-        if (count(\Db::getInstance()->executeS('SHOW TABLES LIKE \'' . _DB_PREFIX_ . 'mbo_api_config\' '))) { // check if table exist
+        if (count(Db::getInstance()->executeS('SHOW TABLES LIKE \'' . _DB_PREFIX_ . 'mbo_api_config\' '))) { //check if table exist
             $query = 'SELECT
                `id_mbo_api_config`,
                `config_key`,
@@ -138,7 +137,7 @@ final class Factory
             $results = $this->db->executeS($query);
 
             if (!is_array($results)) {
-                throw new \PrestaShopDatabaseException(sprintf('Retrieving config from DB returns a non array : %s. Query was : %s', gettype($results), $query));
+                throw new PrestaShopDatabaseException(sprintf('Retrieving config from DB returns a non array : %s. Query was : %s', gettype($results), $query));
             }
 
             $collection = $this->buildConfigCollection($results);

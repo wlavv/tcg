@@ -23,10 +23,16 @@ use Symfony\Component\Validator\Constraints\AtLeastOneOf;
 final class PropertySchemaOneOfRestriction implements PropertySchemaRestrictionMetadataInterface
 {
     /**
+     * @var iterable<PropertySchemaRestrictionMetadataInterface>
+     */
+    private $restrictionsMetadata;
+
+    /**
      * @param iterable<PropertySchemaRestrictionMetadataInterface> $restrictionsMetadata
      */
-    public function __construct(private readonly iterable $restrictionsMetadata = [])
+    public function __construct(iterable $restrictionsMetadata = [])
     {
+        $this->restrictionsMetadata = $restrictionsMetadata;
     }
 
     /**
@@ -36,7 +42,7 @@ final class PropertySchemaOneOfRestriction implements PropertySchemaRestrictionM
      */
     public function create(Constraint $constraint, ApiProperty $propertyMetadata): array
     {
-        $oneOfConstraints = $constraint->constraints;
+        $oneOfConstraints = method_exists($constraint, 'getNestedContraints') ? $constraint->getNestedContraints() : $constraint->constraints;
         $oneOfRestrictions = [];
 
         foreach ($oneOfConstraints as $oneOfConstraint) {

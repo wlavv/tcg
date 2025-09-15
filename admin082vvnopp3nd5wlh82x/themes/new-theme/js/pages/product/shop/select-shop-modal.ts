@@ -24,7 +24,7 @@
  */
 import {Modal} from '@components/modal';
 import ProductMap from '@pages/product/product-map';
-import {isUndefined} from '@components/typeguard';
+import {isUndefined} from '@PSTypes/typeguard';
 
 export default function selectShopForEdition(editButton: HTMLElement, shopIds: string[]): void {
   if (isUndefined(editButton.dataset.modalTitle) || isUndefined(editButton.dataset.shopSelector)) {

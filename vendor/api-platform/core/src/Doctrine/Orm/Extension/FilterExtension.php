@@ -16,7 +16,7 @@ namespace ApiPlatform\Doctrine\Orm\Extension;
 use ApiPlatform\Doctrine\Orm\Filter\FilterInterface;
 use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
 use ApiPlatform\Doctrine\Orm\Util\QueryNameGeneratorInterface;
-use ApiPlatform\Metadata\Exception\InvalidArgumentException;
+use ApiPlatform\Exception\InvalidArgumentException;
 use ApiPlatform\Metadata\Operation;
 use Doctrine\ORM\QueryBuilder;
 use Psr\Container\ContainerInterface;
@@ -29,20 +29,24 @@ use Psr\Container\ContainerInterface;
  */
 final class FilterExtension implements QueryCollectionExtensionInterface
 {
-    public function __construct(private readonly ContainerInterface $filterLocator)
+    /** @var ContainerInterface */
+    private $filterLocator;
+
+    public function __construct(ContainerInterface $filterLocator)
     {
+        $this->filterLocator = $filterLocator;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function applyToCollection(QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, ?string $resourceClass = null, ?Operation $operation = null, array $context = []): void
+    public function applyToCollection(QueryBuilder $queryBuilder, QueryNameGeneratorInterface $queryNameGenerator, string $resourceClass = null, Operation $operation = null, array $context = []): void
     {
         if (null === $resourceClass) {
             throw new InvalidArgumentException('The "$resourceClass" parameter must not be null');
         }
 
-        $resourceFilters = $operation?->getFilters();
+        $resourceFilters = $operation ? $operation->getFilters() : [];
 
         if (empty($resourceFilters)) {
             return;
@@ -59,13 +63,13 @@ final class FilterExtension implements QueryCollectionExtensionInterface
                     continue;
                 }
 
-                $context['filters'] ??= [];
+                $context['filters'] = $context['filters'] ?? [];
                 $filter->apply($queryBuilder, $queryNameGenerator, $resourceClass, $operation, $context);
             }
         }
 
         foreach ($orderFilters as $orderFilter) {
-            $context['filters'] ??= [];
+            $context['filters'] = $context['filters'] ?? [];
             $orderFilter->apply($queryBuilder, $queryNameGenerator, $resourceClass, $operation, $context);
         }
     }

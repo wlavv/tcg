@@ -15,8 +15,6 @@ namespace ApiPlatform\Doctrine\Odm\Metadata\Resource;
 
 use ApiPlatform\Doctrine\Odm\State\CollectionProvider;
 use ApiPlatform\Doctrine\Odm\State\ItemProvider;
-use ApiPlatform\Doctrine\Odm\State\Options;
-use ApiPlatform\Metadata\ApiResource;
 use ApiPlatform\Metadata\CollectionOperationInterface;
 use ApiPlatform\Metadata\DeleteOperationInterface;
 use ApiPlatform\Metadata\Operation;
@@ -27,30 +25,35 @@ use Doctrine\Persistence\ManagerRegistry;
 
 final class DoctrineMongoDbOdmResourceCollectionMetadataFactory implements ResourceMetadataCollectionFactoryInterface
 {
-    public function __construct(private readonly ManagerRegistry $managerRegistry, private readonly ResourceMetadataCollectionFactoryInterface $decorated)
+    /**
+     * @var ManagerRegistry
+     */
+    private $managerRegistry;
+
+    /**
+     * @var ResourceMetadataCollectionFactoryInterface
+     */
+    private $decorated;
+
+    public function __construct(ManagerRegistry $managerRegistry, ResourceMetadataCollectionFactoryInterface $decorated)
     {
+        $this->decorated = $decorated;
+        $this->managerRegistry = $managerRegistry;
     }
 
     /**
-     * {@inheritdoc}
+     * {@inheritDoc}
      */
     public function create(string $resourceClass): ResourceMetadataCollection
     {
         $resourceMetadataCollection = $this->decorated->create($resourceClass);
 
-        /** @var ApiResource $resourceMetadata */
         foreach ($resourceMetadataCollection as $i => $resourceMetadata) {
             $operations = $resourceMetadata->getOperations();
 
             if ($operations) {
-                /** @var Operation $operation */
                 foreach ($resourceMetadata->getOperations() as $operationName => $operation) {
-                    $documentClass = $operation->getClass();
-                    if (($options = $operation->getStateOptions()) && $options instanceof Options && $options->getDocumentClass()) {
-                        $documentClass = $options->getDocumentClass();
-                    }
-
-                    if (!$this->managerRegistry->getManagerForClass($documentClass) instanceof DocumentManager) {
+                    if (!$this->managerRegistry->getManagerForClass($operation->getClass()) instanceof DocumentManager) {
                         continue;
                     }
 
@@ -80,14 +83,8 @@ final class DoctrineMongoDbOdmResourceCollectionMetadataFactory implements Resou
         return $resourceMetadataCollection;
     }
 
-    private function addDefaults(Operation $operation): Operation
+    private function addDefaults($operation): Operation
     {
-        $options = $operation->getStateOptions() ?: new Options();
-        if ($options instanceof Options && null === $options->getHandleLinks()) {
-            $options = $options->withHandleLinks('api_platform.doctrine.odm.links_handler');
-            $operation = $operation->withStateOptions($options);
-        }
-
         if (null === $operation->getProvider()) {
             $operation = $operation->withProvider($this->getProvider($operation));
         }

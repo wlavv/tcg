@@ -17,11 +17,16 @@ use ApiPlatform\Metadata\Resource\ResourceMetadataCollection;
 
 /**
  * @author Antoine Bluchet <soyuka@gmail.com>
+ *
+ * @deprecated BC layer, is removed in 3.0
  */
 final class AlternateUriResourceMetadataCollectionFactory implements ResourceMetadataCollectionFactoryInterface
 {
-    public function __construct(private readonly ?ResourceMetadataCollectionFactoryInterface $decorated = null)
+    private $decorated;
+
+    public function __construct(ResourceMetadataCollectionFactoryInterface $decorated = null)
     {
+        $this->decorated = $decorated;
     }
 
     /**
@@ -35,7 +40,7 @@ final class AlternateUriResourceMetadataCollectionFactory implements ResourceMet
         }
 
         foreach ($resourceMetadataCollection as $i => $resource) {
-            if (0 === $i) {
+            if (0 === $i || ($resource->getExtraProperties()['is_legacy_subresource'] ?? false) || ($resource->getExtraProperties()['is_legacy_resource_metadata'] ?? false)) {
                 continue;
             }
 

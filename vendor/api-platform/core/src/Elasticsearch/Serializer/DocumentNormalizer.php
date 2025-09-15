@@ -13,6 +13,7 @@ declare(strict_types=1);
 
 namespace ApiPlatform\Elasticsearch\Serializer;
 
+use ApiPlatform\Core\Metadata\Resource\Factory\ResourceMetadataFactoryInterface;
 use ApiPlatform\Metadata\HttpOperation;
 use ApiPlatform\Metadata\Resource\Factory\ResourceMetadataCollectionFactoryInterface;
 use Symfony\Component\PropertyAccess\PropertyAccessorInterface;
@@ -21,11 +22,7 @@ use Symfony\Component\Serializer\Exception\LogicException;
 use Symfony\Component\Serializer\Mapping\ClassDiscriminatorResolverInterface;
 use Symfony\Component\Serializer\Mapping\Factory\ClassMetadataFactoryInterface;
 use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
-use Symfony\Component\Serializer\Normalizer\DenormalizerInterface;
-use Symfony\Component\Serializer\Normalizer\NormalizerInterface;
 use Symfony\Component\Serializer\Normalizer\ObjectNormalizer;
-use Symfony\Component\Serializer\SerializerAwareInterface;
-use Symfony\Component\Serializer\SerializerInterface;
 
 /**
  * Document denormalizer for Elasticsearch.
@@ -34,49 +31,47 @@ use Symfony\Component\Serializer\SerializerInterface;
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
-final class DocumentNormalizer implements NormalizerInterface, DenormalizerInterface, SerializerAwareInterface
+final class DocumentNormalizer extends ObjectNormalizer
 {
     public const FORMAT = 'elasticsearch';
 
-    private readonly ObjectNormalizer $decoratedNormalizer;
-
-    public function __construct(
-        private readonly ResourceMetadataCollectionFactoryInterface $resourceMetadataCollectionFactory,
-        ?ClassMetadataFactoryInterface $classMetadataFactory = null,
-        private readonly ?NameConverterInterface $nameConverter = null,
-        ?PropertyAccessorInterface $propertyAccessor = null,
-        ?PropertyTypeExtractorInterface $propertyTypeExtractor = null,
-        ?ClassDiscriminatorResolverInterface $classDiscriminatorResolver = null,
-        ?callable $objectClassResolver = null,
-        array $defaultContext = [],
-    ) {
-        $this->decoratedNormalizer = new ObjectNormalizer($classMetadataFactory, $nameConverter, $propertyAccessor, $propertyTypeExtractor, $classDiscriminatorResolver, $objectClassResolver, $defaultContext);
-    }
+    private $resourceMetadataFactory;
 
     /**
-     * {@inheritdoc}
+     * @param ResourceMetadataCollectionFactoryInterface|ResourceMetadataFactoryInterface $resourceMetadataFactory
      */
-    public function supportsDenormalization(mixed $data, string $type, ?string $format = null, array $context = []): bool
+    public function __construct($resourceMetadataFactory, ClassMetadataFactoryInterface $classMetadataFactory = null, NameConverterInterface $nameConverter = null, PropertyAccessorInterface $propertyAccessor = null, PropertyTypeExtractorInterface $propertyTypeExtractor = null, ClassDiscriminatorResolverInterface $classDiscriminatorResolver = null, callable $objectClassResolver = null, array $defaultContext = [])
     {
-        return self::FORMAT === $format && $this->decoratedNormalizer->supportsDenormalization($data, $type, $format, $context);
+        parent::__construct($classMetadataFactory, $nameConverter, $propertyAccessor, $propertyTypeExtractor, $classDiscriminatorResolver, $objectClassResolver, $defaultContext);
+        $this->resourceMetadataFactory = $resourceMetadataFactory;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function denormalize(mixed $data, string $class, ?string $format = null, array $context = []): mixed
+    public function supportsDenormalization($data, $type, $format = null, array $context = []): bool
+    {
+        return self::FORMAT === $format && parent::supportsDenormalization($data, $type, $format, $context); // @phpstan-ignore-line symfony bc-layer
+    }
+
+    /**
+     * {@inheritdoc}
+     *
+     * @return mixed
+     */
+    public function denormalize($data, $class, $format = null, array $context = [])
     {
         if (\is_string($data['_id'] ?? null) && \is_array($data['_source'] ?? null)) {
             $data = $this->populateIdentifier($data, $class)['_source'];
         }
 
-        return $this->decoratedNormalizer->denormalize($data, $class, $format, $context);
+        return parent::denormalize($data, $class, $format, $context);
     }
 
     /**
      * {@inheritdoc}
      */
-    public function supportsNormalization(mixed $data, ?string $format = null, array $context = []): bool
+    public function supportsNormalization($data, $format = null, array $context = []): bool
     {
         // prevent the use of lower priority normalizers (e.g. serializer.normalizer.object) for this format
         return self::FORMAT === $format;
@@ -86,10 +81,12 @@ final class DocumentNormalizer implements NormalizerInterface, DenormalizerInter
      * {@inheritdoc}
      *
      * @throws LogicException
+     *
+     * @return array|string|int|float|bool|\ArrayObject|null
      */
-    public function normalize(mixed $object, ?string $format = null, array $context = []): array|string|int|float|bool|\ArrayObject|null
+    public function normalize($object, $format = null, array $context = [])
     {
-        throw new LogicException(\sprintf('%s is a write-only format.', self::FORMAT));
+        throw new LogicException(sprintf('%s is a write-only format.', self::FORMAT));
     }
 
     /**
@@ -98,14 +95,18 @@ final class DocumentNormalizer implements NormalizerInterface, DenormalizerInter
     private function populateIdentifier(array $data, string $class): array
     {
         $identifier = 'id';
-        $resourceMetadata = $this->resourceMetadataCollectionFactory->create($class);
+        $resourceMetadata = $this->resourceMetadataFactory->create($class);
 
-        $operation = $resourceMetadata->getOperation();
-        if ($operation instanceof HttpOperation) {
-            $uriVariable = $operation->getUriVariables()[0] ?? null;
+        if ($this->resourceMetadataFactory instanceof ResourceMetadataFactoryInterface) {
+            $identifier = $resourceMetadata->getItemOperationAttribute('get', 'identifiers');
+        } else {
+            $operation = $resourceMetadata->getOperation();
+            if ($operation instanceof HttpOperation) {
+                $uriVariable = $operation->getUriVariables()[0] ?? null;
 
-            if ($uriVariable) {
-                $identifier = $uriVariable->getIdentifiers()[0] ?? 'id';
+                if ($uriVariable) {
+                    $identifier = $uriVariable->getIdentifiers()[0] ?? 'id';
+                }
             }
         }
 
@@ -116,21 +117,5 @@ final class DocumentNormalizer implements NormalizerInterface, DenormalizerInter
         }
 
         return $data;
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function setSerializer(SerializerInterface $serializer): void
-    {
-        $this->decoratedNormalizer->setSerializer($serializer);
-    }
-
-    /**
-     * {@inheritdoc}
-     */
-    public function getSupportedTypes(?string $format): array
-    {
-        return self::FORMAT === $format ? ['object' => true] : [];
     }
 }

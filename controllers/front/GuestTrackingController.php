@@ -41,7 +41,7 @@ class GuestTrackingControllerCore extends FrontController
      *
      * @see FrontController::init()
      */
-    public function init(): void
+    public function init()
     {
         if ($this->context->customer->isLogged()) {
             Tools::redirect('history.php');
@@ -55,7 +55,7 @@ class GuestTrackingControllerCore extends FrontController
      *
      * @see FrontController::postProcess()
      */
-    public function postProcess(): void
+    public function postProcess()
     {
         $order_reference = current(explode('#', Tools::getValue('order_reference')));
         $email = Tools::getValue('email');
@@ -75,10 +75,10 @@ class GuestTrackingControllerCore extends FrontController
         $this->order = Order::getByReferenceAndEmail($order_reference, $email);
         if (!Validate::isLoadedObject($this->order)) {
             $this->errors[] = $this->getTranslator()->trans(
-                'We couldn\'t find your order with the information provided, please try again',
-                [],
-                'Shop.Notifications.Error'
-            );
+                    'We couldn\'t find your order with the information provided, please try again',
+                    [],
+                    'Shop.Notifications.Error'
+                );
         }
 
         if (Tools::isSubmit('submitTransformGuestToCustomer') && Tools::getValue('password')) {
@@ -142,14 +142,12 @@ class GuestTrackingControllerCore extends FrontController
      *
      * @see FrontController::initContent()
      */
-    public function initContent(): void
+    public function initContent()
     {
         parent::initContent();
 
         if (!Validate::isLoadedObject($this->order)) {
-            $this->setTemplate('customer/guest-login');
-
-            return;
+            return $this->setTemplate('customer/guest-login');
         }
 
         if ((int) $this->order->isReturnable()) {
@@ -161,7 +159,7 @@ class GuestTrackingControllerCore extends FrontController
         }
 
         // Kept for backwards compatibility (is_customer), inline it in later versions
-        $registered_customer_exists = Customer::customerExists(Tools::getValue('email'));
+        $registered_customer_exists = Customer::customerExists(Tools::getValue('email'), false, true);
 
         $this->context->smarty->assign([
             'order' => (new OrderPresenter())->present($this->order),
@@ -171,10 +169,10 @@ class GuestTrackingControllerCore extends FrontController
             'HOOK_DISPLAYORDERDETAIL' => Hook::exec('displayOrderDetail', ['order' => $this->order]),
         ]);
 
-        $this->setTemplate('customer/guest-tracking');
+        return $this->setTemplate('customer/guest-tracking');
     }
 
-    public function getBreadcrumbLinks(): array
+    public function getBreadcrumbLinks()
     {
         $breadcrumbLinks = parent::getBreadcrumbLinks();
 
@@ -196,7 +194,7 @@ class GuestTrackingControllerCore extends FrontController
     /**
      * {@inheritdoc}
      */
-    public function getCanonicalURL(): string
+    public function getCanonicalURL()
     {
         return $this->context->link->getPageLink('guest-tracking');
     }

@@ -27,6 +27,7 @@ use PrestaShop\PrestaShop\Adapter\CoreException;
 use PrestaShop\PrestaShop\Adapter\ServiceLocator;
 use PrestaShop\PrestaShop\Adapter\SymfonyContainer;
 use PrestaShop\PrestaShop\Core\Crypto\Hashing;
+use PrestaShopBundle\Security\Admin\SessionRenewer;
 
 /**
  * Class EmployeeCore.
@@ -143,11 +144,11 @@ class EmployeeCore extends ObjectModel
     protected $webserviceParameters = [
         'fields' => [
             'id_lang' => ['xlink_resource' => 'languages'],
-            'last_passwd_gen' => ['setter' => false],
-            'stats_date_from' => ['setter' => false],
-            'stats_date_to' => ['setter' => false],
-            'stats_compare_from' => ['setter' => false],
-            'stats_compare_to' => ['setter' => false],
+            'last_passwd_gen' => ['setter' => null],
+            'stats_date_from' => ['setter' => null],
+            'stats_date_to' => ['setter' => null],
+            'stats_compare_from' => ['setter' => null],
+            'stats_compare_to' => ['setter' => null],
             'passwd' => ['setter' => 'setWsPasswd'],
         ],
     ];
@@ -331,8 +332,8 @@ class EmployeeCore extends ObjectModel
             return false;
         }
 
-        $this->id = (int) $result['id_employee'];
-        $this->id_profile = (int) $result['id_profile'];
+        $this->id = $result['id_employee'];
+        $this->id_profile = $result['id_profile'];
         foreach ($result as $key => $value) {
             if (property_exists($this, $key)) {
                 $this->{$key} = $value;
@@ -434,7 +435,7 @@ class EmployeeCore extends ObjectModel
     public function setWsPasswd($passwd)
     {
         try {
-            /** @var Hashing $crypto */
+            /** @var \PrestaShop\PrestaShop\Core\Crypto\Hashing $crypto */
             $crypto = ServiceLocator::get('\\PrestaShop\\PrestaShop\\Core\\Crypto\\Hashing');
         } catch (CoreException $e) {
             return false;
@@ -458,13 +459,26 @@ class EmployeeCore extends ObjectModel
      */
     public function isLoggedBack()
     {
-        $container = SymfonyContainer::getInstance();
-        if (!$container) {
-            return false;
-        }
-        $userProvider = $container->get('prestashop.user_provider');
+        if (!Cache::isStored('isLoggedBack' . $this->id)) {
+            /* Employee is valid only if it can be load and if cookie password is the same as database one */
+            $result = (
+                $this->id
+                && Validate::isUnsignedId($this->id)
+                && Context::getContext()->cookie
+                && Context::getContext()->cookie->isSessionAlive()
+                && Employee::checkPassword($this->id, Context::getContext()->cookie->passwd)
+                && (
+                    !isset(Context::getContext()->cookie->remote_addr)
+                    || Context::getContext()->cookie->remote_addr == ip2long(Tools::getRemoteAddr())
+                    || !Configuration::get('PS_COOKIE_CHECKIP')
+                )
+            );
+            Cache::store('isLoggedBack' . $this->id, $result);
 
-        return $userProvider->getUser() !== null;
+            return $result;
+        }
+
+        return Cache::retrieve('isLoggedBack' . $this->id);
     }
 
     /**
@@ -479,7 +493,7 @@ class EmployeeCore extends ObjectModel
 
         $sfContainer = SymfonyContainer::getInstance();
         if ($sfContainer !== null) {
-            $sfContainer->get('prestashop.user_provider')->logout();
+            $sfContainer->get(SessionRenewer::class)->renew();
         }
 
         $this->id = null;
@@ -746,29 +760,5 @@ class EmployeeCore extends ObjectModel
         }
 
         return null;
-    }
-
-    public function getAssociatedShopIds(): array
-    {
-        return $this->associated_shops;
-    }
-
-    public function getAssociatedShopGroupIds(): array
-    {
-        $associatedShopGroupIds = [];
-        foreach ($this->associated_shops as $shopId) {
-            /** @var int $groupFromShop */
-            $groupFromShop = Shop::getGroupFromShop($shopId, true);
-            if (!empty($groupFromShop) && !in_array($groupFromShop, $associatedShopGroupIds)) {
-                $associatedShopGroupIds[] = (int) $groupFromShop;
-            }
-        }
-
-        return $associatedShopGroupIds;
-    }
-
-    public function getImageUrl(): string
-    {
-        return $this->getImage();
     }
 }

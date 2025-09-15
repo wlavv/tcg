@@ -22,7 +22,7 @@ use GraphQL\Type\Definition\Type as GraphQLType;
  */
 final class TypesContainer implements TypesContainerInterface
 {
-    private array $graphqlTypes = [];
+    private $graphqlTypes = [];
 
     /**
      * {@inheritdoc}
@@ -35,13 +35,13 @@ final class TypesContainer implements TypesContainerInterface
     /**
      * {@inheritdoc}
      */
-    public function get(string $id): GraphQLType
+    public function get($id): GraphQLType
     {
         if ($this->has($id)) {
             return $this->graphqlTypes[$id];
         }
 
-        throw new TypeNotFoundException(\sprintf('Type with id "%s" is not present in the types container', $id), $id);
+        throw new TypeNotFoundException(sprintf('Type with id "%s" is not present in the types container', $id), $id);
     }
 
     /**
@@ -55,8 +55,10 @@ final class TypesContainer implements TypesContainerInterface
     /**
      * {@inheritdoc}
      */
-    public function has(string $id): bool
+    public function has($id): bool
     {
         return \array_key_exists($id, $this->graphqlTypes);
     }
 }
+
+class_alias(TypesContainer::class, \ApiPlatform\Core\GraphQl\Type\TypesContainer::class);

@@ -21,7 +21,7 @@ use Symfony\Component\Serializer\NameConverter\NameConverterInterface;
  *
  * @author Baptiste Meyer <baptiste.meyer@gmail.com>
  */
-final class ReservedAttributeNameConverter implements NameConverterInterface, AdvancedNameConverterInterface
+final class ReservedAttributeNameConverter implements AdvancedNameConverterInterface
 {
     public const JSON_API_RESERVED_ATTRIBUTES = [
         'id' => '_id',
@@ -31,14 +31,17 @@ final class ReservedAttributeNameConverter implements NameConverterInterface, Ad
         'included' => '_included',
     ];
 
-    public function __construct(private readonly ?NameConverterInterface $nameConverter = null)
+    private $nameConverter;
+
+    public function __construct(NameConverterInterface $nameConverter = null)
     {
+        $this->nameConverter = $nameConverter;
     }
 
     /**
      * {@inheritdoc}
      */
-    public function normalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string
+    public function normalize($propertyName, string $class = null, string $format = null, array $context = []): string
     {
         if (null !== $this->nameConverter) {
             $propertyName = $this->nameConverter->normalize($propertyName, $class, $format, $context);
@@ -54,7 +57,7 @@ final class ReservedAttributeNameConverter implements NameConverterInterface, Ad
     /**
      * {@inheritdoc}
      */
-    public function denormalize(string $propertyName, ?string $class = null, ?string $format = null, array $context = []): string
+    public function denormalize($propertyName, string $class = null, string $format = null, array $context = []): string
     {
         if (\in_array($propertyName, self::JSON_API_RESERVED_ATTRIBUTES, true)) {
             $propertyName = substr($propertyName, 1);
@@ -67,3 +70,5 @@ final class ReservedAttributeNameConverter implements NameConverterInterface, Ad
         return $propertyName;
     }
 }
+
+class_alias(ReservedAttributeNameConverter::class, \ApiPlatform\Core\JsonApi\Serializer\ReservedAttributeNameConverter::class);

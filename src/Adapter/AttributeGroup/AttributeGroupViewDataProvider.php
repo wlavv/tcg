@@ -101,7 +101,7 @@ final class AttributeGroupViewDataProvider implements AttributeGroupViewDataProv
             if ($attributeGroup->id !== $attributeGroupId) {
                 throw new AttributeGroupNotFoundException(sprintf('Attribute group with id "%s" was not found.', $attributeGroupId));
             }
-        } catch (PrestaShopException) {
+        } catch (PrestaShopException $e) {
             throw new AttributeGroupException(sprintf('An error occurred when trying to get attribute group with id %s', $attributeGroupId));
         }
 

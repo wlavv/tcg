@@ -31,7 +31,6 @@ use Db;
 use Employee;
 use PrestaShop\PrestaShop\Adapter\Configuration;
 use PrestaShop\PrestaShop\Adapter\Hook\HookInformationProvider;
-use PrestaShop\PrestaShop\Core\Context\ApiClientContext;
 use PrestaShop\PrestaShop\Core\Image\ImageTypeRepository;
 use PrestaShop\PrestaShop\Core\Module\HookConfigurator;
 use PrestaShop\PrestaShop\Core\Module\HookRepository;
@@ -43,18 +42,17 @@ use Symfony\Component\Finder\Finder;
 
 class ThemeManagerBuilder
 {
-    private LoggerInterface $logger;
-    private ApiClientContext $apiClientContext;
+    private $context;
+    private $db;
+    private $themeValidator;
+    private $logger;
 
-    public function __construct(
-        private Context $context,
-        private readonly Db $db,
-        private ?ThemeValidator $themeValidator = null,
-        ?LoggerInterface $logger = null,
-        ?ApiClientContext $apiClientContext = null
-    ) {
+    public function __construct(Context $context, Db $db, ThemeValidator $themeValidator = null, LoggerInterface $logger = null)
+    {
+        $this->context = $context;
+        $this->db = $db;
+        $this->themeValidator = $themeValidator;
         $this->logger = $logger ?? new NullLogger();
-        $this->apiClientContext = $apiClientContext ?: new ApiClientContext(null);
     }
 
     public function build()
@@ -85,12 +83,11 @@ class ThemeManagerBuilder
             ),
             $this->buildRepository($this->context->shop),
             new ImageTypeRepository($this->db),
-            $this->logger,
-            $this->apiClientContext,
+            $this->logger
         );
     }
 
-    public function buildRepository(?Shop $shop = null)
+    public function buildRepository(Shop $shop = null)
     {
         if (!$shop instanceof Shop) {
             $shop = $this->context->shop;

@@ -28,12 +28,10 @@
     id="app"
     class="translations-app"
   >
-    <div class="row justify-content-between align-items-end">
-      <div class="col-md-8 mb-3">
+    <div class="container-fluid">
+      <div class="row justify-content-between align-items-center">
         <Search @search="onSearch" />
-      </div>
-      <div class="col-md-4 mb-3">
-        <div class="translations-summary text-md-right">
+        <div class="translations-summary">
           <span>{{ totalTranslations }}</span>
           <span v-show="totalMissingTranslations">
             -
@@ -41,23 +39,18 @@
           </span>
         </div>
       </div>
-    </div>
 
-    <div class="row">
-      <div class="col-md-5 col-lg-4 mb-3">
+      <div class="row">
         <Sidebar
           :modal="$refs.transModal"
           :principal="$refs.principal"
         />
-      </div>
-      <div class="col-md-7 col-lg-8 mb-3">
         <Principal
           :modal="$refs.transModal"
           ref="principal"
         />
       </div>
     </div>
-
     <PSModal
       ref="transModal"
       :translations="translations"
@@ -181,11 +174,11 @@
   }
 
   .missing {
-    color: var(--#{$cdk}red-500);
+    color: $danger;
   }
 
   .translations-summary {
-    font-weight: 500;
-    font-size: var(--#{$cdk}size-16);
+    font-weight: $font-weight-semibold;
+    font-size: 1rem;
   }
 </style>

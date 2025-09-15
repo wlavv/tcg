@@ -20,17 +20,14 @@ use Symfony\Component\Workflow\SupportStrategy\WorkflowSupportStrategyInterface;
  */
 class Registry
 {
-    private array $workflows = [];
+    private $workflows = [];
 
-    /**
-     * @return void
-     */
     public function addWorkflow(WorkflowInterface $workflow, WorkflowSupportStrategyInterface $supportStrategy)
     {
         $this->workflows[] = [$workflow, $supportStrategy];
     }
 
-    public function has(object $subject, ?string $workflowName = null): bool
+    public function has(object $subject, string $workflowName = null): bool
     {
         foreach ($this->workflows as [$workflow, $supportStrategy]) {
             if ($this->supports($workflow, $supportStrategy, $subject, $workflowName)) {
@@ -41,7 +38,10 @@ class Registry
         return false;
     }
 
-    public function get(object $subject, ?string $workflowName = null): WorkflowInterface
+    /**
+     * @return Workflow
+     */
+    public function get(object $subject, string $workflowName = null)
     {
         $matched = [];
 
@@ -56,7 +56,9 @@ class Registry
         }
 
         if (2 <= \count($matched)) {
-            $names = array_map(static fn (WorkflowInterface $workflow): string => $workflow->getName(), $matched);
+            $names = array_map(static function (WorkflowInterface $workflow): string {
+                return $workflow->getName();
+            }, $matched);
 
             throw new InvalidArgumentException(sprintf('Too many workflows (%s) match this subject (%s); set a different name on each and use the second (name) argument of this method.', implode(', ', $names), get_debug_type($subject)));
         }

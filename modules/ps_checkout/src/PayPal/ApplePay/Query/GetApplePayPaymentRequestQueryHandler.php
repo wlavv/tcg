@@ -1,5 +1,4 @@
 <?php
-
 /**
  * Copyright since 2007 PrestaShop SA and Contributors
  * PrestaShop is an International Registered Trademark & Property of PrestaShop SA
@@ -28,8 +27,14 @@ use PrestaShop\Module\PrestashopCheckout\Presenter\Cart\CartPresenter;
 
 class GetApplePayPaymentRequestQueryHandler
 {
-    public function __construct(private ApplePayPaymentRequestBuilder $builder)
+    /**
+     * @var ApplePayPaymentRequestBuilder
+     */
+    private $builder;
+
+    public function __construct(ApplePayPaymentRequestBuilder $builder)
     {
+        $this->builder = $builder;
     }
 
     /**
@@ -39,7 +44,7 @@ class GetApplePayPaymentRequestQueryHandler
      *
      * @throws PsCheckoutException
      */
-    public function __invoke(GetApplePayPaymentRequestQuery $query)
+    public function handle(GetApplePayPaymentRequestQuery $query)
     {
         $cartPresenter = new CartPresenter();
         $cart = $cartPresenter->present();

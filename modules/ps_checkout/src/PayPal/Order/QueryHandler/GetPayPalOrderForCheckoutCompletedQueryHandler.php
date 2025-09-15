@@ -21,28 +21,35 @@
 
 namespace PrestaShop\Module\PrestashopCheckout\PayPal\Order\QueryHandler;
 
+use Exception;
 use PrestaShop\Module\PrestashopCheckout\Exception\HttpTimeoutException;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Exception\PayPalOrderException;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForCheckoutCompletedQuery;
 use PrestaShop\Module\PrestashopCheckout\PayPal\Order\Query\GetPayPalOrderForCheckoutCompletedQueryResult;
 use PrestaShop\Module\PrestashopCheckout\PaypalOrder;
-use Symfony\Component\Cache\Adapter\ChainAdapter;
+use Psr\SimpleCache\CacheInterface;
 
 /**
  * We need to know if the Order Status is APPROVED and in case of Card payment if 3D Secure allow to capture
  */
 class GetPayPalOrderForCheckoutCompletedQueryHandler
 {
-    public function __construct(private ChainAdapter $orderPayPalCache)
+    /**
+     * @var CacheInterface
+     */
+    private $orderPayPalCache;
+
+    public function __construct(CacheInterface $orderPayPalCache)
     {
+        $this->orderPayPalCache = $orderPayPalCache;
     }
 
-    public function __invoke(GetPayPalOrderForCheckoutCompletedQuery $getPayPalOrderQuery)
+    public function handle(GetPayPalOrderForCheckoutCompletedQuery $getPayPalOrderQuery)
     {
         $payPalOrderId = $getPayPalOrderQuery->getOrderPayPalId()->getValue();
 
-        /** @var array{id: string, status: string}|array $order */
-        $order = $this->orderPayPalCache->getItem($payPalOrderId)->get();
+        /** @var array{id: string, status: string} $order */
+        $order = $this->orderPayPalCache->get($payPalOrderId);
 
         if (!empty($order) && in_array($order['status'], ['COMPLETED', 'CANCELED'])) {
             return new GetPayPalOrderForCheckoutCompletedQueryResult($order);
@@ -51,12 +58,10 @@ class GetPayPalOrderForCheckoutCompletedQueryHandler
         try {
             $orderPayPal = new PaypalOrder($payPalOrderId);
             $orderToStoreInCache = !empty($order) ? array_replace_recursive($order, $orderPayPal->getOrder()) : $orderPayPal->getOrder();
-            $cacheItem = $this->orderPayPalCache->getItem($payPalOrderId);
-            $cacheItem->set($orderToStoreInCache);
-            $this->orderPayPalCache->save($cacheItem);
+            $this->orderPayPalCache->set($payPalOrderId, $orderToStoreInCache);
         } catch (HttpTimeoutException $exception) {
             throw $exception;
-        } catch (\Exception $exception) {
+        } catch (Exception $exception) {
             throw new PayPalOrderException(sprintf('Unable to retrieve PayPal Order %s', $payPalOrderId), PayPalOrderException::CANNOT_RETRIEVE_ORDER, $exception);
         }
 

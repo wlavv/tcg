@@ -24,8 +24,6 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-use PrestaShopBundle\Form\Admin\Type\FormattedTextareaType;
-
 /**
  * Class ContactCore.
  */
@@ -75,7 +73,7 @@ class ContactCore extends ObjectModel
                 'type' => self::TYPE_STRING,
                 'lang' => true,
                 'validate' => 'isString',
-                'size' => FormattedTextareaType::LIMIT_MEDIUMTEXT_UTF8_MB4,
+                'size' => 4194303,
             ],
         ],
     ];

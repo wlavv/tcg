@@ -25,26 +25,45 @@ use PrestaShop\Module\PsxMarketingWithGoogle\Http\HttpClient;
 class BillingAdapter
 {
     private const BILLING_URL = 'https://billing-api.distribution.prestashop.net/v1/';
+    private const BILLING_PREPROD_URL = 'https://billing-api.distribution-preprod.prestashop.net/v1/';
 
     /**
      * @var string
      */
     private $jwt;
 
-    public function __construct($jwt)
+    /**
+     * @var string
+     */
+    private $url;
+
+    /**
+     * @var bool
+     */
+    private $isSandbox;
+
+    public function __construct($jwt, $isSandbox, $usePreprod)
     {
         $this->jwt = $jwt;
+        $this->isSandbox = $isSandbox;
+        $this->url = $usePreprod ? self::BILLING_PREPROD_URL : self::BILLING_URL;
     }
 
     public function getCurrentSubscription($shopId, $productId)
     {
-        $httpClient = new HttpClient(self::BILLING_URL);
-        $httpClient->setHeaders([
+        $httpClient = new HttpClient($this->url);
+        $headers = [
             'Accept: application/json',
             'Authorization: Bearer ' . $this->jwt,
             'Content-Type: application/json',
             'User-Agent : module-lib-billing v3 (' . $productId . ')',
-        ]);
+        ];
+
+        if ($this->isSandbox === true) {
+            $headers[] = 'sandbox: true';
+        }
+
+        $httpClient->setHeaders($headers);
 
         return $httpClient->get('/customers/' . $shopId . '/subscriptions/' . $productId);
     }

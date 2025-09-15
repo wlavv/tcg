@@ -11,14 +11,8 @@ services:
   prestashop.adapter.cache.clearer.smarty_cache_clearer:
     class: 'PrestaShop\PrestaShop\Adapter\Cache\Clearer\SmartyCacheClearer'
 
-  PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer:
-    autowire: true
-
   prestashop.adapter.cache.clearer.symfony_cache_clearer:
-    alias: 'PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer'
-    deprecated:
-      package: PrestaShop\PrestaShop
-      version: 9.0
+    class: 'PrestaShop\PrestaShop\Adapter\Cache\Clearer\SymfonyCacheClearer'
 
   prestashop.adapter.cache.clearer.xml_cache_clearer:
     class: 'PrestaShop\PrestaShop\Adapter\Cache\Clearer\XmlCacheClearer'
