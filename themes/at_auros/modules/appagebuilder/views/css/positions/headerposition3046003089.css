@@ -1,0 +1,57 @@
+/***************************************************
+  Mixins Themes 
+/***************************************************/
+/* Mixin Normal*/
+/* Mixin Clear */
+/* Mixin Border */
+/*background RGBA
+============================================*/
+/***************************************************
+  Mixins RTL Themes 
+/***************************************************/
+/************************************ 
+	Override Bootstrap 
+*************************************/
+/**
+ * Web Application Prefix Apply For Making Owner Styles
+ */
+/**
+ *   Blocks Layout Selectors 
+ */
+/***********************************************************************/
+/*header 4 (header home 5)*/
+@media (min-width: 768px) {
+  #index:not(.keep-header) #page {
+    position: relative; }
+    #index:not(.keep-header) #page #header {
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 0;
+      z-index: 1;
+      max-width: 1710px;
+      margin: auto;
+      width: 100%;
+      background-color: transparent; } }
+#index.keep-header #header, #index.keep-header .box-top {
+  background-color: #363636 !important; }
+
+#index .box-top #leo_search_block_top .title_block,
+#index .box-top #leo_search_block_top.active .title_block:before,
+#index .popup-over a.popup-title,
+#index #_desktop_cart .cart-preview i,
+#index .box-top.home-2 .showmenu,
+#index .box-top.home-2 .showmenu i {
+  color: #FFFFFF; }
+#index .box-top #leo_search_block_top .title_block:hover,
+#index .box-top #leo_search_block_top.active .title_block:hover:before,
+#index .popup-over a.popup-title:hover,
+#index #_desktop_cart .cart-preview i:hover,
+#index .box-top.home-2 .showmenu:hover,
+#index .box-top.home-2 .showmenu:hover i {
+  color: #eb7025; }
+#index .navbar-header .navbar-toggler {
+  border-color: #FFFFFF;
+  color: #FFFFFF; }
+
+/*# sourceMappingURL=headerposition3046003089.css.map */

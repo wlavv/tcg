@@ -1,0 +1,36 @@
+/* Profile 10 (home 10) */
+/***************************************************
+  Mixins Themes 
+/***************************************************/
+/* Mixin Normal*/
+/* Mixin Clear */
+/* Mixin Border */
+/*background RGBA
+============================================*/
+/***************************************************
+  Mixins RTL Themes 
+/***************************************************/
+/************************************ 
+	Override Bootstrap 
+*************************************/
+/**
+ * Web Application Prefix Apply For Making Owner Styles
+ */
+/**
+ *   Blocks Layout Selectors 
+ */
+/***********************************************************************/
+#index {
+  background-color: #f5f5f5; }
+
+.h5-boxproduct {
+  padding: 0;
+  max-width: inherit; }
+  @media (min-width: 1200px) {
+    .h5-boxproduct {
+      margin: 0 -20px; } }
+
+.product-has-border .thumbnail-container:before {
+  border-color: #dedede; }
+
+/*# sourceMappingURL=profile1817341333.css.map */

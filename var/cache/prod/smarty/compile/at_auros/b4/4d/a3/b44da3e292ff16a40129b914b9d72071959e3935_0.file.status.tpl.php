@@ -1,0 +1,32 @@
+<?php
+/* Smarty version 4.3.4, created on 2025-06-20 10:48:27
+  from '/home/playfunc/tcg/modules/leoslideshow/views/templates/hook/status.tpl' */
+
+/* @var Smarty_Internal_Template $_smarty_tpl */
+if ($_smarty_tpl->_decodeProperties($_smarty_tpl, array (
+  'version' => '4.3.4',
+  'unifunc' => 'content_68552e6b70b242_01576690',
+  'has_nocache_code' => false,
+  'file_dependency' => 
+  array (
+    'b44da3e292ff16a40129b914b9d72071959e3935' => 
+    array (
+      0 => '/home/playfunc/tcg/modules/leoslideshow/views/templates/hook/status.tpl',
+      1 => 1749910613,
+      2 => 'file',
+    ),
+  ),
+  'includes' => 
+  array (
+  ),
+),false)) {
+function content_68552e6b70b242_01576690 (Smarty_Internal_Template $_smarty_tpl) {
+if ((isset($_smarty_tpl->tpl_vars['gstatus']->value)) || (isset($_smarty_tpl->tpl_vars['status']->value))) {?>
+	<a href="<?php echo $_smarty_tpl->tpl_vars['status_link']->value;?>
+" title="<?php echo $_smarty_tpl->tpl_vars['title']->value;?>
+"><img src="<?php echo $_smarty_tpl->tpl_vars['img_link']->value;?>
+" alt="" /></a>
+<?php }?>
+
+<?php }
+}
