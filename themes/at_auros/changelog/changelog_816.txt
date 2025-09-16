@@ -1,3 +1,0 @@
-****templates change:
-
-themes\classic\templates\customer\password-new.tpl
