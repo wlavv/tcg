@@ -3,9 +3,9 @@
   array (
     'database_host' => '127.0.0.1',
     'database_port' => '',
-    'database_name' => 'playfunc_tcg',
-    'database_user' => 'playfunc_admin_2024',
-    'database_password' => '8dWcFpbdaUY28f3',
+    'database_name' => 'dev_tcg',
+    'database_user' => 'root',
+    'database_password' => '',
     'database_prefix' => 'ps_',
     'database_engine' => 'InnoDB',
     'mailer_transport' => 'smtp',
