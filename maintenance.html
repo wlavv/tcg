@@ -194,19 +194,23 @@
   min-height: 80px;                    /* dá um pouco mais de “corpo” ao cartão */
 }
 
-/* Contentor fixo do logo (primeiro <div> dentro do .store-card) */
-.store-card > div:first-child{
-  width: 64px;                         /* comprimento/largura fixos do contentor do logo */
-  height: 64px;
-  flex: 0 0 64px;                      /* impede que encolha/estique */
+.store-card > div:first-child {
+  width: 150px;
+  height: 150px;
+  flex: 0 0 150px;
   border-radius: 12px;
-  background: #f0f5ff;                 /* fundo do ícone */
+  background: #f0f0f0; /* um tom ligeiramente mais claro que o cinza do cartão */
   border: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
-  overflow: hidden;                    /* corta logos maiores */
+  overflow: hidden;
+  /* efeito embutido */
+  box-shadow:
+    inset 3px 3px 6px rgba(0,0,0,0.15),    /* sombra interna escura */
+    inset -3px -3px 6px rgba(255,255,255,0.7); /* brilho interno no topo/esquerda */
 }
+
 
 /* O próprio <img> do logo adapta-se ao contentor fixo */
 .store-card > div:first-child img{
