@@ -1,0 +1,282 @@
+<!doctype html>
+<html lang="pt-PT">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>TCG‑Collectors — A tua hub para TCG (Em construção)</title>
+  <meta name="description" content="Singles e selados de MTG, Pokémon e Yu‑Gi‑Oh!. Ferramentas para colecionadores. Em construção — subscreve para acesso antecipado." />
+  <meta property="og:title" content="TCG‑Collectors — A tua hub para TCG" />
+  <meta property="og:description" content="Singles e selados de MTG, Pokémon e Yu‑Gi‑Oh!. Ferramentas para colecionadores. Em construção." />
+  <meta property="og:type" content="website" />
+  <meta property="og:site_name" content="TCG‑Collectors" />
+  <meta property="og:image" content="/img/tcg-collectors-og.jpg" />
+  <meta property="og:locale" content="pt_PT" />
+  <meta name="twitter:card" content="summary_large_image" />
+  <meta name="twitter:title" content="TCG‑Collectors — A tua hub para TCG" />
+  <meta name="twitter:description" content="Singles e selados • Ferramentas de coleção • Em construção" />
+  <meta name="twitter:image" content="/img/tcg-collectors-og.jpg" />
+  <link rel="canonical" href="https://www.tcg-collectors.com/" />
+  <meta name="robots" content="index,follow,max-image-preview:large" />
+  <meta name="theme-color" content="#ffffff" />
+  <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png" />
+  <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+  
+  
+  <style>
+    :root{
+      /* Fresh, bright TCG identity (reverted to light theme) */
+      --ink: #0b1024;           /* main text */
+      --muted: #3b425a;         /* secondary text */
+      --paper: #ffffff;         /* cards */
+      --canvas: #f7f9ff;        /* page background */
+      --line: #d3dbf0;          /* borders */
+      --brandCyan: #00e5ff;
+      --brandViolet: #8b5cf6;
+      --brandGrad: linear-gradient(90deg, var(--brandCyan), var(--brandViolet));
+      --gold1:#f7e6a6; --gold2:#d4af37; --gold3:#8f6f1e; /* logo only */
+    }
+
+    /* Reset/typography */
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth;scroll-padding-top:76px}
+    body{margin:0;font-family:Inter,system-ui,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:var(--ink);background:var(--canvas);}
+    .container{width:min(1180px,92vw);margin-inline:auto}
+
+    /* New header style: slim bar with gold mark and pill nav */
+    .topbar{position:sticky;top:0;z-index:50;background:#fff;border-bottom:1px solid var(--line)}
+    .topbar .row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px 0}
+    .mark{display:flex;align-items:center;gap:10px}
+    .logo-gold{width:28px;height:28px;border-radius:8px;background:linear-gradient(135deg,var(--gold1),var(--gold2) 55%,var(--gold3));box-shadow:inset 0 0 10px rgba(255,255,255,.5), 0 6px 14px rgba(212,175,55,.25)}
+    .brand{font-weight:900;letter-spacing:.3px}
+
+    .nav{display:flex;gap:6px;align-items:center}
+    .nav a{padding:.55rem .9rem;border-radius:6px;border:1px solid var(--line);background:#fff;color:#172147;font-weight:600;text-decoration:none;min-height:44px;display:inline-flex;align-items:center}
+    .nav a:hover{border-color:#b8c3e3}
+    .cta{border:2px solid transparent;background-image:var(--brandGrad);color:#0b1024;font-weight:800}
+    .cta:hover{filter:saturate(1.07) brightness(1.02)}
+
+    /* Hero: diagonal split, completely new layout */
+    .hero{position:relative}
+    .hero-wrap{display:grid;grid-template-columns:1.1fr .9fr;align-items:center}
+    .hero-left{padding:56px 0}
+    .eyebrow{display:inline-flex;align-items:center;gap:.5rem;padding:.35rem .6rem;border-radius:999px;border:1px dashed #b9c6ea;background:#f0f5ff;color:#0b1024;font-weight:700}
+    h1{font-size:clamp(2.2rem,4.5vw,3.5rem);line-height:1.05;margin:.3rem 0 10px}
+    .lead{color:var(--muted);font-size:1.12rem;max-width:65ch}
+
+    .hero-ctas{display:flex;gap:.6rem;flex-wrap:wrap;margin-top:18px}
+    .btn{display:inline-flex;align-items:center;gap:.6rem;padding:.9rem 1.1rem;border-radius:6px;border:1px solid #0f1838;background:#0f1838;color:#fff;font-weight:700;line-height:1;cursor:pointer;text-decoration:none;transition:transform .18s ease, box-shadow .18s ease, filter .18s ease;min-height:44px}
+    .btn.secondary{background:#fff;color:#0f1838;border:1px solid var(--line)}
+    .btn.secondary:hover{border-color:#b8c3e3;filter:brightness(1.03)}
+    .btn.primary{border:2px solid transparent;background-image:var(--brandGrad);background-origin:border-box;background-clip:padding-box,border-box;color:#ffffff;text-shadow:0 1px 0 rgba(0,0,0,.08)}
+
+    /* Right: illustration block (no previous visuals reused) */
+    .hero-right{position:relative;min-height:420px;pointer-events:none}
+    .arc{position:absolute;inset:auto -10% auto -10%;top:12%;height:320px;background:conic-gradient(from 210deg, rgba(0,229,255,.18), rgba(139,92,246,.18), transparent 60%);filter:blur(18px);border-radius:100%}
+    .pack{width:260px;height:140px;border-radius:6px;background:#fff;border:1px solid var(--line);box-shadow:0 6px 14px rgba(10,16,40,.06);position:relative;overflow:hidden}
+.pack::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brandGrad);opacity:1}
+    .pack-stack{position:absolute;right:6%;bottom:-40px;display:grid;gap:12px}
+/* varied tilts per pack (desktop) */
+.pack-stack .pack:nth-child(1){transform:rotate(-3deg)}
+.pack-stack .pack:nth-child(2){transform:translateX(18px) rotate(3deg)}
+.pack-stack .pack:nth-child(3){transform:translateX(36px) rotate(-2deg)}
+    .pack .title{position:absolute;left:12px;bottom:12px;font-weight:900;color:#10142a}
+
+    /* Info strips */
+    .strip{margin-top:28px;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+    .kpi{background:#fff;border:1px solid var(--line);border-radius:6px;padding:10px 14px;font-weight:700;display:flex;align-items:center;gap:10px}
+    .dot{width:10px;height:10px;border-radius:50%;background:linear-gradient(90deg,var(--brandCyan),var(--brandViolet))}
+
+    /* Sections, new blocks */
+    section{padding:64px 0}
+    .section-head{display:flex;align-items:end;justify-content:space-between;gap:12px;margin-bottom:18px}
+    .section-title{font-size:1.6rem;margin:0}
+    .section-action a{display:inline-flex;align-items:center;gap:.4rem;border-radius:6px;border:1px solid var(--line);padding:.5rem .8rem;font-weight:700;text-decoration:none}
+
+    .pill-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:10px}
+    .pill{background:#fff;border:1px solid var(--line);padding:.75rem 1rem;border-radius:6px;text-align:center;font-weight:700;position:relative;overflow:hidden}
+.pill::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brandGrad);opacity:1}
+
+    .feature-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .feature{background:#fff;border:1px solid var(--line);border-radius:6px;padding:16px;box-shadow:0 6px 16px rgba(10,16,40,.06);position:relative;overflow:hidden}
+.feature::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brandGrad);opacity:1}
+    .feature h3{margin:.2rem 0 .35rem}
+    .badge{display:inline-flex;align-items:center;gap:.35rem;padding:.32rem .55rem;border-radius:999px;border:1px solid #b9c6ea;background:#eef4ff;font-weight:700;font-size:.8rem}
+
+    .steps{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:16px}
+    .step{background:#fff;border:1px solid var(--line);border-radius:6px;padding:18px}
+
+    .brands{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:14px}
+    .brand-link{background:#fff;border:1px dashed var(--line);border-radius:6px;height:56px;display:flex;align-items:center;justify-content:center;font-weight:800;color:#0b1024;text-decoration:none;position:relative;overflow:hidden;transition:transform .2s ease, box-shadow .2s ease}
+.brand-link:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(10,16,40,.15)}
+.brand-link::before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:var(--brandGrad);opacity:1}
+
+    footer{background:#fff;border-top:1px solid var(--line);padding:26px 0;color:#2a3044}
+
+    /* Responsive */
+    @media (max-width:980px){
+  .hero-wrap{grid-template-columns:1fr}
+  .hero-right{min-height:300px}
+  .strip{grid-template-columns:1fr 1fr}
+  .pill-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .feature-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr}
+  .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
+  /* stack packs inside flow to avoid overlap */
+  .pack-stack{position:relative;right:auto;bottom:auto;margin:16px auto 0;transform:none;grid-auto-flow:row;justify-items:center}
+  /* soften tilts on smaller screens */
+  .pack-stack .pack:nth-child(1){transform:rotate(-2deg)}
+  .pack-stack .pack:nth-child(2){transform:rotate(2deg)}
+  .pack-stack .pack:nth-child(3){transform:rotate(-1deg)}
+}
+      .hero-right{min-height:300px}
+      .strip{grid-template-columns:1fr 1fr}
+      .pill-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+      .feature-grid{grid-template-columns:1fr 1fr}
+      .steps{grid-template-columns:1fr}
+      .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
+    }
+    @media (max-width:560px){
+  .pill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feature-grid{grid-template-columns:1fr}
+  .brands{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .hero-left{padding:36px 0}
+  .pack{width:200px;height:110px}
+  .pack-stack{margin-top:12px}
+}
+      .feature-grid{grid-template-columns:1fr}
+      .brands{grid-template-columns:repeat(2,minmax(0,1fr))}
+      .hero-left{padding:36px 0}
+      .pack{width:220px;height:120px}
+    }
+
+
+    /* Mobile polish + safe areas */
+    .topbar .row{padding-left:calc(env(safe-area-inset-left) + 12px);padding-right:calc(env(safe-area-inset-right) + 12px)}
+    @media (max-width:420px){.strip{grid-template-columns:1fr}}
+
+    /* Keep static gradient bars (no animation, no shimmer) */
+    @media (prefers-reduced-motion: reduce){
+      .feature::before,.pack::before,.pill::before,.brand-link::before{animation:none}
+      .brand-link{transition:none}
+    }
+  </style>
+</head>
+<body>
+  <!-- top notice -->
+  <div class="topbar">
+    <div class="container row">
+      <div class="mark"><span class="logo-gold" aria-hidden="true"></span><span class="brand">TCG‑Collectors</span></div>
+      <nav class="nav" aria-label="Principal">
+        <a href="#catalogo">Catálogo</a>
+        <a href="#ferramentas">Ferramentas</a>
+        <a href="#vender">Vender</a>
+        <a class="cta" href="#newsletter">Subscrever</a>
+      </nav>
+    </div>
+  </div>
+
+  <!-- hero completely new -->
+  <header class="hero">
+    <div class="container hero-wrap">
+      <div class="hero-left">
+        <span class="eyebrow">🚧 Em construção</span>
+        <h1>Uma loja e um set de ferramentas para colecionadores sérios.</h1>
+        <p class="lead">Compra singles e selados, acompanha preços e gere a tua coleção de <strong>MTG</strong>, <strong>Pokémon</strong> e <strong>Yu‑Gi‑Oh!</strong> — tudo no mesmo sítio.</p>
+        <div class="hero-ctas">
+          <a class="btn primary" href="#catalogo">Explorar</a>
+          <a class="btn secondary" href="#ferramentas">Ver Ferramentas</a>
+        </div>
+        <div class="strip">
+          <div class="kpi"><span class="dot"></span> Singles & Selados</div>
+          <div class="kpi"><span class="dot"></span> Price Tracker</div>
+          <div class="kpi"><span class="dot"></span> Gestor de Coleção</div>
+        </div>
+      </div>
+      <div class="hero-right" aria-hidden="true">
+        <div class="arc"></div>
+        <div class="pack-stack">
+          <div class="pack"><span class="title">Booster • MTG</span></div>
+          <div class="pack"><span class="title">Booster • Pokémon</span></div>
+          <div class="pack"><span class="title">Booster • Yu‑Gi‑Oh!</span></div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <!-- catálogo tags (new pill layout) -->
+    <section id="catalogo">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Explora por tema</h2>
+        </div>
+        <div class="pill-grid">
+          <div class="pill">Commander Staples</div>
+          <div class="pill">Modern Staples</div>
+          <div class="pill">Chase Pokémon</div>
+          <div class="pill">Collector Rares</div>
+          <div class="pill">Graded & Slabs</div>
+          <div class="pill">ETBs & Boxes</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ferramentas (three-up features) -->
+    <section id="ferramentas">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Ferramentas</h2>
+          <div class="badge">Beta • Acesso antecipado</div>
+        </div>
+        <div class="feature-grid">
+          <article class="feature">
+            <h3>Deck Builder</h3>
+            <p class="muted">Constrói decks com autocomplete, legalidades e compra direta.</p>
+          </article>
+          <article class="feature">
+            <h3>Price Tracker</h3>
+            <p class="muted">Segue tendências de preço e cria alertas para oportunidades.</p>
+          </article>
+          <article class="feature">
+            <h3>Gestor de Coleção</h3>
+            <p class="muted">Regista condições/edições e vê o valor total da tua coleção.</p>
+          </article>
+        </div>
+      </div>
+    </section>
+
+    <!-- grupo -->
+    <section id="grupo">
+      <div class="container">
+        <div class="section-head">
+          <h2 class="section-title">Lojas do grupo</h2>
+        </div>
+        <div class="brands">
+          <a class="brand-link" href="https://life-style.pt" target="_blank" rel="noopener noreferrer">Life‑style.pt</a>
+          <a class="brand-link" href="https://as-yourself.pt" target="_blank" rel="noopener noreferrer">As‑Yourself.pt</a>
+          <a class="brand-link" href="https://world-decor.pt" target="_blank" rel="noopener noreferrer">World‑Decor.pt</a>
+          <a class="brand-link" href="https://casual-vibe.com" target="_blank" rel="noopener noreferrer">Casual‑Vibe.com</a>
+          <a class="brand-link" href="https://2play4fun.com" target="_blank" rel="noopener noreferrer">2Play4Fun.com</a>
+          <a class="brand-link" href="#" aria-disabled="true" title="Em breve">(Tech Store)</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="container" style="display:flex;flex-wrap:wrap;gap:12px;align-items:center;justify-content:space-between">
+      <div style="display:flex;align-items:center;gap:10px"><span class="logo-gold" aria-hidden="true" style="width:22px;height:22px"></span><strong>TCG‑Collectors</strong></div>
+      <small>© <span id="year"></span> TCG‑Collectors. Todos os direitos reservados.</small>
+    </div>
+  </footer>
+
+  <script>
+    document.getElementById('year').textContent = new Date().getFullYear();
+    function subscribe(){
+      const msg = document.getElementById('sub-msg');
+      if(msg){ msg.style.display = 'block'; msg.scrollIntoView({behavior:'smooth', block:'nearest'}); }
+    }
+  </script>
+</body>
+</html>

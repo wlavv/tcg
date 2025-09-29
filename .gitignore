@@ -3,6 +3,7 @@
 /.htaccess
 *.log
 
+
 # Cache
 /cache/*
 !/cache/.htaccess
