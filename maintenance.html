@@ -189,6 +189,48 @@
   opacity:1;
 }
 
+.muted{ color: var(--muted); }
+
+/* Responsive */
+@media (max-width:980px){
+  .hero-wrap{grid-template-columns:1fr}
+  .hero-right{min-height:300px}
+  .strip{grid-template-columns:1fr 1fr}
+  .pill-grid{grid-template-columns:repeat(3,minmax(0,1fr))}
+  .feature-grid{grid-template-columns:1fr 1fr}
+  .steps{grid-template-columns:1fr}
+  .brands{grid-template-columns:repeat(3,minmax(0,1fr))}
+
+  /* stack packs inside flow to avoid overlap */
+  .pack-stack{position:relative;right:auto;bottom:auto;margin:16px auto 0;transform:none;grid-auto-flow:row;justify-items:center}
+  /* soften tilts on smaller screens */
+  .pack-stack .pack:nth-child(1){transform:rotate(-2deg)}
+  .pack-stack .pack:nth-child(2){transform:rotate(2deg)}
+  .pack-stack .pack:nth-child(3){transform:rotate(-1deg)}
+  .hero-left{padding:36px 0}
+  .pack{width:220px;height:120px}
+}
+
+@media (max-width:560px){
+  .pill-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .feature-grid{grid-template-columns:1fr}
+  .brands{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .pack{width:200px;height:110px}
+  .pack-stack{margin-top:12px}
+}
+
+/* Mobile polish + safe areas */
+.topbar .row{
+  padding-left:calc(env(safe-area-inset-left) + 12px);
+  padding-right:calc(env(safe-area-inset-right) + 12px)
+}
+@media (max-width:420px){ .strip{grid-template-columns:1fr} }
+
+.kpi::before, .step::before{
+  content:""; position:absolute; inset:0 0 auto 0; height:3px;
+  background:var(--brandGrad); opacity:1;
+}
+.kpi, .step{ position:relative; overflow:hidden; }
 
   </style>
 </head>
@@ -283,7 +325,6 @@
           <h2 class="section-title">Lojas do grupo</h2>
         </div>
         <div class="brands">
-				<h2 id="stores-heading" class="sr-only">Our other stores</h2>
 				<a class="store-card" href="https://life-style.pt" target="_blank">
 					<div><img src="https://www.tcg-collectors.com/img/logos/3w.webp" width="200" height="200" title="Life Style"></div>
 					<div>
