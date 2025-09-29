@@ -160,6 +160,36 @@
       .feature::before,.pack::before,.pill::before,.brand-link::before{animation:none}
       .brand-link{transition:none}
     }
+
+/* Cartões das lojas – igual ao antigo .brand-link, com a barrinha em degradê */
+.store-card{
+  background:#fff;
+  border:1px dashed var(--line);
+  border-radius:6px;
+  height:56px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  padding:10px;
+  font-weight:800;
+  color:#0b1024;
+  text-decoration:none;
+  position:relative;
+  overflow:hidden;
+  transition:transform .2s ease, box-shadow .2s ease;
+}
+.store-card:hover{transform:translateY(-3px);box-shadow:0 10px 22px rgba(10,16,40,.15)}
+.store-card::before{
+  content:"";
+  position:absolute;
+  inset:0 0 auto 0;
+  height:3px;
+  background:var(--brandGrad);
+  opacity:1;
+}
+
+
   </style>
 </head>
 <body>
