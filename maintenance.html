@@ -199,16 +199,16 @@
   height: 150px;
   flex: 0 0 150px;
   border-radius: 12px;
-  background: #f0f0f0; /* um tom ligeiramente mais claro que o cinza do cartão */
+  background: #f0f0f0; /* mantém próximo do fundo */
   border: 1px solid var(--line);
   display: flex;
   align-items: center;
   justify-content: center;
   overflow: hidden;
-  /* efeito embutido */
+  /* sombras internas para efeito "escavado" */
   box-shadow:
-    inset 3px 3px 6px rgba(0,0,0,0.15),    /* sombra interna escura */
-    inset -3px -3px 6px rgba(255,255,255,0.7); /* brilho interno no topo/esquerda */
+    inset 6px 6px 12px rgba(0,0,0,0.2),    /* sombra no canto inferior/direito */
+    inset -6px -6px 12px rgba(255,255,255,0.6); /* brilho no topo/esquerda */
 }
 
 
@@ -331,7 +331,7 @@
         </div>
         <div class="brands">
 				<a class="store-card" href="https://life-style.pt" target="_blank">
-					<div><img src="https://www.tcg-collectors.com/img/logos/3w.webp" width="200" height="200" title="Life Style"></div>
+					<div><img src="https://www.tcg-collectors.com/img/logos/3b.webp" width="200" height="200" title="Life Style"></div>
 					<div>
 						<h3>Life‑Style</h3>
 						<p>Premium picks for home, wellness and lifestyle.</p>
@@ -359,14 +359,14 @@
 					</div>
 				</a>
 				<a class="store-card" href="https://casual-vibes.com" target="_blank">
-					<div><img src="https://www.tcg-collectors.com/img/logos/9w.webp" width="200" height="200" title="Casual Vibes"></div>
+					<div><img src="https://www.tcg-collectors.com/img/logos/9b.webp" width="200" height="200" title="Casual Vibes"></div>
 					<div>
 						<h3>Casual‑Vibes</h3>
 						<p>Light, versatile daily wear.</p>
 					</div>
 				</a>
 				<a class="store-card" href="https://world-decor.com" target="_blank">
-					<div><img src="https://www.tcg-collectors.com/img/logos/10w.webp" width="200" height="200" title="World Decor"></div>
+					<div><img src="https://www.tcg-collectors.com/img/logos/10b.webp" width="200" height="200" title="World Decor"></div>
 					<div>
 						<h3>World‑Decor</h3>
 						<p>Decor with soul: wood, linen and ceramics.</p>
