@@ -495,7 +495,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getCacheDirectoryProviderService()
     {
-        return $this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', 'C:\\xampp\\htdocs\\tcg', true);
+        return $this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', '/home/playfunc/prod/tcg', true);
     }
 
     /**
@@ -837,7 +837,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getLoggerDirectoryService()
     {
-        return $this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', 'C:\\xampp\\htdocs\\tcg');
+        return $this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', '/home/playfunc/prod/tcg');
     }
 
     /**
@@ -867,7 +867,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getLoggerHandlerFactoryService()
     {
-        return $this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerHandlerFactory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerHandlerFactory(($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] ?? ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', 'C:\\xampp\\htdocs\\tcg')))->getPath(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerFilename'] ?? $this->getLoggerFilenameService())->get(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerConfiguration'] ?? $this->getLoggerConfigurationService())->getMaxFiles(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerConfiguration'] ?? $this->getLoggerConfigurationService())->getLevel());
+        return $this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerHandlerFactory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerHandlerFactory(($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] ?? ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', '/home/playfunc/prod/tcg')))->getPath(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerFilename'] ?? $this->getLoggerFilenameService())->get(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerConfiguration'] ?? $this->getLoggerConfigurationService())->getMaxFiles(), ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerConfiguration'] ?? $this->getLoggerConfigurationService())->getLevel());
     }
 
     /**
@@ -2536,7 +2536,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
         $a = new \Doctrine\DBAL\Configuration();
         $a->setSQLLogger(new \Doctrine\DBAL\Logging\LoggerChain([0 => new \Symfony\Bridge\Doctrine\Logger\DbalLogger(NULL, NULL), 1 => new \Doctrine\DBAL\Logging\DebugStack()]));
 
-        return $this->services['doctrine.dbal.default_connection'] = (new \Doctrine\Bundle\DoctrineBundle\ConnectionFactory([]))->createConnection(['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => '', 'dbname' => 'dev_tcg', 'user' => 'root', 'password' => '', 'charset' => 'utf8mb4', 'driverOptions' => [1002 => 'SET sql_mode=(SELECT REPLACE(@@sql_mode,\'ONLY_FULL_GROUP_BY\',\'\'))', 1013 => $this->getEnv('const:runtime:_PS_ALLOW_MULTI_STATEMENTS_QUERIES_')], 'defaultTableOptions' => []], $a, new \Symfony\Bridge\Doctrine\ContainerAwareEventManager($this), ['enum' => 'string']);
+        return $this->services['doctrine.dbal.default_connection'] = (new \Doctrine\Bundle\DoctrineBundle\ConnectionFactory([]))->createConnection(['driver' => 'pdo_mysql', 'host' => '127.0.0.1', 'port' => '', 'dbname' => 'playfunc_tcg', 'user' => 'playfunc_admin_2024', 'password' => '8dWcFpbdaUY28f3', 'charset' => 'utf8mb4', 'driverOptions' => [1002 => 'SET sql_mode=(SELECT REPLACE(@@sql_mode,\'ONLY_FULL_GROUP_BY\',\'\'))', 1013 => $this->getEnv('const:runtime:_PS_ALLOW_MULTI_STATEMENTS_QUERIES_')], 'defaultTableOptions' => []], $a, new \Symfony\Bridge\Doctrine\ContainerAwareEventManager($this), ['enum' => 'string']);
     }
 
     /**
@@ -2551,24 +2551,24 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
         $b = new \Doctrine\Persistence\Mapping\Driver\MappingDriverChain();
 
         $c = ($this->services['annotation_reader'] ?? ($this->services['annotation_reader'] = new \Doctrine\Common\Annotations\AnnotationReader()));
-        $d = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => 'C:\\xampp\\htdocs\\tcg\\modules\\psxdesign\\src\\Entity']);
-        $d->addExcludePaths([0 => 'C:\\xampp\\htdocs\\tcg\\modules\\psxdesign\\src\\Entity/index.php']);
-        $e = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => 'C:\\xampp\\htdocs\\tcg\\modules\\ps_accounts\\src\\Entity']);
-        $e->addExcludePaths([0 => 'C:\\xampp\\htdocs\\tcg\\modules\\ps_accounts\\src\\Entity/index.php']);
-        $f = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => 'C:\\xampp\\htdocs\\tcg\\modules\\ps_checkout\\src\\Entity']);
-        $f->addExcludePaths([0 => 'C:\\xampp\\htdocs\\tcg\\modules\\ps_checkout\\src\\Entity/index.php']);
+        $d = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => '/home/playfunc/prod/tcg/modules/ps_accounts/src/Entity']);
+        $d->addExcludePaths([0 => '/home/playfunc/prod/tcg/modules/ps_accounts/src/Entity/index.php']);
+        $e = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => '/home/playfunc/prod/tcg/modules/ps_checkout/src/Entity']);
+        $e->addExcludePaths([0 => '/home/playfunc/prod/tcg/modules/ps_checkout/src/Entity/index.php']);
+        $f = new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => '/home/playfunc/prod/tcg/modules/psxdesign/src/Entity']);
+        $f->addExcludePaths([0 => '/home/playfunc/prod/tcg/modules/psxdesign/src/Entity/index.php']);
 
-        $b->addDriver(new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => 'C:\\xampp\\htdocs\\tcg\\src\\PrestaShopBundle\\Entity']), 'PrestaShop');
-        $b->addDriver($d, 'PrestaShop\\Module\\PsxDesign\\Entity');
-        $b->addDriver($e, 'PrestaShop\\Module\\PsAccounts\\Entity');
-        $b->addDriver($f, 'PrestaShop\\Module\\PrestashopCheckout\\Entity');
+        $b->addDriver(new \Doctrine\ORM\Mapping\Driver\AnnotationDriver($c, [0 => '/home/playfunc/prod/tcg/src/PrestaShopBundle/Entity']), 'PrestaShop');
+        $b->addDriver($d, 'PrestaShop\\Module\\PsAccounts\\Entity');
+        $b->addDriver($e, 'PrestaShop\\Module\\PrestashopCheckout\\Entity');
+        $b->addDriver($f, 'PrestaShop\\Module\\PsxDesign\\Entity');
 
         $a->setEntityNamespaces(['PrestaShopBundle\\Entity' => 'PrestaShop']);
         $a->setMetadataCache(new \Symfony\Component\Cache\Adapter\ArrayAdapter());
         $a->setQueryCache(new \Symfony\Component\Cache\Adapter\ArrayAdapter());
         $a->setResultCache(new \Symfony\Component\Cache\Adapter\ArrayAdapter());
         $a->setMetadataDriverImpl($b);
-        $a->setProxyDir('C:\\xampp\\htdocs\\tcg/var/cache/dev\\/doctrine/orm/Proxies');
+        $a->setProxyDir('/home/playfunc/prod/tcg/var/cache/dev//doctrine/orm/Proxies');
         $a->setProxyNamespace('Proxies');
         $a->setAutoGenerateProxyClasses(true);
         $a->setClassMetadataFactoryName('Doctrine\\ORM\\Mapping\\ClassMetadataFactory');
@@ -2578,9 +2578,9 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
         $a->setEntityListenerResolver(new \Doctrine\Bundle\DoctrineBundle\Mapping\ContainerEntityListenerResolver($this));
         $a->setRepositoryFactory(new \Doctrine\Bundle\DoctrineBundle\Repository\ContainerRepositoryFactory(new \Symfony\Component\DependencyInjection\ServiceLocator([])));
         $a->addCustomStringFunction('regexp', 'DoctrineExtensions\\Query\\Mysql\\Regexp');
-        $a->addEntityNamespace('Modulepsxdesign', 'PrestaShop\\Module\\PsxDesign\\Entity');
         $a->addEntityNamespace('ModulepsAccounts', 'PrestaShop\\Module\\PsAccounts\\Entity');
         $a->addEntityNamespace('ModulepsCheckout', 'PrestaShop\\Module\\PrestashopCheckout\\Entity');
+        $a->addEntityNamespace('Modulepsxdesign', 'PrestaShop\\Module\\PsxDesign\\Entity');
 
         $this->services['doctrine.orm.default_entity_manager'] = $instance = \Doctrine\ORM\EntityManager::create(($this->services['doctrine.dbal.default_connection'] ?? $this->getDoctrine_Dbal_DefaultConnectionService()), $a);
 
@@ -2796,7 +2796,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPrestashop_Adapter_Module_Repository_ModuleRepositoryService()
     {
-        return $this->services['prestashop.adapter.module.repository.module_repository'] = new \PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository('C:\\xampp\\htdocs\\tcg', 'C:\\xampp\\htdocs\\tcg/modules/');
+        return $this->services['prestashop.adapter.module.repository.module_repository'] = new \PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository('/home/playfunc/prod/tcg', '/home/playfunc/prod/tcg/modules/');
     }
 
     /**
@@ -2964,7 +2964,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPrestashop_Core_Localization_Cldr_Cache_AdapterService()
     {
-        return $this->services['prestashop.core.localization.cldr.cache.adapter'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('CLDR', 0, 'C:\\xampp\\htdocs\\tcg/var/cache/dev\\/localization');
+        return $this->services['prestashop.core.localization.cldr.cache.adapter'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('CLDR', 0, '/home/playfunc/prod/tcg/var/cache/dev//localization');
     }
 
     /**
@@ -2974,7 +2974,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPrestashop_Core_Localization_Cldr_Datalayer_LocaleCacheService()
     {
-        $this->services['prestashop.core.localization.cldr.datalayer.locale_cache'] = $instance = new \PrestaShop\PrestaShop\Core\Localization\CLDR\DataLayer\LocaleCache(($this->services['prestashop.core.localization.cldr.cache.adapter'] ?? ($this->services['prestashop.core.localization.cldr.cache.adapter'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('CLDR', 0, 'C:\\xampp\\htdocs\\tcg/var/cache/dev\\/localization'))));
+        $this->services['prestashop.core.localization.cldr.datalayer.locale_cache'] = $instance = new \PrestaShop\PrestaShop\Core\Localization\CLDR\DataLayer\LocaleCache(($this->services['prestashop.core.localization.cldr.cache.adapter'] ?? ($this->services['prestashop.core.localization.cldr.cache.adapter'] = new \Symfony\Component\Cache\Adapter\FilesystemAdapter('CLDR', 0, '/home/playfunc/prod/tcg/var/cache/dev//localization'))));
 
         $instance->setLowerLayer(($this->services['prestashop.core.localization.cldr.datalayer.locale_reference'] ?? $this->getPrestashop_Core_Localization_Cldr_Datalayer_LocaleReferenceService()));
 
@@ -3130,7 +3130,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPrestashop_Translation_TranslatorLanguageLoaderService()
     {
-        return $this->services['prestashop.translation.translator_language_loader'] = new \PrestaShopBundle\Translation\TranslatorLanguageLoader(($this->services['prestashop.adapter.module.repository.module_repository'] ?? ($this->services['prestashop.adapter.module.repository.module_repository'] = new \PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository('C:\\xampp\\htdocs\\tcg', 'C:\\xampp\\htdocs\\tcg/modules/'))));
+        return $this->services['prestashop.translation.translator_language_loader'] = new \PrestaShopBundle\Translation\TranslatorLanguageLoader(($this->services['prestashop.adapter.module.repository.module_repository'] ?? ($this->services['prestashop.adapter.module.repository.module_repository'] = new \PrestaShop\PrestaShop\Adapter\Module\Repository\ModuleRepository('/home/playfunc/prod/tcg', '/home/playfunc/prod/tcg/modules/'))));
     }
 
     /**
@@ -3140,7 +3140,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPsAccounts_FacadeService()
     {
-        return $this->services['ps_accounts.facade'] = new \PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts(($this->services['ps_accounts.installer'] ?? ($this->services['ps_accounts.installer'] = new \PrestaShop\PsAccountsInstaller\Installer\Installer('4.0.0'))));
+        return $this->services['ps_accounts.facade'] = new \PrestaShop\PsAccountsInstaller\Installer\Facade\PsAccounts(($this->services['ps_accounts.installer'] ?? ($this->services['ps_accounts.installer'] = new \PrestaShop\PsAccountsInstaller\Installer\Installer('5.0'))));
     }
 
     /**
@@ -3150,7 +3150,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPsAccounts_InstallerService()
     {
-        return $this->services['ps_accounts.installer'] = new \PrestaShop\PsAccountsInstaller\Installer\Installer('4.0.0');
+        return $this->services['ps_accounts.installer'] = new \PrestaShop\PsAccountsInstaller\Installer\Installer('5.0');
     }
 
     /**
@@ -3180,7 +3180,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPsCheckout_Cache_Paypal_CaptureService()
     {
-        return $this->services['ps_checkout.cache.paypal.capture'] = new \Symfony\Component\Cache\Simple\ChainCache([0 => new \Symfony\Component\Cache\Simple\ArrayCache(), 1 => new \Symfony\Component\Cache\Simple\FilesystemCache('paypal-capture', 3600, ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] ?? ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', 'C:\\xampp\\htdocs\\tcg', true)))->getPath())]);
+        return $this->services['ps_checkout.cache.paypal.capture'] = new \Symfony\Component\Cache\Simple\ChainCache([0 => new \Symfony\Component\Cache\Simple\ArrayCache(), 1 => new \Symfony\Component\Cache\Simple\FilesystemCache('paypal-capture', 3600, ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] ?? ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', '/home/playfunc/prod/tcg', true)))->getPath())]);
     }
 
     /**
@@ -3190,7 +3190,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPsCheckout_Cache_Paypal_OrderService()
     {
-        return $this->services['ps_checkout.cache.paypal.order'] = new \PrestaShop\Module\PrestashopCheckout\PayPal\Order\Cache\PayPalOrderCache([0 => new \Symfony\Component\Cache\Simple\ArrayCache(), 1 => new \Symfony\Component\Cache\Simple\FilesystemCache('paypal-orders', 3600, ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] ?? ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', 'C:\\xampp\\htdocs\\tcg', true)))->getPath())]);
+        return $this->services['ps_checkout.cache.paypal.order'] = new \PrestaShop\Module\PrestashopCheckout\PayPal\Order\Cache\PayPalOrderCache([0 => new \Symfony\Component\Cache\Simple\ArrayCache(), 1 => new \Symfony\Component\Cache\Simple\FilesystemCache('paypal-orders', 3600, ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] ?? ($this->services['PrestaShop\\ModuleLibCacheDirectoryProvider\\Cache\\CacheDirectoryProvider'] = new \PrestaShop\ModuleLibCacheDirectoryProvider\Cache\CacheDirectoryProvider('8.2.1', '/home/playfunc/prod/tcg', true)))->getPath())]);
     }
 
     /**
@@ -3230,7 +3230,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
      */
     protected function getPsCheckout_LoggerService()
     {
-        return $this->services['ps_checkout.logger'] = ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerFactory'] ?? $this->getLoggerFactoryService())->build(($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] ?? ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', 'C:\\xampp\\htdocs\\tcg'))));
+        return $this->services['ps_checkout.logger'] = ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerFactory'] ?? $this->getLoggerFactoryService())->build(($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] ?? ($this->services['PrestaShop\\Module\\PrestashopCheckout\\Logger\\LoggerDirectory'] = new \PrestaShop\Module\PrestashopCheckout\Logger\LoggerDirectory('8.2.1', '/home/playfunc/prod/tcg'))));
     }
 
     /**
@@ -3670,9 +3670,9 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
         return [
             'database_host' => '127.0.0.1',
             'database_port' => '',
-            'database_name' => 'dev_tcg',
-            'database_user' => 'root',
-            'database_password' => '',
+            'database_name' => 'playfunc_tcg',
+            'database_user' => 'playfunc_admin_2024',
+            'database_password' => '8dWcFpbdaUY28f3',
             'database_prefix' => 'ps_',
             'database_engine' => 'InnoDB',
             'mailer_transport' => 'smtp',
@@ -3695,12 +3695,12 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
             'kernel.bundles' => [
 
             ],
-            'kernel.root_dir' => 'C:\\xampp\\htdocs\\tcg/app',
-            'kernel.project_dir' => 'C:\\xampp\\htdocs\\tcg',
+            'kernel.root_dir' => '/home/playfunc/prod/tcg/app',
+            'kernel.project_dir' => '/home/playfunc/prod/tcg',
             'kernel.name' => 'app',
             'kernel.debug' => true,
             'kernel.environment' => 'dev',
-            'kernel.cache_dir' => 'C:\\xampp\\htdocs\\tcg/var/cache/dev\\',
+            'kernel.cache_dir' => '/home/playfunc/prod/tcg/var/cache/dev/',
             'kernel.active_modules' => [
                 0 => 'blockreassurance',
                 1 => 'psgdpr',
@@ -3781,7 +3781,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
                 76 => 'leoquicklogin',
                 77 => 'leoproductsearch',
             ],
-            'ps_cache_dir' => 'C:\\xampp\\htdocs\\tcg/var/cache/dev\\',
+            'ps_cache_dir' => '/home/playfunc/prod/tcg/var/cache/dev/',
             'mail_themes_uri' => '/mails/themes',
             'doctrine.dbal.logger.chain.class' => 'Doctrine\\DBAL\\Logging\\LoggerChain',
             'doctrine.dbal.logger.profiling.class' => 'Doctrine\\DBAL\\Logging\\DebugStack',
@@ -3851,7 +3851,7 @@ class FrontContainer extends \PrestaShop\PrestaShop\Adapter\Container\LegacyCont
             'doctrine.orm.second_level_cache.cache_configuration.class' => 'Doctrine\\ORM\\Cache\\CacheConfiguration',
             'doctrine.orm.second_level_cache.regions_configuration.class' => 'Doctrine\\ORM\\Cache\\RegionsConfiguration',
             'doctrine.orm.auto_generate_proxy_classes' => true,
-            'doctrine.orm.proxy_dir' => 'C:\\xampp\\htdocs\\tcg/var/cache/dev\\/doctrine/orm/Proxies',
+            'doctrine.orm.proxy_dir' => '/home/playfunc/prod/tcg/var/cache/dev//doctrine/orm/Proxies',
             'doctrine.orm.proxy_namespace' => 'Proxies',
             'psshipping.sentry_dsn' => 'https://78c41abf489931010a3a83cacc14926b@o298402.ingest.sentry.io/4505906299600896',
             'psshipping.sentry_env' => 'production',
