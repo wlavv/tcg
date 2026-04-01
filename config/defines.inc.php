@@ -24,7 +24,7 @@
  * @license   https://opensource.org/licenses/OSL-3.0 Open Software License (OSL 3.0)
  */
 
-define('_PS_MODE_DEV_', true);
+define('_PS_MODE_DEV_', false);
 
 
 /* Debug only */

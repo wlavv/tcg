@@ -1,0 +1,11 @@
+Nome,categoria,preco,referencia,image_url,cor,idioma,tipo
+Black Lotus,mtg,0.00,MTG-LEA-232,https://api.scryfall.com/cards/lea/232?format=image,colorless,EN,Artifact
+Mox Sapphire,mtg,0.00,MTG-LEA-265,https://api.scryfall.com/cards/lea/265?format=image,colorless,EN,Artifact
+Mox Jet,mtg,0.00,MTG-LEA-262,https://api.scryfall.com/cards/lea/262?format=image,colorless,EN,Artifact
+Ancestral Recall,mtg,0.00,MTG-LEA-47,https://api.scryfall.com/cards/lea/47?format=image,blue,EN,Instant
+Lightning Bolt,mtg,0.00,MTG-LEA-161,https://api.scryfall.com/cards/lea/161?format=image,red,EN,Instant
+Dark Ritual,mtg,0.00,MTG-LEA-98,https://api.scryfall.com/cards/lea/98?format=image,black,EN,Instant
+Giant Growth,mtg,0.00,MTG-LEA-197,https://api.scryfall.com/cards/lea/197?format=image,green,EN,Instant
+Counterspell,mtg,0.00,MTG-LEA-54,https://api.scryfall.com/cards/lea/54?format=image,blue,EN,Instant
+Mox Pearl,mtg,0.00,MTG-LEA-263,https://api.scryfall.com/cards/lea/263?format=image,colorless,EN,Artifact
+Mox Emerald,mtg,0.00,MTG-LEA-261,https://api.scryfall.com/cards/lea/261?format=image,colorless,EN,Artifact
